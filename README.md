@@ -15,15 +15,77 @@
 
 ### This project does one thing.
 
-Get you from zero to a fully-equipped Claude Code agent — fast — through a web interface.
+Get you from zero to a fully-equipped AI agent fleet — fast.
 
-**Step 1.** Web wizard walks you through installing Claude Code and authenticating in minutes.
+Clawd-Lobster is a **generator**. You run it once, it creates your personal **Hub** — a private repo that becomes your command center. Your Hub manages all your machines, workspaces, memory, and skills.
 
-**Step 2.** Web wizard sets up your multi-layer memory system and essential tools — click by click, green light by green light.
+```
+  clawd-lobster (this repo — the generator)
+       │
+       │  run install.ps1 once
+       │
+       ▼
+  clawd-yourname (YOUR private Hub — generated for you)
+       │
+       │  this is what you actually use day-to-day
+       │
+       ├── Machine A ── Claude Code + skills + memory
+       ├── Machine B ── Claude Code + skills + memory
+       └── Machine C ── Claude Code + skills + memory
+            │
+            All connected. All sharing knowledge.
+            All always alive via heartbeat.
+```
 
-**Step 3.** A skills marketplace where you install what you need. Nothing you don't.
+### How the setup works
 
-**Step 4.** Your agents evolve freely. Every memory persists. Every action is tracked. Every insight is shared.
+The installer asks you 4 questions. That's it. Everything else is automatic.
+
+```
+  ┌──────────────────────────────────────────────────┐
+  │  1. Language?                                     │
+  │     English / 繁體中文 / 简体中文 / 日本語 / 한국어   │
+  │                                                   │
+  │  2. First machine or joining?                     │
+  │     → New Hub (I'm the first)                     │
+  │     → Join Hub (I have the URL)                   │
+  │                                                   │
+  │  3. Fresh or importing?                           │
+  │     → Fresh start                                 │
+  │     → Absorb existing system                      │
+  │                                                   │
+  │  4. Name your Hub / Machine                       │
+  │     → Hub: clawd-yourname (becomes private repo)  │
+  │     → Machine: home-pc / office-vm / laptop       │
+  │     → Domain: work / personal / hybrid            │
+  └──────────────────────────────────────────────────┘
+             │
+             ▼  then 9 automated steps
+  [1] Prerequisites   — Node, Python, Git, Claude Code
+  [2] Authentication  — Claude + GitHub (OAuth clicks)
+  [3] Create Hub      — copies template → private GitHub repo
+  [4] Config          — writes ~/.clawd-lobster/config.json
+  [5] Memory Server   — installs 21-tool MCP server
+  [6] Claude Code     — configures CLAUDE.md + .mcp.json
+  [7] Workspaces      — clones repos, inits memory.db each
+  [8] Scheduler       — registers sync + heartbeat tasks
+  [9] Migration       — absorbs OpenClaw/Hermes/etc (if chosen)
+```
+
+### Adding another machine later
+
+Once your Hub exists on GitHub, adding a machine is even simpler:
+
+```bash
+git clone https://github.com/you/clawd-lobster
+cd clawd-lobster
+./install.ps1   # or ./install.sh
+
+  → Join existing Hub
+  → paste your Hub URL
+  → name this machine
+  → done (clones Hub, deploys workspaces, starts heartbeat)
+```
 
 ---
 
@@ -223,54 +285,61 @@ OS-level scheduler (Windows Task Scheduler / cron / launchd) — runs even when 
 
 ## Quick Start
 
-### Option A: Web Setup Wizard
+### First machine (create your Hub)
 
-Open `webapp/index.html` in your browser and follow the 6-step guided wizard.
-
-### Option B: Command Line
-
-**Windows (PowerShell)**
+**Windows**
 ```powershell
-git clone https://github.com/YOUR_USERNAME/clawd-lobster
+git clone https://github.com/teddashh/clawd-lobster
 cd clawd-lobster
 .\install.ps1
+# Answer 4 questions → your private Hub is created → everything is set up
 ```
 
-**macOS / Linux (Bash)**
+**macOS / Linux**
 ```bash
-git clone https://github.com/YOUR_USERNAME/clawd-lobster
+git clone https://github.com/teddashh/clawd-lobster
 cd clawd-lobster
 chmod +x install.sh && ./install.sh
 ```
 
 **Docker**
 ```bash
-git clone https://github.com/YOUR_USERNAME/clawd-lobster
+git clone https://github.com/teddashh/clawd-lobster
 cd clawd-lobster
-docker compose up -d
-docker compose exec clawd bash
-# Then inside container: claude auth login
+docker compose up -d && docker compose exec clawd bash
 ```
 
-### What the installer does
+### Second machine (join your Hub)
+
+```bash
+git clone https://github.com/teddashh/clawd-lobster
+cd clawd-lobster
+.\install.ps1    # or ./install.sh
+# Choose "Join Hub" → paste your Hub URL → done
+```
+
+### What the 9 steps do
 
 | Step | Action | Time |
 |------|--------|------|
 | 1 | Check prerequisites (Node, Python, Git) | 5s |
-| 2 | Authenticate Claude Code + GitHub (OAuth) | 30s |
-| 3 | Install MCP Memory Server (21 tools) | 10s |
-| 4 | Configure Claude Code (.mcp.json, settings.json, CLAUDE.md) | 5s |
-| 5 | Register scheduled tasks (OS-native) | 5s |
-| 6 | Done | --- |
+| 2 | Authenticate Claude Code + GitHub (2 OAuth clicks) | 30s |
+| 3 | **Create your Hub** (private repo) or clone existing | 10s |
+| 4 | Write config | 5s |
+| 5 | Install MCP Memory Server (21 tools) | 10s |
+| 6 | Configure Claude Code (CLAUDE.md + .mcp.json) | 5s |
+| 7 | Deploy workspaces (clone repos, init memory.db) | varies |
+| 8 | Register scheduler + heartbeat | 5s |
+| 9 | Absorb existing system (if chosen) | varies |
 
-| Platform | Scheduler | Method |
-|----------|-----------|--------|
-| Windows | Task Scheduler | `install.ps1` auto-registers |
-| macOS | launchd | `install.sh` creates LaunchAgent |
-| Linux | cron | `install.sh` adds crontab entry |
-| Docker | Container restart | `docker compose` handles lifecycle |
+| Platform | Sync | Heartbeat |
+|----------|------|-----------|
+| Windows | Task Scheduler (30 min) | Task Scheduler (30 min) |
+| macOS | launchd | launchd |
+| Linux | cron | cron |
+| Docker | Container lifecycle | Container lifecycle |
 
-**Total credentials needed: 2 OAuth clicks.** No API keys to paste (unless you want Oracle L4).
+**Total credentials: 2 OAuth clicks.** No API keys unless you want Oracle L4.
 
 ---
 
