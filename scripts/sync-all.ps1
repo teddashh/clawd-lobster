@@ -128,4 +128,21 @@ if ($All) {
     }
 }
 
+# Step 5: Update machine status
+$machineConfigFile = "$env:USERPROFILE\.clawd-lobster\config.json"
+if (Test-Path $machineConfigFile) {
+    try {
+        $machineConfig = Get-Content $machineConfigFile -Raw | ConvertFrom-Json
+        $mid = $machineConfig.machine_id
+        if ($mid) {
+            $clientFile = "$wrapperDir\clients\$mid.json"
+            if (Test-Path $clientFile) {
+                $status = Get-Content $clientFile -Raw | ConvertFrom-Json
+                $status.last_sync = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
+                $status | ConvertTo-Json -Depth 3 | Set-Content $clientFile -Encoding UTF8
+            }
+        }
+    } catch { }
+}
+
 Log "=== Sync finished ==="
