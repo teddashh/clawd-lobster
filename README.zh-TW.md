@@ -3,7 +3,7 @@
 # Clawd-Lobster
 
 <p align="center">
-<strong>終究要用最好的，何必繞遠路？</strong><br>
+<strong>你終究要用 Claude Code 的，何必在那邊一直試其他 Agent ？</strong><br>
 <em>終極 agent 體驗 — 最輕量、精選功能、極致效能。</em>
 </p>
 
