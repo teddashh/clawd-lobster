@@ -3,7 +3,7 @@
 # Clawd-Lobster
 
 <p align="center">
-<strong>You'll end up using the best anyway.</strong><br>
+<strong>You'll end up using Claude Code (The Best) anyway.</strong><br>
 <em>The ultimate agent experience — lightest weight, curated features, maximum performance.</em>
 </p>
 
