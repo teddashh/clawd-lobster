@@ -187,12 +187,37 @@ Create workspaces with one command. The scheduler auto-syncs all git repos under
 └── random-notes/    ← not a git repo, ignored by sync
 ```
 
+### Always Alive — Heartbeat Session Manager
+
+Your agents never die. The OS scheduler checks every 30 minutes: is each workspace session alive? If not, it revives it with `claude --resume` — full context restored.
+
+```
+OS Scheduler (every 30 min)
+    │
+    ▼ heartbeat.ps1 / heartbeat.sh
+    │
+    For each workspace in workspaces.json:
+    ├─ Session alive? → skip
+    └─ Session dead?  → claude --resume → context restored
+    │
+    ▼ All sessions visible via Claude Code Remote / App
+```
+
+- **Terminal open** → session alive → agent has full context, running 24/7
+- **Terminal closed** → heartbeat detects → revives automatically
+- **All sessions** → visible via Claude Code Remote on any device
+- **No custom daemon** — OS scheduler is the watchdog. Never crashes. Zero maintenance.
+
+Other frameworks run a custom 24/7 daemon (their own inferior engine). We let the OS ensure Claude Code sessions stay alive. **The best engine, always on.**
+
 ### Scheduled Automation
 
 OS-level scheduler (Windows Task Scheduler / cron / launchd) — runs even when Claude Code isn't active:
 
+- **Heartbeat** — Ensure all workspace sessions stay alive (revive if dead)
 - **Git sync** — Pull and push all repos every 30 minutes
 - **Salience decay** — Daily memory importance adjustment
+- **Client status** — Track each machine's sessions, last heartbeat, deployed workspaces
 
 ---
 
@@ -339,11 +364,13 @@ When Anthropic ships Opus 4.7, 1M context, new tools — you get them instantly.
 | | Claude Code (raw) | OpenClaw | Hermes Agent | **Clawd-Lobster** |
 |---|---|---|---|---|
 | Agent engine | Anthropic | Custom (Pi Agent) | Custom (Python) | **Anthropic (native)** |
+| Always alive | No | Custom daemon | Custom daemon | **OS heartbeat + auto-revive** |
 | Persistent memory | None | Hybrid search | FTS5 + LLM | **4-layer + salience** |
-| Multi-agent shared memory | No | No | No | **Yes** |
-| Agent evolution | No | No | Self-improving skills | **Yes (memory + skills)** |
+| Multi-agent shared memory | No | No | No | **Yes (git-synced)** |
+| Agent evolution | No | No | Self-improving skills | **Yes (21 MCP tools)** |
 | Multi-machine | No | No | No | **Yes (MDM-style)** |
-| Onboarding | Manual | Complex | Moderate | **Web wizard, 5 min** |
+| Session management | Manual | Gateway process | Manual | **Auto-revive all sessions** |
+| Onboarding | Manual | Complex | Moderate | **Web wizard, 5 languages** |
 | Auto-upgrades | Yes | No | No | **Yes** |
 | Codebase size | N/A | ~300K LOC | ~50K LOC | **~2K LOC** |
 | Audit trail | No | Security audit | No | **Full (every action)** |
