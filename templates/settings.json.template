@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "mcp__memory__memory_list",
+      "mcp__memory__memory_get",
+      "mcp__memory__memory_search",
+      "mcp__memory__memory_get_summary",
+      "mcp__memory__memory_status"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+# Clawd-Lobster Docker Compose
+# Usage:
+#   docker compose up -d       # Start
+#   docker compose exec clawd bash  # Enter shell
+#   docker compose down        # Stop
+
+services:
+  clawd:
+    build: .
+    container_name: clawd-lobster
+    stdin_open: true
+    tty: true
+    volumes:
+      - clawd-config:/root/.clawd-lobster
+      - claude-config:/root/.claude
+      - workspaces:/root/Documents/Workspace
+      # Mount local knowledge for git sync (optional):
+      # - ./knowledge:/opt/clawd-lobster/knowledge
+    environment:
+      - TERM=xterm-256color
+    # For API keys, create a .env file (git-ignored) with:
+    #   ANTHROPIC_API_KEY=sk-ant-xxxxx
+    #   OPENAI_API_KEY=sk-xxxxx
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
+
+volumes:
+  clawd-config:
+  claude-config:
+  workspaces:
