@@ -12,6 +12,7 @@ param(
     [string]$Env = "",
     [string]$MachineId = "",
     [string]$JoinCode = "",
+    [string]$HubName = "",
     [ValidateSet("", "work", "personal", "hybrid")]
     [string]$Domain = ""
 )
@@ -41,10 +42,13 @@ $i18n = @{
         domain_work = "Work — deploy work workspaces"
         domain_personal = "Personal — deploy personal workspaces"
         domain_hybrid = "Hybrid — deploy everything"
+        hub_name_prompt = "Name your Hub (e.g. clawd-yourname)"
+        hub_name_hint = "This creates a private GitHub repo that becomes your command center"
         machine_prompt = "Name this machine"
-        join_prompt = "Enter Hub URL or join code"
+        join_prompt = "Enter Hub repo URL (e.g. github.com/you/clawd-yourname)"
         step_prereq = "Checking prerequisites"
         step_auth = "Authentication"
+        step_hub = "Creating your Hub"
         step_config = "Configuring"
         step_mcp = "Installing MCP Memory Server"
         step_claude = "Setting up Claude Code"
@@ -70,10 +74,13 @@ $i18n = @{
         domain_work = "工作 — 部署工作用工作區"
         domain_personal = "個人 — 部署個人工作區"
         domain_hybrid = "混合 — 全部部署"
+        hub_name_prompt = "幫你的 Hub 取個名字 (例如 clawd-你的名字)"
+        hub_name_hint = "這會建立一個 private GitHub repo，成為你的指揮中心"
         machine_prompt = "幫這台機器命名"
-        join_prompt = "輸入 Hub 網址或加入碼"
+        join_prompt = "輸入 Hub repo 網址 (例如 github.com/你/clawd-你的名字)"
         step_prereq = "檢查前置需求"
         step_auth = "身份驗證"
+        step_hub = "建立你的 Hub"
         step_config = "設定中"
         step_mcp = "安裝 MCP 記憶伺服器"
         step_claude = "設定 Claude Code"
@@ -99,10 +106,13 @@ $i18n = @{
         domain_work = "工作 — 部署工作用工作区"
         domain_personal = "个人 — 部署个人工作区"
         domain_hybrid = "混合 — 全部部署"
+        hub_name_prompt = "给你的 Hub 起个名字 (例如 clawd-你的名字)"
+        hub_name_hint = "这会创建一个 private GitHub repo，成为你的指挥中心"
         machine_prompt = "给这台机器命名"
-        join_prompt = "输入 Hub 地址或加入码"
+        join_prompt = "输入 Hub repo 地址 (例如 github.com/你/clawd-你的名字)"
         step_prereq = "检查前置需求"
         step_auth = "身份验证"
+        step_hub = "创建你的 Hub"
         step_config = "配置中"
         step_mcp = "安装 MCP 记忆服务器"
         step_claude = "设置 Claude Code"
@@ -128,10 +138,13 @@ $i18n = @{
         domain_work = "仕事 — 仕事用ワークスペースをデプロイ"
         domain_personal = "個人 — 個人ワークスペースをデプロイ"
         domain_hybrid = "ハイブリッド — すべてデプロイ"
+        hub_name_prompt = "Hubの名前を決めてください (例: clawd-あなたの名前)"
+        hub_name_hint = "プライベートGitHubリポジトリが作成され、あなたの司令塔になります"
         machine_prompt = "このマシンの名前"
-        join_prompt = "Hub URLまたは参加コードを入力"
+        join_prompt = "Hub リポジトリURLを入力 (例: github.com/you/clawd-yourname)"
         step_prereq = "前提条件の確認"
         step_auth = "認証"
+        step_hub = "Hubを作成中"
         step_config = "設定中"
         step_mcp = "MCPメモリサーバーのインストール"
         step_claude = "Claude Codeの設定"
@@ -157,10 +170,13 @@ $i18n = @{
         domain_work = "업무 — 업무 워크스페이스 배포"
         domain_personal = "개인 — 개인 워크스페이스 배포"
         domain_hybrid = "하이브리드 — 전부 배포"
+        hub_name_prompt = "Hub 이름을 정해주세요 (예: clawd-당신의이름)"
+        hub_name_hint = "프라이빗 GitHub 리포지토리가 생성되어 당신의 지휘 센터가 됩니다"
         machine_prompt = "이 머신의 이름"
-        join_prompt = "Hub URL 또는 참여 코드 입력"
+        join_prompt = "Hub 리포지토리 URL 입력 (예: github.com/you/clawd-yourname)"
         step_prereq = "전제 조건 확인"
         step_auth = "인증"
+        step_hub = "Hub 생성 중"
         step_config = "구성 중"
         step_mcp = "MCP 메모리 서버 설치"
         step_claude = "Claude Code 설정"
@@ -240,7 +256,18 @@ if (-not $Env) {
     if ($r2 -eq "2") { $Env = "absorb" } else { $Env = "fresh" }
 }
 
-# Join code for agent mode
+# Hub naming (new mode) or join URL (join mode)
+if ($Hub -eq "new" -and -not $HubName) {
+    Write-Host ""
+    Write-Host "  $(T 'hub_name_hint')" -ForegroundColor Gray
+    $defaultHub = "clawd-$(($env:USERNAME ?? 'me').ToLower() -replace '[^a-z0-9]', '')"
+    $HubName = Read-Host "  $(T 'hub_name_prompt') [$defaultHub]"
+    if (-not $HubName) { $HubName = $defaultHub }
+    # Sanitize
+    $HubName = ($HubName.ToLower() -replace '[^a-z0-9-]', '-').TrimStart('-').TrimEnd('-')
+    Write-Host "  Hub: $HubName" -ForegroundColor Cyan
+}
+
 if ($Hub -eq "join" -and -not $JoinCode) {
     Write-Host ""
     $JoinCode = Read-Host "  $(T 'join_prompt')"
@@ -332,10 +359,66 @@ if ($gh) {
 }
 
 # ============================================================
-# STEP 3: CONFIG
+# STEP 3: CREATE OR CLONE HUB
 # ============================================================
 
-Write-Step "3/8" "step_config"
+Write-Step "3/9" "step_hub"
+
+$hubDir = ""
+if ($Hub -eq "new") {
+    # Create hub repo from clawd-lobster template
+    $hubDir = "$env:USERPROFILE\Documents\$HubName"
+    if (Test-Path $hubDir) {
+        Write-OK "$HubName already exists at $hubDir"
+    } else {
+        # Copy clawd-lobster as template
+        Copy-Item -Path $wrapperDir -Destination $hubDir -Recurse -Force
+        # Remove clawd-lobster's .git — this is a new repo
+        Remove-Item -Path "$hubDir\.git" -Recurse -Force -ErrorAction SilentlyContinue
+        # Init fresh git
+        Push-Location $hubDir
+        git init 2>&1 | Out-Null
+        # Create private GitHub repo
+        if ($gh) {
+            git add -A 2>&1 | Out-Null
+            git commit -m "Initial hub: $HubName (generated by clawd-lobster)" 2>&1 | Out-Null
+            gh repo create $HubName --private --source=. --remote=origin --push --description "My AI agent hub (generated by clawd-lobster)" 2>&1 | Out-Null
+            Write-OK "Hub created: github.com/$(gh api user --jq '.login' 2>&1)/$HubName (private)"
+        } else {
+            git add -A 2>&1 | Out-Null
+            git commit -m "Initial hub: $HubName" 2>&1 | Out-Null
+            Write-OK "Hub created locally (push to GitHub manually: gh repo create $HubName --private)"
+        }
+        Pop-Location
+    }
+    # Switch context: everything now runs from the hub, not clawd-lobster
+    $wrapperDir = $hubDir
+} elseif ($Hub -eq "join") {
+    # Clone existing hub
+    $hubUrl = $JoinCode
+    # Normalize URL
+    if ($hubUrl -notmatch "^https?://") { $hubUrl = "https://github.com/$hubUrl" }
+    if ($hubUrl -notmatch "\.git$") { $hubUrl = "$hubUrl.git" }
+    $HubName = [System.IO.Path]::GetFileNameWithoutExtension(($hubUrl -split '/')[-1])
+    $hubDir = "$env:USERPROFILE\Documents\$HubName"
+    if (Test-Path $hubDir) {
+        Write-OK "$HubName already exists, pulling latest..."
+        Push-Location $hubDir
+        git pull 2>&1 | Out-Null
+        Pop-Location
+    } else {
+        git clone $hubUrl $hubDir 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) { Write-OK "Hub cloned: $HubName" }
+        else { Write-Fail "Failed to clone hub from $hubUrl"; exit 1 }
+    }
+    $wrapperDir = $hubDir
+}
+
+# ============================================================
+# STEP 4: CONFIG
+# ============================================================
+
+Write-Step "4/9" "step_config"
 
 New-Item -ItemType Directory -Force -Path $configDir | Out-Null
 $wsRoot = "$env:USERPROFILE\Documents\Workspace"
@@ -345,6 +428,8 @@ $config = @{
     machine_id = $MachineId
     lang = $Lang
     hub = $Hub
+    hub_name = $HubName
+    hub_dir = $hubDir
     env = $Env
     domain = $Domain
     wrapper_dir = $wrapperDir
@@ -356,13 +441,13 @@ $config = @{
     embedding = @{ provider = "none" }
 }
 $config | ConvertTo-Json -Depth 3 | Set-Content $configFile -Encoding UTF8
-Write-OK "Config saved (machine: $MachineId, mode: $setupMode)"
+Write-OK "Config saved (hub: $HubName, machine: $MachineId)"
 
 # ============================================================
 # STEP 4: MCP MEMORY SERVER
 # ============================================================
 
-Write-Step "4/8" "step_mcp"
+Write-Step "5/9" "step_mcp"
 
 $mcpServerDir = "$wrapperDir\skills\memory-server"
 Push-Location $mcpServerDir
@@ -387,7 +472,7 @@ Write-OK ".mcp.json"
 # STEP 5: CLAUDE.MD + SETTINGS
 # ============================================================
 
-Write-Step "5/8" "step_claude"
+Write-Step "6/9" "step_claude"
 
 $claudeMd = Get-Content "$wrapperDir\templates\global-CLAUDE.md" -Raw
 $claudeMd = $claudeMd -replace '\{\{DATA_DIR\}\}', $wrapperDir
@@ -404,7 +489,7 @@ if (-not (Test-Path $settingsPath) -or (Get-Content $settingsPath -Raw) -eq "{}"
 # STEP 6: DEPLOY WORKSPACES
 # ============================================================
 
-Write-Step "6/8" "step_workspace"
+Write-Step "7/9" "step_workspace"
 
 $registryFile = "$wrapperDir\workspaces.json"
 $deployed = @()
@@ -433,7 +518,7 @@ Write-Host "  $($deployed.Count) workspaces deployed" -ForegroundColor Green
 # STEP 7: SCHEDULER + REGISTRATION
 # ============================================================
 
-Write-Step "7/8" "step_sched"
+Write-Step "8/9" "step_sched"
 
 $taskName = "Clawd-Lobster Sync"
 $existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
@@ -484,7 +569,7 @@ Write-OK "Machine: $MachineId"
 # ============================================================
 
 if ($Env -eq "absorb") {
-    Write-Step "8/8" "step_migrate"
+    Write-Step "9/9" "step_migrate"
 
     # Scan for existing systems
     $found = @()
@@ -501,7 +586,7 @@ if ($Env -eq "absorb") {
         Write-Skip "No previous systems detected"
     }
 } else {
-    Write-Step "8/8" "step_migrate"
+    Write-Step "9/9" "step_migrate"
     Write-Skip "Fresh environment — nothing to absorb"
 }
 
@@ -514,8 +599,9 @@ Write-Host "  ========================================" -ForegroundColor Green
 Write-Host "     $(T 'done')" -ForegroundColor Green
 Write-Host "  ========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Machine:    $MachineId ($setupMode)" -ForegroundColor Gray
-Write-Host "  Wrapper:    $wrapperDir" -ForegroundColor Gray
+Write-Host "  Hub:        $HubName" -ForegroundColor Gray
+Write-Host "  Hub dir:    $hubDir" -ForegroundColor Gray
+Write-Host "  Machine:    $MachineId ($Domain, $setupMode)" -ForegroundColor Gray
 Write-Host "  Workspaces: $($deployed.Count) deployed" -ForegroundColor Gray
 Write-Host ""
 
