@@ -11,7 +11,9 @@ param(
     [ValidateSet("", "fresh", "absorb")]
     [string]$Env = "",
     [string]$MachineId = "",
-    [string]$JoinCode = ""
+    [string]$JoinCode = "",
+    [ValidateSet("", "work", "personal", "hybrid")]
+    [string]$Domain = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,6 +37,10 @@ $i18n = @{
         round2_title = "Environment status?"
         round2_a = "Fresh start (brand new, nothing to import)"
         round2_b = "Absorb previous system (OpenClaw, Hermes, claude-setup, etc.)"
+        domain_title = "This machine is for:"
+        domain_work = "Work — deploy work workspaces"
+        domain_personal = "Personal — deploy personal workspaces"
+        domain_hybrid = "Hybrid — deploy everything"
         machine_prompt = "Name this machine"
         join_prompt = "Enter Hub URL or join code"
         step_prereq = "Checking prerequisites"
@@ -60,6 +66,10 @@ $i18n = @{
         round2_title = "環境狀態？"
         round2_a = "全新開始（什麼都沒有，從零開始）"
         round2_b = "吸收舊系統（OpenClaw、Hermes、claude-setup 等）"
+        domain_title = "這台機器的用途："
+        domain_work = "工作 — 部署工作用工作區"
+        domain_personal = "個人 — 部署個人工作區"
+        domain_hybrid = "混合 — 全部部署"
         machine_prompt = "幫這台機器命名"
         join_prompt = "輸入 Hub 網址或加入碼"
         step_prereq = "檢查前置需求"
@@ -85,6 +95,10 @@ $i18n = @{
         round2_title = "环境状态？"
         round2_a = "全新开始（什么都没有，从零开始）"
         round2_b = "吸收旧系统（OpenClaw、Hermes、claude-setup 等）"
+        domain_title = "这台机器的用途："
+        domain_work = "工作 — 部署工作用工作区"
+        domain_personal = "个人 — 部署个人工作区"
+        domain_hybrid = "混合 — 全部部署"
         machine_prompt = "给这台机器命名"
         join_prompt = "输入 Hub 地址或加入码"
         step_prereq = "检查前置需求"
@@ -110,6 +124,10 @@ $i18n = @{
         round2_title = "環境の状態は？"
         round2_a = "新規スタート（何もない状態から）"
         round2_b = "既存システムを吸収（OpenClaw、Hermes、claude-setup等）"
+        domain_title = "このマシンの用途："
+        domain_work = "仕事 — 仕事用ワークスペースをデプロイ"
+        domain_personal = "個人 — 個人ワークスペースをデプロイ"
+        domain_hybrid = "ハイブリッド — すべてデプロイ"
         machine_prompt = "このマシンの名前"
         join_prompt = "Hub URLまたは参加コードを入力"
         step_prereq = "前提条件の確認"
@@ -135,6 +153,10 @@ $i18n = @{
         round2_title = "환경 상태?"
         round2_a = "새로 시작 (처음부터)"
         round2_b = "기존 시스템 흡수 (OpenClaw, Hermes, claude-setup 등)"
+        domain_title = "이 머신의 용도:"
+        domain_work = "업무 — 업무 워크스페이스 배포"
+        domain_personal = "개인 — 개인 워크스페이스 배포"
+        domain_hybrid = "하이브리드 — 전부 배포"
         machine_prompt = "이 머신의 이름"
         join_prompt = "Hub URL 또는 참여 코드 입력"
         step_prereq = "전제 조건 확인"
@@ -235,9 +257,29 @@ if (-not $MachineId) {
     if (-not $MachineId) { $MachineId = $defaultId }
 }
 
-$setupMode = "$Hub-$Env"  # new-fresh, new-absorb, join-fresh, join-absorb
+# ============================================================
+# DOMAIN SELECTION
+# ============================================================
+
+if (-not $Domain) {
+    Write-Host ""
+    Write-Host "  $(T 'domain_title')" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "    [1] $(T 'domain_work')"
+    Write-Host "    [2] $(T 'domain_personal')"
+    Write-Host "    [3] $(T 'domain_hybrid')"
+    Write-Host ""
+    $dc = Read-Host "  (1/2/3)"
+    switch ($dc) {
+        "1" { $Domain = "work" }
+        "2" { $Domain = "personal" }
+        default { $Domain = "hybrid" }
+    }
+}
+
+$setupMode = "$Hub-$Env"
 Write-Host ""
-Write-Host "  Machine: $MachineId | Mode: $setupMode" -ForegroundColor Cyan
+Write-Host "  Machine: $MachineId | Domain: $Domain | Mode: $setupMode" -ForegroundColor Cyan
 Write-Host ""
 
 # ============================================================
@@ -304,6 +346,7 @@ $config = @{
     lang = $Lang
     hub = $Hub
     env = $Env
+    domain = $Domain
     wrapper_dir = $wrapperDir
     data_dir = $wrapperDir
     workspace_root = $wsRoot
@@ -412,6 +455,7 @@ New-Item -ItemType Directory -Force -Path $clientsDir | Out-Null
     hostname = $env:COMPUTERNAME
     os = "Windows $([System.Environment]::OSVersion.Version.Major)"
     lang = $Lang
+    domain = $Domain
     hub = $Hub
     env_mode = $Env
     registered = (Get-Date -Format "yyyy-MM-dd")
