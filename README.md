@@ -372,6 +372,35 @@ When Anthropic ships Opus 4.7, 1M context, new tools — you get them instantly.
 
 ---
 
+## FAQ
+
+### "Isn't this just Claude Code with a wrapper?"
+
+Yes. That's the point.
+
+Claude Code is the most capable coding agent available — backed by millions of engineering hours from Anthropic. OpenClaw rebuilds the engine from scratch (300K lines). Hermes rebuilds it again (50K lines). We add what's missing (2K lines) and keep the best engine.
+
+When Anthropic ships the next breakthrough, we get it instantly. They have to rewrite their adapters.
+
+### "But other agents run 24/7 and keep learning"
+
+So does ours. The scheduler syncs knowledge every 30 minutes. Memory evolves daily via salience decay. Learned skills propagate across all machines via git. **The agent doesn't need to be running for knowledge to grow.**
+
+And the heartbeat ensures sessions stay alive: if a terminal closes, the OS scheduler detects it and revives the session with `claude --resume` — full context restored. No custom daemon needed. No inferior engine running 24/7. Just Claude Code, always on.
+
+### "Other agents have heartbeat and time awareness"
+
+Ours do too — but smarter. Instead of running a custom daemon process, we use the OS scheduler (Task Scheduler / launchd / cron) as the heartbeat. It checks every 30 minutes:
+
+- Is each workspace session alive? If not, revive it.
+- Git sync needed? Do it.
+- Salience decay due? Run it.
+- Client status? Updated and pushed.
+
+The OS scheduler never crashes, never needs debugging, and never burns tokens when idle. When Claude Code ships native 24/7 mode (KAIROS — it's in the codebase), we get it for free. Zero code change.
+
+---
+
 ## Contributing
 
 Contributions welcome! The easiest way to contribute:

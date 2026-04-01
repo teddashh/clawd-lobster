@@ -447,6 +447,19 @@ if (-not $existingTask) {
     Write-OK "Scheduler (every 30 min)"
 } else { Write-OK "Scheduler (exists)" }
 
+# Heartbeat task (every 30 min — ensures all workspace sessions stay alive)
+$hbTaskName = "Clawd-Lobster Heartbeat"
+$existingHb = Get-ScheduledTask -TaskName $hbTaskName -ErrorAction SilentlyContinue
+if (-not $existingHb) {
+    $hbAction = New-ScheduledTaskAction -Execute "powershell.exe" `
+        -Argument "-ExecutionPolicy Bypass -File `"$wrapperDir\scripts\heartbeat.ps1`"" `
+        -WorkingDirectory $wrapperDir
+    $hbTrigger = New-ScheduledTaskTrigger -RepetitionInterval (New-TimeSpan -Minutes 30) -Once -At (Get-Date)
+    $hbSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+    Register-ScheduledTask -TaskName $hbTaskName -Action $hbAction -Trigger $hbTrigger -Settings $hbSettings 2>&1 | Out-Null
+    Write-OK "Heartbeat (session lifecycle, every 30 min)"
+} else { Write-OK "Heartbeat (exists)" }
+
 # Register machine
 $clientsDir = "$wrapperDir\clients"
 New-Item -ItemType Directory -Force -Path $clientsDir | Out-Null

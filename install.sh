@@ -221,22 +221,52 @@ case "$OS_TYPE" in
 </plist>
 EOF
             launchctl load "$PLIST" 2>/dev/null || true
-            ok "launchd agent registered (every 30 min)"
+            ok "launchd sync agent registered (every 30 min)"
         else
-            ok "launchd agent already exists"
+            ok "launchd sync agent already exists"
+        fi
+        # Heartbeat
+        HB_PLIST="$HOME/Library/LaunchAgents/com.clawd-lobster.heartbeat.plist"
+        if [ ! -f "$HB_PLIST" ]; then
+            cat > "$HB_PLIST" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.clawd-lobster.heartbeat</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$WRAPPER_DIR/scripts/heartbeat.sh</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>1800</integer>
+    <key>WorkingDirectory</key>
+    <string>$WRAPPER_DIR</string>
+</dict>
+</plist>
+EOF
+            launchctl load "$HB_PLIST" 2>/dev/null || true
+            ok "launchd heartbeat agent registered (every 30 min)"
+        else
+            ok "launchd heartbeat agent already exists"
         fi
         ;;
     Linux)
         # Linux: cron
         CRON_CMD="*/30 * * * * bash $WRAPPER_DIR/scripts/sync-all.sh"
+        CRON_HB="*/30 * * * * bash $WRAPPER_DIR/scripts/heartbeat.sh"
         if ! crontab -l 2>/dev/null | grep -q "clawd-lobster"; then
-            (crontab -l 2>/dev/null; echo "# clawd-lobster sync"; echo "$CRON_CMD") | crontab -
-            ok "Cron job registered (every 30 min)"
+            (crontab -l 2>/dev/null; echo "# clawd-lobster sync + heartbeat"; echo "$CRON_CMD"; echo "$CRON_HB") | crontab -
+            ok "Cron jobs registered (sync + heartbeat, every 30 min)"
         else
-            ok "Cron job already exists"
+            ok "Cron jobs already exist"
         fi
         ;;
 esac
+
+chmod +x "$WRAPPER_DIR/scripts/heartbeat.sh" 2>/dev/null
 
 # ============================================================
 # DONE
