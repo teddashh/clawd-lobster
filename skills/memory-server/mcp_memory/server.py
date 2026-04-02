@@ -1,16 +1,16 @@
 """
 Clawd-Lobster MCP Memory Server — unified memory interface for AI agents.
 
-Tools (21):
+Tools (24):
   Write:    memory_store, memory_record_decision, memory_record_resolved,
             memory_record_question, memory_record_knowledge
   Read:     memory_list, memory_get, memory_get_summary
   Delete:   memory_delete
-  Search:   memory_search (vector + text, salience-weighted)
+  Search:   memory_search (vector + text, salience-weighted, ALL tables)
   Salience: memory_reinforce (boost important memories)
   Evolve:   memory_learn_skill, memory_list_skills, memory_improve_skill
-  Trail:    memory_audit_search, memory_audit_stats, memory_daily_report,
-            memory_activity_log
+  Trail:    memory_log_action, memory_audit_search, memory_audit_stats,
+            memory_daily_report, memory_activity_log
   Admin:    memory_compact, memory_status, memory_oracle_summary
 
 Usage:
@@ -18,6 +18,7 @@ Usage:
   python -m mcp_memory.server --http   # HTTP (other clients)
 """
 import json
+import os
 import re
 import sys
 from datetime import datetime
@@ -39,9 +40,16 @@ mcp = FastMCP(
         "Use memory_store for quick saves (auto-classifies type). "
         "Use memory_search for semantic search across all knowledge. "
         "Use memory_list to see recent items. "
+        "Use memory_log_action to record task actions. "
         "Use memory_status for system overview."
     ),
 )
+
+
+def _get_machine_id() -> str:
+    """Get machine ID for tagging records."""
+    from .config import get_machine_id
+    return get_machine_id()
 
 
 # ============================================================
@@ -50,8 +58,9 @@ mcp = FastMCP(
 
 @mcp.tool()
 def memory_store(content: str, type: str = "auto", tags: str = "", priority: int = 2) -> str:
-    """Store a memory. Type: 'decision', 'resolved', 'question', 'knowledge', or 'auto' (auto-detect).
-    For decisions: content = 'what | why | how'. For questions: priority 1=high, 2=medium, 3=low."""
+    """Store a memory. Type: 'decision', 'resolved', 'question', 'knowledge', 'learning', or 'auto' (auto-detect).
+    For decisions: content = 'what | why | how'. For questions: priority 1=high, 2=medium, 3=low.
+    For learnings (mistakes, pitfalls, lessons): auto-tagged with 'learning'."""
     if type == "auto":
         cl = content.lower()
         if any(w in cl for w in ["decided", "chose", "decision", "will use", "going with"]):
@@ -60,6 +69,9 @@ def memory_store(content: str, type: str = "auto", tags: str = "", priority: int
             type = "resolved"
         elif any(w in cl for w in ["?", "should we", "how to", "what if", "need to figure"]):
             type = "question"
+        elif any(w in cl for w in ["learned", "lesson", "mistake", "never again", "pitfall",
+                                    "gotcha", "watch out", "踩坑", "教訓", "原來", "別再"]):
+            type = "learning"
         else:
             type = "knowledge"
 
@@ -76,6 +88,10 @@ def memory_store(content: str, type: str = "auto", tags: str = "", priority: int
         return memory_record_resolved(what=what, how=how, tags=tags)
     elif type == "question":
         return memory_record_question(question=content, tags=tags, priority=priority)
+    elif type == "learning":
+        # Learnings stored as knowledge_items with auto-tag "learning"
+        learning_tags = "learning," + tags if tags else "learning"
+        return memory_record_knowledge(title=content[:100], content=content, tags=learning_tags)
     else:
         return memory_record_knowledge(title=content[:100], content=content, tags=tags)
 
@@ -88,12 +104,13 @@ def memory_record_decision(what: str, why: str = "", how: str = "", tags: str = 
     conn = get_sqlite()
     try:
         rid = new_id()
+        mid = _get_machine_id()
         conn.execute(
-            "INSERT INTO decisions (id, date, what, why, how, tags) VALUES (?, date('now'), ?, ?, ?, ?)",
-            (rid, what, why, how, tags_to_json(tags)),
+            "INSERT INTO decisions (id, date, what, why, how, tags, machine_id) VALUES (?, date('now'), ?, ?, ?, ?, ?)",
+            (rid, what, why, how, tags_to_json(tags), mid),
         )
         conn.commit()
-        return f"Decision recorded [{detect_workspace()}]: {what[:60]} (id: {rid})"
+        return f"Decision recorded [{detect_workspace()}@{mid}]: {what[:60]} (id: {rid})"
     finally:
         conn.close()
 
@@ -106,12 +123,13 @@ def memory_record_resolved(what: str, how: str = "", tags: str = "") -> str:
     conn = get_sqlite()
     try:
         rid = new_id()
+        mid = _get_machine_id()
         conn.execute(
-            "INSERT INTO resolved (id, what, how, tags) VALUES (?, ?, ?, ?)",
-            (rid, what, how, tags_to_json(tags)),
+            "INSERT INTO resolved (id, what, how, tags, machine_id) VALUES (?, ?, ?, ?, ?)",
+            (rid, what, how, tags_to_json(tags), mid),
         )
         conn.commit()
-        return f"Resolved recorded [{detect_workspace()}]: {what[:60]} (id: {rid})"
+        return f"Resolved recorded [{detect_workspace()}@{mid}]: {what[:60]} (id: {rid})"
     finally:
         conn.close()
 
@@ -123,30 +141,32 @@ def memory_record_question(question: str, context: str = "", tags: str = "", pri
     conn = get_sqlite()
     try:
         rid = new_id()
+        mid = _get_machine_id()
         conn.execute(
-            "INSERT INTO open_questions (id, question, context, tags, priority) VALUES (?, ?, ?, ?, ?)",
-            (rid, question, context, tags_to_json(tags), priority),
+            "INSERT INTO open_questions (id, question, context, tags, priority, machine_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (rid, question, context, tags_to_json(tags), priority, mid),
         )
         conn.commit()
-        return f"Question recorded [{detect_workspace()}] P{priority}: {question[:60]} (id: {rid})"
+        return f"Question recorded [{detect_workspace()}@{mid}] P{priority}: {question[:60]} (id: {rid})"
     finally:
         conn.close()
 
 
 @mcp.tool()
 def memory_record_knowledge(title: str, content: str = "", tags: str = "") -> str:
-    """Record a knowledge item."""
+    """Record a knowledge item. Use tags='learning' for lessons/pitfalls/mistakes."""
     if len(content) > _MAX_CONTENT_LEN:
         return f"Content too large (max {_MAX_CONTENT_LEN} chars)"
     conn = get_sqlite()
     try:
         rid = new_id()
+        mid = _get_machine_id()
         conn.execute(
-            "INSERT INTO knowledge_items (id, title, content, tags, written_to_obsidian) VALUES (?, ?, ?, ?, 0)",
-            (rid, title, content, tags_to_json(tags)),
+            "INSERT INTO knowledge_items (id, title, content, tags, written_to_obsidian, machine_id) VALUES (?, ?, ?, ?, 0, ?)",
+            (rid, title, content, tags_to_json(tags), mid),
         )
         conn.commit()
-        return f"Knowledge recorded [{detect_workspace()}]: {title[:60]} (id: {rid})"
+        return f"Knowledge recorded [{detect_workspace()}@{mid}]: {title[:60]} (id: {rid})"
     finally:
         conn.close()
 
@@ -157,9 +177,9 @@ def memory_record_knowledge(title: str, content: str = "", tags: str = "") -> st
 
 @mcp.tool()
 def memory_list(type: str = "all", workspace: str = "current", limit: int = 20) -> str:
-    """List recent memories. Type: 'all', 'decisions', 'resolved', 'questions', 'knowledge'."""
+    """List recent memories. Type: 'all', 'decisions', 'resolved', 'questions', 'knowledge', 'actions'."""
     limit = max(1, min(limit, _MAX_LIMIT))
-    valid_types = ("all", "decisions", "resolved", "questions", "knowledge")
+    valid_types = ("all", "decisions", "resolved", "questions", "knowledge", "actions")
     if type not in valid_types:
         return f"Invalid type: {type}. Use one of: {', '.join(valid_types)}"
     ws = detect_workspace() if workspace == "current" else workspace
@@ -194,6 +214,17 @@ def memory_list(type: str = "all", workspace: str = "current", limit: int = 20) 
             s = "synced" if r['written_to_obsidian'] else "pending"
             results.append(f"  [KNO] {r['id']} | {r['title'][:60]} | {s} | {r['created_at']}")
 
+    if type in ("all", "actions"):
+        try:
+            rows = conn.execute(
+                "SELECT id, timestamp, machine_id, action, target, note FROM action_log ORDER BY timestamp DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            for r in rows:
+                results.append(f"  [ACT] {r['id']} | {r['timestamp'][:16]} | {r['machine_id']} | {r['action']} | {r['target'][:40]}")
+        except Exception:
+            pass
+
     conn.close()
     if not results:
         return f"No memories found in [{ws}]"
@@ -212,6 +243,13 @@ def memory_get(id: str, workspace: str = "current") -> str:
                 _touch_access(conn, table, id)
                 conn.commit()
                 return f"[{ws}/{table}] " + json.dumps(dict(row), ensure_ascii=False, default=str)
+        # Also check action_log
+        try:
+            row = conn.execute("SELECT * FROM action_log WHERE id = ?", (id,)).fetchone()
+            if row:
+                return f"[{ws}/action_log] " + json.dumps(dict(row), ensure_ascii=False, default=str)
+        except Exception:
+            pass
         return f"Memory '{id}' not found in [{ws}]"
     finally:
         conn.close()
@@ -229,12 +267,17 @@ def memory_get_summary(workspace: str = "current") -> str:
         k = conn.execute("SELECT COUNT(*) FROM knowledge_items").fetchone()[0]
         kp = conn.execute("SELECT COUNT(*) FROM knowledge_items WHERE written_to_obsidian=0").fetchone()[0]
         dl = conn.execute("SELECT COUNT(*) FROM daily_logs").fetchone()[0]
+        al = 0
+        try:
+            al = conn.execute("SELECT COUNT(*) FROM action_log").fetchone()[0]
+        except Exception:
+            pass
     except Exception:
         return f"Error retrieving summary for [{ws}]. Database may need initialization."
     finally:
         conn.close()
     return (f"[{ws}] Decisions:{d} Resolved:{r} Questions:{q} "
-            f"Knowledge:{k} (pending:{kp}) DailyLogs:{dl}")
+            f"Knowledge:{k} (pending:{kp}) DailyLogs:{dl} Actions:{al}")
 
 
 # ============================================================
@@ -247,12 +290,39 @@ def memory_delete(id: str, workspace: str = "current") -> str:
     ws = detect_workspace() if workspace == "current" else workspace
     conn = get_sqlite(ws)
     try:
-        for table in ["decisions", "resolved", "open_questions", "knowledge_items"]:
-            cur = conn.execute(f"DELETE FROM {table} WHERE id = ?", (id,))
-            if cur.rowcount > 0:
-                conn.commit()
-                return f"Deleted '{id}' from {table} [{ws}]"
+        for table in ["decisions", "resolved", "open_questions", "knowledge_items", "action_log"]:
+            try:
+                cur = conn.execute(f"DELETE FROM {table} WHERE id = ?", (id,))
+                if cur.rowcount > 0:
+                    conn.commit()
+                    return f"Deleted '{id}' from {table} [{ws}]"
+            except Exception:
+                continue
         return f"Memory '{id}' not found in [{ws}]"
+    finally:
+        conn.close()
+
+
+# ============================================================
+# TRAIL — Action Log (local SQLite, syncs to Oracle if available)
+# ============================================================
+
+@mcp.tool()
+def memory_log_action(action: str, target: str = "", note: str = "", tokens: int = 0) -> str:
+    """Log a task action. Actions: TASK_START, SPEC, DELEGATE, REVIEW, REVIEW_OK,
+    REVIEW_FIX, COMMIT, TASK_DONE, or any custom action.
+    All actions are tagged with machine_id for multi-machine audit trails."""
+    conn = get_sqlite()
+    ws = detect_workspace()
+    mid = _get_machine_id()
+    try:
+        rid = new_id()
+        conn.execute(
+            "INSERT INTO action_log (id, machine_id, action, target, note, tokens, workspace) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (rid, mid, action, target, note, tokens, ws),
+        )
+        conn.commit()
+        return f"Action logged [{ws}@{mid}]: {action} {target[:40]} (id: {rid})"
     finally:
         conn.close()
 
@@ -506,12 +576,13 @@ def run_decay(workspace_id: str = None, decay_factor: float = 0.95, stale_days: 
 
 
 # ============================================================
-# SEARCH
+# SEARCH — searches ALL tables (not just knowledge_items)
 # ============================================================
 
 @mcp.tool()
 def memory_search(query: str, domain: str = "all", limit: int = 10) -> str:
-    """Semantic search across ALL workspaces. Falls back to text search if vector not available."""
+    """Search across ALL workspaces and ALL memory types (decisions, resolved, knowledge, questions).
+    Uses Oracle vector search if available, falls back to local text search."""
     oracle = get_oracle()
     if oracle is None:
         return _local_text_search(query, limit)
@@ -588,9 +659,11 @@ def _get_embedding(text: str):
 
 
 def _local_text_search(query: str, limit: int) -> str:
+    """Search ALL tables across ALL workspaces. Opens connections lazily, closes immediately."""
     from .config import load_config, get_workspace_map_path
     config = load_config()
     results = []
+    q = f"%{query.lower()}%"
 
     try:
         with open(get_workspace_map_path()) as f:
@@ -601,25 +674,68 @@ def _local_text_search(query: str, limit: int) -> str:
         else:
             ws_ids = list(workspaces.keys())
     except (FileNotFoundError, json.JSONDecodeError):
-        return "No workspace registry found"
+        # No registry — search current workspace only
+        ws_ids = [detect_workspace()]
 
     for ws_id in ws_ids:
         try:
             conn = get_sqlite(ws_id)
+        except (FileNotFoundError, ValueError):
+            continue
+        try:
+            # Search knowledge_items
             rows = conn.execute(
                 """SELECT id, title, tags, COALESCE(salience, 1.0) as sal
                    FROM knowledge_items
                    WHERE LOWER(title) LIKE ? OR LOWER(content) LIKE ?
                    ORDER BY sal DESC LIMIT ?""",
-                (f"%{query.lower()}%", f"%{query.lower()}%", limit),
+                (q, q, limit),
             ).fetchall()
             for r in rows:
                 _touch_access(conn, "knowledge_items", r["id"])
-                results.append((r["sal"], f"  [{ws_id}] {r['id']} | {r['title'][:60]} | sal={r['sal']:.2f} | {r['tags']}"))
+                results.append((r["sal"], f"  [{ws_id}] [KNO] {r['id']} | {r['title'][:55]} | sal={r['sal']:.2f} | {r['tags']}"))
+
+            # Search decisions
+            rows = conn.execute(
+                """SELECT id, what, tags, COALESCE(salience, 1.0) as sal
+                   FROM decisions
+                   WHERE LOWER(what) LIKE ? OR LOWER(why) LIKE ? OR LOWER(how) LIKE ?
+                   ORDER BY sal DESC LIMIT ?""",
+                (q, q, q, limit),
+            ).fetchall()
+            for r in rows:
+                _touch_access(conn, "decisions", r["id"])
+                results.append((r["sal"], f"  [{ws_id}] [DEC] {r['id']} | {r['what'][:55]} | sal={r['sal']:.2f} | {r['tags']}"))
+
+            # Search resolved
+            rows = conn.execute(
+                """SELECT id, what, tags, COALESCE(salience, 1.0) as sal
+                   FROM resolved
+                   WHERE LOWER(what) LIKE ? OR LOWER(how) LIKE ?
+                   ORDER BY sal DESC LIMIT ?""",
+                (q, q, limit),
+            ).fetchall()
+            for r in rows:
+                _touch_access(conn, "resolved", r["id"])
+                results.append((r["sal"], f"  [{ws_id}] [RES] {r['id']} | {r['what'][:55]} | sal={r['sal']:.2f} | {r['tags']}"))
+
+            # Search open_questions
+            rows = conn.execute(
+                """SELECT id, question, tags, COALESCE(salience, 1.0) as sal
+                   FROM open_questions
+                   WHERE LOWER(question) LIKE ? OR LOWER(context) LIKE ?
+                   ORDER BY sal DESC LIMIT ?""",
+                (q, q, limit),
+            ).fetchall()
+            for r in rows:
+                _touch_access(conn, "open_questions", r["id"])
+                results.append((r["sal"], f"  [{ws_id}] [Q] {r['id']} | {r['question'][:55]} | sal={r['sal']:.2f} | {r['tags']}"))
+
             conn.commit()
-            conn.close()
         except Exception:
-            continue
+            pass
+        finally:
+            conn.close()
 
     if not results:
         return f"No local results for '{query}'"
@@ -628,17 +744,100 @@ def _local_text_search(query: str, limit: int) -> str:
 
 
 # ============================================================
-# TRAIL / AUDIT TOOLS
+# TRAIL / AUDIT TOOLS — SQLite-first, Oracle as sync target
 # ============================================================
 
 @mcp.tool()
-def memory_audit_search(query: str = "", date: str = "", sender: str = "",
-                        importance: str = "", workspace: str = "all", limit: int = 20) -> str:
-    """Search audit trail. Filter by keyword, date, sender, importance (H/M/L)."""
-    oracle = get_oracle()
-    if oracle is None:
-        return "Audit trail requires Oracle L4 connection"
+def memory_audit_search(query: str = "", date: str = "", action: str = "",
+                        machine: str = "", workspace: str = "all", limit: int = 20) -> str:
+    """Search audit trail (action_log). Filter by keyword, date, action type, machine ID.
+    Searches local SQLite first. If Oracle L4 is connected, also searches cloud."""
+    limit = max(1, min(limit, _MAX_LIMIT))
+    results = []
 
+    # Local SQLite search
+    results.extend(_local_audit_search(query, date, action, machine, workspace, limit))
+
+    # Oracle L4 search (if available, for cross-workspace data)
+    oracle = get_oracle()
+    if oracle:
+        try:
+            results.extend(_oracle_audit_search(oracle, query, date, action, machine, workspace, limit))
+        except Exception:
+            pass
+
+    if not results:
+        return "No audit entries found"
+    # Deduplicate by ID, sort by timestamp
+    seen = set()
+    unique = []
+    for r in results:
+        if r[0] not in seen:
+            seen.add(r[0])
+            unique.append(r)
+    unique.sort(key=lambda x: x[1], reverse=True)
+    lines = [f"Audit trail ({len(unique)} entries):"]
+    for r in unique[:limit]:
+        lines.append(r[2])
+    return "\n".join(lines)
+
+
+def _local_audit_search(query, date, action, machine, workspace, limit):
+    """Search action_log in local SQLite."""
+    from .config import load_config, get_workspace_map_path
+    results = []
+
+    try:
+        with open(get_workspace_map_path()) as f:
+            registry = json.load(f)
+        ws_list = registry.get("workspaces", [])
+        ws_ids = [w.get("id") for w in ws_list] if isinstance(ws_list, list) else list(ws_list.keys())
+    except (FileNotFoundError, json.JSONDecodeError):
+        ws_ids = [detect_workspace()]
+
+    if workspace != "all":
+        ws_ids = [workspace] if workspace in ws_ids else []
+
+    for ws_id in ws_ids:
+        try:
+            conn = get_sqlite(ws_id)
+        except (FileNotFoundError, ValueError):
+            continue
+        try:
+            conditions, params = [], []
+            if query:
+                conditions.append("(LOWER(action) LIKE ? OR LOWER(target) LIKE ? OR LOWER(note) LIKE ?)")
+                params.extend([f"%{query.lower()}%"] * 3)
+            if date:
+                conditions.append("timestamp LIKE ?")
+                params.append(f"{date}%")
+            if action:
+                conditions.append("LOWER(action) LIKE ?")
+                params.append(f"%{action.lower()}%")
+            if machine:
+                conditions.append("LOWER(machine_id) LIKE ?")
+                params.append(f"%{machine.lower()}%")
+
+            where = "WHERE " + " AND ".join(conditions) if conditions else ""
+            rows = conn.execute(
+                f"SELECT id, timestamp, machine_id, action, target, note, workspace FROM action_log {where} ORDER BY timestamp DESC LIMIT ?",
+                params + [limit],
+            ).fetchall()
+            for r in rows:
+                rid = r["id"]
+                ts = r["timestamp"][:16] if r["timestamp"] else "?"
+                line = f"  {ts} | {r['machine_id']:15s} | {r['action']:15s} | {(r['target'] or '')[:40]} | [{ws_id}]"
+                results.append((rid, r["timestamp"] or "", line))
+        except Exception:
+            pass
+        finally:
+            conn.close()
+
+    return results
+
+
+def _oracle_audit_search(oracle, query, date, action, machine, workspace, limit):
+    """Search AUDIT_LOG in Oracle L4."""
     cur = oracle.cursor()
     conditions, params = [], {}
     if query:
@@ -647,12 +846,9 @@ def memory_audit_search(query: str = "", date: str = "", sender: str = "",
     if date:
         conditions.append("a.ts LIKE :dt")
         params["dt"] = f"{date}%"
-    if sender:
-        conditions.append("(LOWER(a.from_name) LIKE :snd OR LOWER(a.from_addr) LIKE :snd)")
-        params["snd"] = f"%{sender.lower()}%"
-    if importance:
-        conditions.append("a.importance = :imp")
-        params["imp"] = importance.upper()[:1]
+    if machine:
+        conditions.append("LOWER(a.machine_id) LIKE :mid")
+        params["mid"] = f"%{machine.lower()}%"
     if workspace != "all":
         conditions.append("a.workspace_id = :ws")
         params["ws"] = workspace
@@ -662,110 +858,198 @@ def memory_audit_search(query: str = "", date: str = "", sender: str = "",
     params["lim"] = limit
     cur.execute(sql, params)
     rows = cur.fetchall()
-    if not rows:
-        return "No audit entries found"
-    lines = [f"Audit trail ({len(rows)} entries):"]
+    results = []
     for r in rows:
         flag = " [!SUSPICIOUS]" if r[7] else ""
-        lines.append(f"  {r[0][:16]} | {r[5] or '-'} | {r[3][:25]:25s} | {(r[4] or '')[:50]}{flag}")
-    return "\n".join(lines)
+        rid = f"oracle-{r[0][:16]}"
+        line = f"  {r[0][:16]} | {'L4':15s} | {r[5] or '-':15s} | {(r[4] or '')[:40]}{flag}"
+        results.append((rid, str(r[0]), line))
+    return results
 
 
 @mcp.tool()
 def memory_audit_stats(date: str = "", workspace: str = "all") -> str:
-    """Audit trail statistics by importance, direction, category."""
-    oracle = get_oracle()
-    if oracle is None:
-        return "Audit stats require Oracle L4 connection"
-    cur = oracle.cursor()
-    conditions, params = [], {}
-    if date:
-        conditions.append("a.ts LIKE :dt")
-        params["dt"] = f"{date}%"
-    if workspace != "all":
-        conditions.append("a.workspace_id = :ws")
-        params["ws"] = workspace
-    where = "WHERE " + " AND ".join(conditions) if conditions else ""
-
+    """Audit trail statistics — local action counts + Oracle stats if available."""
     lines = []
-    cur.execute(f"SELECT COUNT(*) FROM AUDIT_LOG a {where}", params)
-    lines.append(f"Audit trail: {cur.fetchone()[0]} total entries")
-    cur.execute(f"SELECT importance, COUNT(*) FROM AUDIT_LOG a {where} GROUP BY importance ORDER BY importance", params)
-    lines.append("\nBy importance:")
-    for r in cur.fetchall():
-        label = {"H": "High", "M": "Medium", "L": "Low"}.get(r[0], r[0] or "?")
-        lines.append(f"  {label}: {r[1]}")
-    cur.execute(f"SELECT direction, COUNT(*) FROM AUDIT_LOG a {where} GROUP BY direction", params)
-    lines.append("\nBy direction:")
-    for r in cur.fetchall():
-        lines.append(f"  {r[0] or '?'}: {r[1]}")
+
+    # Local stats from SQLite action_log
+    from .config import get_workspace_map_path
+    total_local = 0
+    action_counts = {}
+    machine_counts = {}
+
+    try:
+        with open(get_workspace_map_path()) as f:
+            registry = json.load(f)
+        ws_list = registry.get("workspaces", [])
+        ws_ids = [w.get("id") for w in ws_list] if isinstance(ws_list, list) else list(ws_list.keys())
+    except (FileNotFoundError, json.JSONDecodeError):
+        ws_ids = [detect_workspace()]
+
+    for ws_id in ws_ids:
+        if workspace != "all" and ws_id != workspace:
+            continue
+        try:
+            conn = get_sqlite(ws_id)
+            date_filter = f" WHERE timestamp LIKE '{date}%'" if date else ""
+            rows = conn.execute(f"SELECT action, machine_id, COUNT(*) as cnt FROM action_log{date_filter} GROUP BY action, machine_id").fetchall()
+            for r in rows:
+                action_counts[r["action"]] = action_counts.get(r["action"], 0) + r["cnt"]
+                machine_counts[r["machine_id"]] = machine_counts.get(r["machine_id"], 0) + r["cnt"]
+                total_local += r["cnt"]
+            conn.close()
+        except Exception:
+            pass
+
+    lines.append(f"Local action log: {total_local} entries")
+    if action_counts:
+        lines.append("\nBy action:")
+        for a, c in sorted(action_counts.items(), key=lambda x: -x[1]):
+            lines.append(f"  {a}: {c}")
+    if machine_counts:
+        lines.append("\nBy machine:")
+        for m, c in sorted(machine_counts.items(), key=lambda x: -x[1]):
+            lines.append(f"  {m}: {c}")
+
+    # Oracle stats (if available)
+    oracle = get_oracle()
+    if oracle:
+        try:
+            cur = oracle.cursor()
+            cur.execute("SELECT COUNT(*) FROM AUDIT_LOG")
+            lines.append(f"\nOracle L4: {cur.fetchone()[0]} audit entries")
+        except Exception:
+            pass
+
     return "\n".join(lines)
 
 
 @mcp.tool()
 def memory_daily_report(date: str = "", workspace: str = "all", limit: int = 7) -> str:
-    """Get daily reports. Shows email counts, calendar, priorities, summary."""
-    oracle = get_oracle()
-    if oracle is None:
-        return "Daily reports require Oracle L4 connection"
-    cur = oracle.cursor()
-    if date:
-        sql = "SELECT workspace_id, report_date, day_of_week, email_count, inbox_count, sent_count, calendar_count, h_count, m_count, l_count, suspicious_count, top_senders, h_subjects, narrative FROM DAILY_REPORTS WHERE report_date = TO_DATE(:dt, 'YYYY-MM-DD')"
-        params = {"dt": date}
-        if workspace != "all":
-            sql += " AND workspace_id = :ws"
-            params["ws"] = workspace
-        sql += " ORDER BY workspace_id"
+    """Get daily reports. Shows action summaries from local data + Oracle if available."""
+    lines = []
+
+    # Local daily summary from action_log
+    from .config import get_workspace_map_path
+    try:
+        with open(get_workspace_map_path()) as f:
+            registry = json.load(f)
+        ws_list = registry.get("workspaces", [])
+        ws_ids = [w.get("id") for w in ws_list] if isinstance(ws_list, list) else list(ws_list.keys())
+    except (FileNotFoundError, json.JSONDecodeError):
+        ws_ids = [detect_workspace()]
+
+    day_data = {}
+    for ws_id in ws_ids:
+        if workspace != "all" and ws_id != workspace:
+            continue
+        try:
+            conn = get_sqlite(ws_id)
+            rows = conn.execute(
+                """SELECT DATE(timestamp) as day, COUNT(*) as cnt, SUM(tokens) as tok,
+                          GROUP_CONCAT(DISTINCT machine_id) as machines
+                   FROM action_log GROUP BY DATE(timestamp) ORDER BY day DESC LIMIT ?""",
+                (limit,),
+            ).fetchall()
+            for r in rows:
+                day = r["day"]
+                if day not in day_data:
+                    day_data[day] = {"actions": 0, "tokens": 0, "machines": set(), "workspaces": set()}
+                day_data[day]["actions"] += r["cnt"]
+                day_data[day]["tokens"] += r["tok"] or 0
+                if r["machines"]:
+                    day_data[day]["machines"].update(r["machines"].split(","))
+                day_data[day]["workspaces"].add(ws_id)
+            conn.close()
+        except Exception:
+            pass
+
+    if day_data:
+        lines.append(f"Daily Reports (local, {len(day_data)} days):")
+        for day in sorted(day_data.keys(), reverse=True)[:limit]:
+            d = day_data[day]
+            machines = ", ".join(d["machines"]) if d["machines"] else "?"
+            lines.append(f"  {day} | actions:{d['actions']} | tokens:{d['tokens']} | machines:{machines} | ws:{len(d['workspaces'])}")
     else:
-        sql = "SELECT workspace_id, report_date, day_of_week, email_count, inbox_count, sent_count, calendar_count, h_count, m_count, l_count, suspicious_count, top_senders, h_subjects, narrative FROM DAILY_REPORTS"
-        params = {}
-        if workspace != "all":
-            sql += " WHERE workspace_id = :ws"
-            params["ws"] = workspace
-        sql += " ORDER BY report_date DESC FETCH FIRST :lim ROWS ONLY"
-        params["lim"] = limit
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    if not rows:
-        return "No daily reports found"
-    lines = [f"Daily Reports ({len(rows)} entries):"]
-    for r in rows:
-        lines.append(f"\n--- {str(r[1])[:10]} ({r[2] or '?'}) [{r[0]}] ---")
-        lines.append(f"  Email: {r[3]} (inbox:{r[4]} sent:{r[5]}) | Calendar: {r[6]}")
-        lines.append(f"  Priority: H={r[7]} M={r[8]} L={r[9]} | Suspicious: {r[10]}")
-        if r[13]:
-            lines.append(f"  Summary: {str(r[13])[:300]}")
-    return "\n".join(lines)
+        lines.append("No local daily data found")
+
+    # Oracle daily reports (if available)
+    oracle = get_oracle()
+    if oracle:
+        try:
+            cur = oracle.cursor()
+            if date:
+                sql = "SELECT workspace_id, report_date, day_of_week, email_count, inbox_count, sent_count, calendar_count, h_count, m_count, l_count, suspicious_count, top_senders, h_subjects, narrative FROM DAILY_REPORTS WHERE report_date = TO_DATE(:dt, 'YYYY-MM-DD')"
+                params = {"dt": date}
+            else:
+                sql = "SELECT workspace_id, report_date, day_of_week, email_count, inbox_count, sent_count, calendar_count, h_count, m_count, l_count, suspicious_count, top_senders, h_subjects, narrative FROM DAILY_REPORTS ORDER BY report_date DESC FETCH FIRST :lim ROWS ONLY"
+                params = {"lim": limit}
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+            if rows:
+                lines.append(f"\nOracle L4 Reports ({len(rows)} entries):")
+                for r in rows:
+                    lines.append(f"  {str(r[1])[:10]} ({r[2] or '?'}) [{r[0]}] | email:{r[3]} cal:{r[6]} | H:{r[7]} M:{r[8]} L:{r[9]}")
+        except Exception:
+            pass
+
+    return "\n".join(lines) if lines else "No daily reports found"
 
 
 @mcp.tool()
 def memory_activity_log(agent: str = "", action: str = "", workspace: str = "all", limit: int = 20) -> str:
-    """View agent activity log. Filter by agent, action, workspace."""
+    """View agent activity log. Searches local SQLite first, Oracle L4 if available.
+    Filter by agent/machine, action, workspace."""
+    limit = max(1, min(limit, _MAX_LIMIT))
+
+    # Local search
+    results = _local_audit_search(
+        query="", date="", action=action, machine=agent, workspace=workspace, limit=limit
+    )
+
+    # Oracle search (if available)
     oracle = get_oracle()
-    if oracle is None:
-        return "Activity log requires Oracle L4 connection"
-    cur = oracle.cursor()
-    conditions, params = [], {}
-    if agent:
-        conditions.append("LOWER(a.agent) LIKE :ag")
-        params["ag"] = f"%{agent.lower()}%"
-    if action:
-        conditions.append("LOWER(a.action) LIKE :act")
-        params["act"] = f"%{action.lower()}%"
-    if workspace != "all":
-        conditions.append("a.workspace_id = :ws")
-        params["ws"] = workspace
-    where = "WHERE " + " AND ".join(conditions) if conditions else ""
-    sql = f"SELECT a.logged_at, a.log_type, a.agent, a.action, a.task_type, a.target, a.result_status, a.workspace_id FROM ACTIVITY_LOG a {where} ORDER BY a.logged_at DESC FETCH FIRST :lim ROWS ONLY"
-    params["lim"] = limit
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    if not rows:
+    if oracle:
+        try:
+            cur = oracle.cursor()
+            conditions, params = [], {}
+            if agent:
+                conditions.append("LOWER(a.agent) LIKE :ag")
+                params["ag"] = f"%{agent.lower()}%"
+            if action:
+                conditions.append("LOWER(a.action) LIKE :act")
+                params["act"] = f"%{action.lower()}%"
+            if workspace != "all":
+                conditions.append("a.workspace_id = :ws")
+                params["ws"] = workspace
+            where = "WHERE " + " AND ".join(conditions) if conditions else ""
+            sql = f"SELECT a.logged_at, a.log_type, a.agent, a.action, a.task_type, a.target, a.result_status, a.workspace_id FROM ACTIVITY_LOG a {where} ORDER BY a.logged_at DESC FETCH FIRST :lim ROWS ONLY"
+            params["lim"] = limit
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+            for r in rows:
+                ts = str(r[0])[:16] if r[0] else "?"
+                rid = f"oracle-{ts}"
+                line = f"  {ts} | {r[2] or '?':15s} | {r[3] or r[4] or '?':15s} | {(r[5] or '')[:40]}"
+                results.append((rid, str(r[0] or ""), line))
+        except Exception:
+            pass
+
+    if not results:
         return "No activity log entries found"
-    lines = [f"Activity log ({len(rows)} entries):"]
-    for r in rows:
-        ts = str(r[0])[:16] if r[0] else "?"
-        lines.append(f"  {ts} | {r[2] or '?':15s} | {r[3] or r[4] or '?':15s} | {(r[5] or '')[:40]}")
+
+    # Deduplicate and sort
+    seen = set()
+    unique = []
+    for r in results:
+        if r[0] not in seen:
+            seen.add(r[0])
+            unique.append(r)
+    unique.sort(key=lambda x: x[1], reverse=True)
+
+    lines = [f"Activity log ({len(unique)} entries):"]
+    for r in unique[:limit]:
+        lines.append(r[2])
     return "\n".join(lines)
 
 
@@ -775,10 +1059,13 @@ def memory_activity_log(agent: str = "", action: str = "", workspace: str = "all
 
 @mcp.tool()
 def memory_status() -> str:
-    """System status: local counts + Oracle sync status."""
+    """System status: local counts, machine info, Oracle sync status."""
     from .config import load_config
     config = load_config()
-    lines = [f"Clawd-Lobster Memory Server v0.2.0", f"Workspace: {detect_workspace()}"]
+    mid = _get_machine_id()
+    lines = [f"Clawd-Lobster Memory Server v0.3.0",
+             f"Workspace: {detect_workspace()}",
+             f"Machine: {mid}"]
     try:
         lines.append(f"Local: {memory_get_summary()}")
     except Exception as e:
@@ -799,12 +1086,13 @@ def memory_status() -> str:
 
 @mcp.tool()
 def memory_compact(workspace: str = "current") -> str:
-    """Check session.md status and recommend compaction if needed."""
+    """Check memory database health and recommend actions if needed.
+    Reports: DB size, table row counts, salience distribution, stale items."""
     ws = detect_workspace() if workspace == "current" else workspace
     from .config import load_config, get_workspace_map_path
     config = load_config()
 
-    # Find session.md
+    # Find memory.db
     ws_root = Path(config["workspace_root"])
     try:
         with open(get_workspace_map_path()) as f:
@@ -819,27 +1107,61 @@ def memory_compact(workspace: str = "current") -> str:
         elif isinstance(workspaces, dict):
             display_path = workspaces.get(ws)
         if display_path:
-            session_path = ws_root / display_path / ".claude-memory" / "session.md"
+            db_path = ws_root / display_path / ".claude-memory" / "memory.db"
         else:
-            session_path = ws_root / ws / ".claude-memory" / "session.md"
+            db_path = ws_root / ws / ".claude-memory" / "memory.db"
     except (FileNotFoundError, json.JSONDecodeError):
-        session_path = ws_root / ws / ".claude-memory" / "session.md"
+        db_path = ws_root / ws / ".claude-memory" / "memory.db"
 
-    if not session_path.exists():
-        return f"No session.md found for [{ws}]"
+    if not db_path.exists():
+        return f"No memory.db found for [{ws}]. Run init_db.py to create it."
 
-    content = session_path.read_text(encoding="utf-8")
-    line_count = len(content.splitlines())
-    token_count = estimate_tokens(content)
-    needs_compact = token_count > 3000 or line_count > 100
-    status = "COMPACT RECOMMENDED" if needs_compact else "OK"
+    # DB file size
+    db_size_kb = db_path.stat().st_size / 1024
+    db_size_str = f"{db_size_kb:.0f} KB" if db_size_kb < 1024 else f"{db_size_kb/1024:.1f} MB"
 
-    return (
-        f"[{ws}] session.md: {status}\n"
-        f"  Lines: {line_count} | Tokens: ~{token_count} (CJK-aware)\n"
-        f"  Threshold: 100 lines or 3000 tokens\n"
-        f"{'  -> Extract items via memory_record_*, then trim session.md' if needs_compact else '  -> No compaction needed'}"
-    )
+    conn = get_sqlite(ws)
+    lines = [f"[{ws}] Memory DB Health:"]
+    lines.append(f"  File: {db_path}")
+    lines.append(f"  Size: {db_size_str}")
+
+    # Row counts
+    total_rows = 0
+    for table in ["decisions", "resolved", "open_questions", "knowledge_items", "learned_skills"]:
+        try:
+            cnt = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            lines.append(f"  {table}: {cnt} rows")
+            total_rows += cnt
+        except Exception:
+            pass
+    try:
+        al_cnt = conn.execute("SELECT COUNT(*) FROM action_log").fetchone()[0]
+        lines.append(f"  action_log: {al_cnt} rows")
+        total_rows += al_cnt
+    except Exception:
+        pass
+
+    # Stale items (salience < 0.5)
+    stale = 0
+    for table in ["decisions", "resolved", "open_questions", "knowledge_items"]:
+        try:
+            cnt = conn.execute(f"SELECT COUNT(*) FROM {table} WHERE salience < 0.5").fetchone()[0]
+            stale += cnt
+        except Exception:
+            pass
+
+    lines.append(f"  Total: {total_rows} rows | Stale (sal<0.5): {stale}")
+
+    # Recommendations
+    if db_size_kb > 10240:
+        lines.append("  -> COMPACT RECOMMENDED: DB > 10MB. Consider archiving old entries.")
+    elif stale > 50:
+        lines.append(f"  -> {stale} stale items. Consider reviewing or deleting low-salience entries.")
+    else:
+        lines.append("  -> OK: No compaction needed.")
+
+    conn.close()
+    return "\n".join(lines)
 
 
 @mcp.tool()

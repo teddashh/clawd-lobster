@@ -8,7 +8,25 @@
       "mcp__memory__memory_get",
       "mcp__memory__memory_search",
       "mcp__memory__memory_get_summary",
-      "mcp__memory__memory_status"
+      "mcp__memory__memory_status",
+      "mcp__memory__memory_log_action",
+      "mcp__memory__memory_list_skills",
+      "mcp__memory__memory_audit_search",
+      "mcp__memory__memory_activity_log"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[hook] file modified'",
+            "description": "Example: log file modifications (customize this)"
+          }
+        ]
+      }
     ]
   }
 }

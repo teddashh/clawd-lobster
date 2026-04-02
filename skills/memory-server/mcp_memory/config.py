@@ -82,6 +82,20 @@ def get_workspace_map_path() -> str:
     return os.path.join(config["data_dir"], "workspaces.json")
 
 
+def get_machine_id() -> str:
+    """Get this machine's ID from config or hostname."""
+    config = load_config()
+    mid = config.get("machine_id", "")
+    if mid:
+        return mid
+    # Env override
+    if os.environ.get("CLAWD_MACHINE_ID"):
+        return os.environ["CLAWD_MACHINE_ID"]
+    # Fallback: hostname
+    import socket
+    return socket.gethostname().lower().replace(" ", "-")
+
+
 def _deep_merge(base: dict, override: dict):
     for k, v in override.items():
         if k in base and isinstance(base[k], dict) and isinstance(v, dict):

@@ -51,17 +51,35 @@ def init_db(db_path):
         last_used TEXT,
         created_at TEXT DEFAULT (datetime('now')))""")
 
+    # Action log (local audit trail — no Oracle required)
+    c.execute("""CREATE TABLE IF NOT EXISTS action_log (
+        id TEXT PRIMARY KEY,
+        timestamp TEXT DEFAULT (datetime('now')),
+        machine_id TEXT DEFAULT '',
+        action TEXT NOT NULL,
+        target TEXT DEFAULT '',
+        note TEXT DEFAULT '',
+        tokens INTEGER DEFAULT 0,
+        workspace TEXT DEFAULT '')""")
+
     # Salience tracking columns (safe to re-run)
     for table in ['decisions', 'resolved', 'open_questions', 'knowledge_items']:
         for col, coltype, default in [
             ('access_count', 'INTEGER', '0'),
             ('last_accessed', 'TEXT', 'NULL'),
             ('salience', 'REAL', '1.0'),
+            ('machine_id', 'TEXT', "''"),
         ]:
             try:
                 c.execute(f"ALTER TABLE {table} ADD COLUMN {col} {coltype} DEFAULT {default}")
             except sqlite3.OperationalError:
                 pass
+
+    # machine_id on action_log (safe to re-run)
+    try:
+        c.execute("ALTER TABLE action_log ADD COLUMN machine_id TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass
 
     conn.commit()
     conn.close()
