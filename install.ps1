@@ -2,6 +2,8 @@
 # Usage:
 #   .\install.ps1                                         # Interactive
 #   .\install.ps1 -Lang en -Hub new -Env fresh -MachineId "my-server"  # Headless
+#   .\install.ps1 -DryRun                                 # Preview only
+#   .\install.ps1 -Resume                                 # Resume from failure
 
 param(
     [ValidateSet("", "zh-TW", "en", "zh-CN", "ja", "ko")]
@@ -13,14 +15,21 @@ param(
     [string]$MachineId = "",
     [string]$JoinCode = "",
     [string]$HubName = "",
+    [switch]$DryRun,
+    [switch]$Resume,
+    [switch]$SkipServices,
     [ValidateSet("", "work", "personal", "hybrid")]
     [string]$Domain = ""
 )
 
 $ErrorActionPreference = "Stop"
+$script:DryRun = $DryRun.IsPresent
 $wrapperDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $configDir = "$env:USERPROFILE\.clawd-lobster"
 $configFile = "$configDir\config.json"
+
+# Load helper library
+. "$wrapperDir\scripts\install-lib.ps1"
 $claudeDir = "$env:USERPROFILE\.claude"
 
 # ============================================================
@@ -196,91 +205,28 @@ function Write-OK($msg) { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Skip($msg) { Write-Host "  [SKIP] $msg" -ForegroundColor Yellow }
 function Write-Fail($msg) { Write-Host "  [FAIL] $msg" -ForegroundColor Red }
 
+# Merge helpers are now in scripts/install-lib.ps1 (loaded above)
+
 # ============================================================
-# MERGE HELPERS — smart config merging for absorb mode
+# RESUME MODE
 # ============================================================
 
-function Backup-File($path) {
-    if (Test-Path $path) {
-        $backupDir = "$env:USERPROFILE\.clawd-lobster\backup"
-        New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
-        $name = Split-Path $path -Leaf
-        $ts = Get-Date -Format "yyyyMMdd-HHmmss"
-        Copy-Item $path "$backupDir\$name.$ts.bak"
-        return $true
+if ($Resume) {
+    $stateFile = "$configDir\install-state.json"
+    if (-not (Test-Path $stateFile)) {
+        Write-Host "  [FAIL] No previous install state found. Run without -Resume." -ForegroundColor Red
+        exit 1
     }
-    return $false
-}
-
-function Merge-McpJson($existingPath, $mcpServerDir) {
-    # Merge: keep all existing MCP servers, add memory server if not present
-    $merged = @{ mcpServers = @{} }
-    if (Test-Path $existingPath) {
-        try {
-            $existing = Get-Content $existingPath -Raw | ConvertFrom-Json
-            if ($existing.mcpServers) {
-                foreach ($prop in $existing.mcpServers.PSObject.Properties) {
-                    $merged.mcpServers[$prop.Name] = $prop.Value
-                }
-            }
-        } catch { }
+    $savedState = Get-Content $stateFile -Raw | ConvertFrom-Json
+    Write-Host "  Resuming from step $($savedState.failed_step ?? 'unknown')..." -ForegroundColor Yellow
+    if ($savedState.params) {
+        if ($savedState.params.hub) { $Hub = $savedState.params.hub }
+        if ($savedState.params.env) { $Env = $savedState.params.env }
+        if ($savedState.params.machine_id) { $MachineId = $savedState.params.machine_id }
+        if ($savedState.params.lang) { $Lang = $savedState.params.lang }
+        if ($savedState.params.hub_name) { $HubName = $savedState.params.hub_name }
+        if ($savedState.params.domain) { $Domain = $savedState.params.domain }
     }
-    # Add or update memory server
-    $merged.mcpServers["memory"] = @{
-        command = "python"
-        args = @("-X", "utf8", "-m", "mcp_memory.server")
-        cwd = $mcpServerDir
-    }
-    return $merged
-}
-
-function Merge-Settings($existingPath, $templatePath) {
-    # Merge: keep existing permissions/hooks, add Lobster permissions if missing
-    $lobsterAllow = @(
-        "mcp__memory__memory_list", "mcp__memory__memory_get",
-        "mcp__memory__memory_search", "mcp__memory__memory_get_summary",
-        "mcp__memory__memory_status", "mcp__memory__memory_log_action",
-        "mcp__memory__memory_list_skills", "mcp__memory__memory_audit_search",
-        "mcp__memory__memory_activity_log"
-    )
-
-    $settings = @{}
-    if (Test-Path $existingPath) {
-        try { $settings = Get-Content $existingPath -Raw | ConvertFrom-Json } catch { $settings = @{} }
-    }
-
-    # Ensure permissions.allow exists
-    if (-not $settings.permissions) {
-        $settings | Add-Member -NotePropertyName "permissions" -NotePropertyValue @{ allow = @() } -Force
-    }
-    if (-not $settings.permissions.allow) {
-        $settings.permissions | Add-Member -NotePropertyName "allow" -NotePropertyValue @() -Force
-    }
-
-    # Add missing Lobster permissions
-    $currentAllow = @($settings.permissions.allow)
-    foreach ($perm in $lobsterAllow) {
-        if ($perm -notin $currentAllow) { $currentAllow += $perm }
-    }
-    $settings.permissions.allow = $currentAllow
-
-    # DON'T touch hooks if they already exist (user's hooks are sacred)
-    # DON'T touch settings.local.json (user's permissions override)
-    return $settings
-}
-
-function Merge-ClaudeMd($existingPath, $templateContent) {
-    # If no existing CLAUDE.md, just use template
-    if (-not (Test-Path $existingPath)) { return $templateContent }
-
-    $existing = Get-Content $existingPath -Raw
-
-    # If already has Lobster sections, don't duplicate
-    if ($existing -match "Clawd-Lobster") { return $existing }
-
-    # Append Lobster sections to existing content
-    $separator = "`n`n# ============================================================`n# Clawd-Lobster (auto-appended by installer)`n# ============================================================`n`n"
-    return $existing + $separator + $templateContent
 }
 
 # ============================================================
@@ -394,13 +340,61 @@ if (-not $Domain) {
 $setupMode = "$Hub-$Env"
 Write-Host ""
 Write-Host "  Machine: $MachineId | Domain: $Domain | Mode: $setupMode" -ForegroundColor Cyan
+
+# ============================================================
+# PHASE 1: PREFLIGHT SCAN
+# ============================================================
+
 Write-Host ""
+Write-Host "  Scanning machine state..." -ForegroundColor Gray
+$machineState = Scan-MachineState -claudeDir $claudeDir
+Show-PreflightReport $machineState
+
+# Warn about active services
+if (-not $SkipServices -and $machineState.active_processes.Count -gt 0) {
+    Write-Host "  Active Claude processes detected. Recommended: close Claude Code before installing." -ForegroundColor Yellow
+    $cont = Read-Host "  Continue anyway? (Y/n)"
+    if ($cont -eq "n") { Write-Host "  Aborted."; exit 0 }
+}
+if ($machineState.locked_files.Count -gt 0) {
+    Write-Host "  [WARN] Some config files are locked. Close Claude Code first." -ForegroundColor Yellow
+    Write-Host "  Locked: $($machineState.locked_files -join ', ')" -ForegroundColor Yellow
+    $cont = Read-Host "  Continue anyway? (Y/n)"
+    if ($cont -eq "n") { Write-Host "  Aborted."; exit 0 }
+}
+
+# ============================================================
+# PHASE 2: SHOW PLAN
+# ============================================================
+
+Show-InstallPlan $machineState $Hub $Env $HubName $MachineId $Domain
+
+if ($DryRun) {
+    Write-Host "  Dry run complete. No changes were made." -ForegroundColor Green
+    exit 0
+}
+
+$proceed = Read-Host "  Proceed? (Y/n)"
+if ($proceed -eq "n") { Write-Host "  Aborted."; exit 0 }
+
+# ============================================================
+# PHASE 3: EXECUTE — Initialize state tracking
+# ============================================================
+
+$installParams = @{
+    hub = $Hub; env = $Env; machine_id = $MachineId
+    lang = $Lang; hub_name = $HubName; domain = $Domain
+}
+$installState = Initialize-InstallState $configDir $installParams
+$resumeFrom = if ($Resume) { Get-ResumePoint $installState } else { 1 }
 
 # ============================================================
 # STEP 1: PREREQUISITES
 # ============================================================
 
-Write-Step "1/8" "step_prereq"
+if ($resumeFrom -le 1) {
+
+Write-Step "1/9" "step_prereq"
 
 $node = Get-Command node -ErrorAction SilentlyContinue
 if ($node) { Write-OK "Node.js $(node --version)" }
@@ -429,7 +423,11 @@ else { Write-Skip "GitHub CLI (optional)" }
 # STEP 2: AUTHENTICATION
 # ============================================================
 
-Write-Step "2/8" "step_auth"
+Set-StepComplete $configDir ([ref]$installState) 1
+} # end step 1
+
+if ($resumeFrom -le 2) {
+Write-Step "2/9" "step_auth"
 
 $claudeCreds = "$claudeDir\.credentials.json"
 if (Test-Path $claudeCreds) { Write-OK "Claude Code" }
@@ -449,6 +447,10 @@ if ($gh) {
 # STEP 3: CREATE OR CLONE HUB
 # ============================================================
 
+Set-StepComplete $configDir ([ref]$installState) 2
+} # end step 2
+
+if ($resumeFrom -le 3) {
 Write-Step "3/9" "step_hub"
 
 $hubDir = ""
@@ -505,6 +507,10 @@ if ($Hub -eq "new") {
 # STEP 4: CONFIG
 # ============================================================
 
+Set-StepComplete $configDir ([ref]$installState) 3
+} # end step 3
+
+if ($resumeFrom -le 4) {
 Write-Step "4/9" "step_config"
 
 New-Item -ItemType Directory -Force -Path $configDir | Out-Null
@@ -534,6 +540,10 @@ Write-OK "Config saved (hub: $HubName, machine: $MachineId)"
 # STEP 4: MCP MEMORY SERVER
 # ============================================================
 
+Set-StepComplete $configDir ([ref]$installState) 4
+} # end step 4
+
+if ($resumeFrom -le 5) {
 Write-Step "5/9" "step_mcp"
 
 $mcpServerDir = "$wrapperDir\skills\memory-server"
@@ -545,36 +555,29 @@ Write-OK "MCP Memory Server (24 tools)"
 
 New-Item -ItemType Directory -Force -Path $claudeDir | Out-Null
 $mcpJsonPath = "$claudeDir\.mcp.json"
-if (Test-Path $mcpJsonPath) {
-    Backup-File $mcpJsonPath | Out-Null
-    $mergedMcp = Merge-McpJson $mcpJsonPath $mcpServerDir
-    $mergedMcp | ConvertTo-Json -Depth 4 | Set-Content $mcpJsonPath -Encoding UTF8
-    $serverCount = ($mergedMcp.mcpServers.PSObject.Properties | Measure-Object).Count
-    Write-OK ".mcp.json (merged — $serverCount servers)"
-} else {
-    @{
-        mcpServers = @{
-            memory = @{
-                command = "python"
-                args = @("-X", "utf8", "-m", "mcp_memory.server")
-                cwd = $mcpServerDir
-            }
-        }
-    } | ConvertTo-Json -Depth 4 | Set-Content $mcpJsonPath -Encoding UTF8
-    Write-OK ".mcp.json (created)"
-}
+$pythonCmd = if (Get-Command python -ErrorAction SilentlyContinue) { "python" } else { "python3" }
+Backup-File $mcpJsonPath $configDir ([ref]$installState) | Out-Null
+$mergedMcp = Merge-McpJson $mcpJsonPath $mcpServerDir $pythonCmd
+$mergedMcp | ConvertTo-Json -Depth 4 | Set-Content $mcpJsonPath -Encoding UTF8
+$serverCount = ($mergedMcp.mcpServers.PSObject.Properties | Measure-Object).Count
+$action = if ($serverCount -gt 1) { "merged — $serverCount servers" } else { "created" }
+Write-OK ".mcp.json ($action)"
 
 # ============================================================
 # STEP 5: CLAUDE.MD + SETTINGS
 # ============================================================
 
+Set-StepComplete $configDir ([ref]$installState) 5
+} # end step 5
+
+if ($resumeFrom -le 6) {
 Write-Step "6/9" "step_claude"
 
 $templateMd = Get-Content "$wrapperDir\templates\global-CLAUDE.md" -Raw
 $templateMd = $templateMd -replace '\{\{DATA_DIR\}\}', $wrapperDir
 $claudeMdPath = "$claudeDir\CLAUDE.md"
 if (Test-Path $claudeMdPath) {
-    Backup-File $claudeMdPath | Out-Null
+    Backup-File $claudeMdPath $configDir ([ref]$installState) | Out-Null
     $mergedMd = Merge-ClaudeMd $claudeMdPath $templateMd
     Set-Content $claudeMdPath -Value $mergedMd -Encoding UTF8
     Write-OK "CLAUDE.md (merged — existing content preserved)"
@@ -587,7 +590,7 @@ $settingsPath = "$claudeDir\settings.json"
 if (Test-Path $settingsPath) {
     $rawSettings = (Get-Content $settingsPath -Raw).Trim()
     if ($rawSettings -ne "{}" -and $rawSettings -ne "") {
-        Backup-File $settingsPath | Out-Null
+        Backup-File $settingsPath $configDir ([ref]$installState) | Out-Null
         $mergedSettings = Merge-Settings $settingsPath "$wrapperDir\templates\settings.json.template"
         $mergedSettings | ConvertTo-Json -Depth 4 | Set-Content $settingsPath -Encoding UTF8
         Write-OK "settings.json (merged — added memory permissions)"
@@ -608,6 +611,10 @@ if (Test-Path "$claudeDir\settings.local.json") {
 # STEP 6: DEPLOY WORKSPACES
 # ============================================================
 
+Set-StepComplete $configDir ([ref]$installState) 6
+} # end step 6
+
+if ($resumeFrom -le 7) {
 Write-Step "7/9" "step_workspace"
 
 $registryFile = "$wrapperDir\workspaces.json"
@@ -637,6 +644,10 @@ Write-Host "  $($deployed.Count) workspaces deployed" -ForegroundColor Green
 # STEP 7: SCHEDULER + REGISTRATION
 # ============================================================
 
+Set-StepComplete $configDir ([ref]$installState) 7
+} # end step 7
+
+if ($resumeFrom -le 8) {
 Write-Step "8/9" "step_sched"
 
 $taskName = "Clawd-Lobster Sync"
@@ -683,10 +694,14 @@ New-Item -ItemType Directory -Force -Path $clientsDir | Out-Null
 } | ConvertTo-Json -Depth 3 | Set-Content "$clientsDir\$MachineId.json" -Encoding UTF8
 Write-OK "Machine: $MachineId"
 
+Set-StepComplete $configDir ([ref]$installState) 8
+} # end step 8
+
 # ============================================================
-# STEP 8: MIGRATE (if absorb mode)
+# STEP 9: MIGRATE (if absorb mode)
 # ============================================================
 
+if ($resumeFrom -le 9) {
 if ($Env -eq "absorb") {
     Write-Step "9/9" "step_migrate"
 
@@ -872,6 +887,21 @@ if ($Env -eq "absorb") {
 } else {
     Write-Step "9/9" "step_migrate"
     Write-Skip "Fresh environment — nothing to absorb"
+}
+Set-StepComplete $configDir ([ref]$installState) 9
+} # end step 9
+
+# ============================================================
+# PHASE 4: VERIFY
+# ============================================================
+
+Write-Host ""
+Write-Host "  Verifying installation..." -ForegroundColor Yellow
+$pythonCmd = if (Get-Command python -ErrorAction SilentlyContinue) { "python" } else { "python3" }
+$verifyResult = Test-Installation $claudeDir $wrapperDir $pythonCmd
+if ($verifyResult.fail -gt 0) {
+    Write-Host ""
+    Write-Host "  Some checks failed. Run with -Resume to retry, or check the issues above." -ForegroundColor Yellow
 }
 
 # ============================================================
