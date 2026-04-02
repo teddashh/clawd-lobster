@@ -268,7 +268,31 @@ cd "$WRAPPER_DIR"
 ok "MCP Memory Server (24 tools)"
 
 mkdir -p "$CLAUDE_DIR"
-cat > "$CLAUDE_DIR/.mcp.json" << EOF
+MCP_JSON="$CLAUDE_DIR/.mcp.json"
+if [ -f "$MCP_JSON" ]; then
+    # Merge: keep existing MCP servers, add memory
+    mkdir -p "$CONFIG_DIR/backup"
+    cp "$MCP_JSON" "$CONFIG_DIR/backup/.mcp.json.$(date +%Y%m%d-%H%M%S).bak"
+    $PYTHON -c "
+import json, sys
+try:
+    with open('$MCP_JSON') as f: existing = json.load(f)
+    servers = existing.get('mcpServers', {})
+except (json.JSONDecodeError, FileNotFoundError):
+    servers = {}
+servers['memory'] = {
+    'command': '$PYTHON',
+    'args': ['-X', 'utf8', '-m', 'mcp_memory.server'],
+    'cwd': '$WRAPPER_DIR/skills/memory-server'
+}
+with open('$MCP_JSON', 'w') as f:
+    json.dump({'mcpServers': servers}, f, indent=2)
+print(f'{len(servers)} servers')
+" 2>/dev/null
+    server_count=$($PYTHON -c "import json; print(len(json.load(open('$MCP_JSON')).get('mcpServers',{})))" 2>/dev/null || echo "?")
+    ok ".mcp.json (merged — $server_count servers)"
+else
+    cat > "$MCP_JSON" << MCPEOF
 {
   "mcpServers": {
     "memory": {
@@ -278,18 +302,36 @@ cat > "$CLAUDE_DIR/.mcp.json" << EOF
     }
   }
 }
-EOF
-ok ".mcp.json"
+MCPEOF
+    ok ".mcp.json (created)"
+fi
 
 # ============================================================
 # STEP 6: CLAUDE.MD + SETTINGS
 # ============================================================
 step "6/9" "Setting up Claude Code"
 
-sed "s|{{DATA_DIR}}|$WRAPPER_DIR|g" "$WRAPPER_DIR/templates/global-CLAUDE.md" > "$CLAUDE_DIR/CLAUDE.md"
-ok "CLAUDE.md"
+CLAUDE_MD_PATH="$CLAUDE_DIR/CLAUDE.md"
+TEMPLATE_MD=$(sed "s|{{DATA_DIR}}|$WRAPPER_DIR|g" "$WRAPPER_DIR/templates/global-CLAUDE.md")
+if [ -f "$CLAUDE_MD_PATH" ]; then
+    # Merge: append Lobster sections if not already present
+    mkdir -p "$CONFIG_DIR/backup"
+    cp "$CLAUDE_MD_PATH" "$CONFIG_DIR/backup/CLAUDE.md.$(date +%Y%m%d-%H%M%S).bak"
+    if grep -q "Clawd-Lobster" "$CLAUDE_MD_PATH" 2>/dev/null; then
+        ok "CLAUDE.md (already has Lobster sections)"
+    else
+        printf "\n\n# ============================================================\n# Clawd-Lobster (auto-appended by installer)\n# ============================================================\n\n%s" "$TEMPLATE_MD" >> "$CLAUDE_MD_PATH"
+        ok "CLAUDE.md (merged — existing content preserved)"
+    fi
+else
+    echo "$TEMPLATE_MD" > "$CLAUDE_MD_PATH"
+    ok "CLAUDE.md (created)"
+fi
 
 SETTINGS="$CLAUDE_DIR/settings.json"
+if [ -f "$CLAUDE_DIR/settings.local.json" ]; then
+    ok "settings.local.json (preserved — not modified)"
+fi
 if [ ! -f "$SETTINGS" ] || [ "$(cat "$SETTINGS" 2>/dev/null)" = "{}" ]; then
     cp "$WRAPPER_DIR/templates/settings.json.template" "$SETTINGS"
     ok "settings.json"

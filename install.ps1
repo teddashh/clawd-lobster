@@ -784,18 +784,26 @@ if ($Env -eq "absorb") {
                 }
             }
 
-            # 8. Learnings
-            $learningsDir = "C:\Vibe_Coding\Knowledge\Learnings"
-            if (Test-Path $learningsDir) {
-                $learningFiles = Get-ChildItem "$learningsDir\*.md" -ErrorAction SilentlyContinue
-                if ($learningFiles.Count -gt 0) {
-                    $lrnDst = "$wrapperDir\knowledge\learnings"
-                    New-Item -ItemType Directory -Force -Path $lrnDst | Out-Null
-                    foreach ($lf in $learningFiles) {
-                        Copy-Item $lf.FullName "$lrnDst\$($lf.Name)" -Force
+            # 8. Learnings (scan common locations relative to detected system root)
+            $learningsSources = @(
+                "$openclawDir\knowledge\learnings",
+                "$openclawDir\learnings",
+                "$env:USERPROFILE\Documents\Knowledge\Learnings",
+                "$env:USERPROFILE\Documents\Workspace\Knowledge\Learnings"
+            )
+            foreach ($learningsDir in $learningsSources) {
+                if (Test-Path $learningsDir) {
+                    $learningFiles = Get-ChildItem "$learningsDir\*.md" -ErrorAction SilentlyContinue
+                    if ($learningFiles.Count -gt 0) {
+                        $lrnDst = "$wrapperDir\knowledge\learnings"
+                        New-Item -ItemType Directory -Force -Path $lrnDst | Out-Null
+                        foreach ($lf in $learningFiles) {
+                            Copy-Item $lf.FullName "$lrnDst\$($lf.Name)" -Force
+                        }
+                        Write-OK "Learnings ($($learningFiles.Count) files from $learningsDir) -> knowledge/learnings/"
+                        $imported++
+                        break
                     }
-                    Write-OK "Learnings ($($learningFiles.Count) files) -> knowledge/learnings/"
-                    $imported++
                 }
             }
         }

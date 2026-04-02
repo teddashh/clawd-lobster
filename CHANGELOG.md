@@ -4,9 +4,9 @@
 
 ### Context
 
-This release was produced by a deep code review session between Ted (黃仁靖) and 蕾姐 (Claude Opus, the CIO of Ted's OpenClaw agent fleet). Ted built Clawd-Lobster v0.2.0 on his work computer with a separate Claude Code setup wrapper. He then brought it back to his home machine (the original OpenClaw installation — the most battle-tested environment with 300K+ LOC, 8 agents, 52 skills, and months of production experience) for a comprehensive audit.
+This release was produced by a deep code review session using Claude Opus as AI architect. Clawd-Lobster v0.2.0 was audited against a battle-tested OpenClaw installation (a private multi-agent framework with months of production experience) to identify gaps, bugs, and missing features.
 
-The goal: take everything OpenClaw learned the hard way and harden Clawd-Lobster before it becomes the unified system across all of Ted's machines.
+The goal: take everything learned from real-world agent operations and harden Clawd-Lobster before wider deployment.
 
 ### Architecture Decisions
 
@@ -65,7 +65,7 @@ Option 3 wins because:
 
 **Decision:** `scripts/security-scan.py` is a real script, not just a SKILL.md instruction file.
 
-**Why:** Originally considered making it just a SKILL.md (documentation for Claude Code to follow). But Ted noted that scan results often include encrypted file false positives, and a proper script can:
+**Why:** Originally considered making it just a SKILL.md (documentation for Claude Code to follow). But in practice, scan results often include encrypted file false positives, and a proper script can:
 - Exclude binary/encrypted patterns (`*.db`, `*.wallet`, `*.p12`)
 - Gracefully skip uninstalled tools (not all 5 will be available on every machine)
 - Save structured JSON reports to `.claude-memory/security-scan.json`
@@ -169,13 +169,12 @@ These OpenClaw features were evaluated and intentionally excluded:
 
 | Feature | Reason |
 |---------|--------|
-| Multi-agent role system (蕾姐/小雞/小米...) | Too Ted-specific; every user's agent composition is different |
+| Multi-agent role system | Too specific to one user's setup; every user's agent composition is different |
 | Deep persona system (SOUL.md with personality/appearance/emotions) | Persona, not tooling; belongs in user's soul/ customization |
 | Odoo / ARP integration | Business system, not general-purpose |
 | Taiwan-specific (ECPay, TWSMS, gov open data) | Regional, not universal |
 | Telegram bot integration | Communication platform binding; should be a separate skill |
 | Gateway service (port 18789) | OpenClaw-specific architecture |
-| NSFW content system | Not appropriate for public repo |
 | Device pairing | Can be added later if needed |
 | GitHub issue dispatch | Too opinionated; every user's workflow is different |
 | 45+ business scripts | Most are tied to specific business logic |
