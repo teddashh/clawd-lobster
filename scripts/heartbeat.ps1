@@ -137,17 +137,33 @@ foreach ($ws in $registry.workspaces) {
         Log "  [$($ws.id)] alive"
         $alive++
     } else {
-        # Revive: start claude in this workspace with --resume
+        # Revive: find the most recent session for this workspace, then resume it
         Log "  [$($ws.id)] dead -> reviving..."
         try {
             $claudePath = (Get-Command claude -ErrorAction SilentlyContinue).Source
             if ($claudePath) {
-                # Start claude in a new terminal window, resuming last session
+                # Find the most recent session ID for this workspace
+                $resumeArg = "--resume"
+                $sessionDir = "$env:USERPROFILE\.claude\projects"
+                if (Test-Path $sessionDir) {
+                    $latestSession = Get-ChildItem "$sessionDir\*\sessions\*.json" -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
+                            $content -and ($content.Contains($ws.id) -or $content.Contains($ws.path))
+                        } |
+                        Sort-Object LastWriteTime -Descending |
+                        Select-Object -First 1
+                    if ($latestSession) {
+                        $sessionId = [System.IO.Path]::GetFileNameWithoutExtension($latestSession.Name)
+                        $resumeArg = "--resume $sessionId"
+                        Log "  [$($ws.id)] found session: $sessionId"
+                    }
+                }
                 Start-Process -FilePath "cmd.exe" `
-                    -ArgumentList "/c cd /d `"$wsPath`" && claude --resume" `
+                    -ArgumentList "/c cd /d `"$wsPath`" && claude $resumeArg" `
                     -WindowStyle Minimized
                 $revived++
-                Log "  [$($ws.id)] revived (claude --resume)"
+                Log "  [$($ws.id)] revived (claude $resumeArg)"
             } else {
                 Log "  [$($ws.id)] cannot revive: claude not in PATH"
                 $skipped++
