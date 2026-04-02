@@ -197,6 +197,93 @@ function Write-Skip($msg) { Write-Host "  [SKIP] $msg" -ForegroundColor Yellow }
 function Write-Fail($msg) { Write-Host "  [FAIL] $msg" -ForegroundColor Red }
 
 # ============================================================
+# MERGE HELPERS — smart config merging for absorb mode
+# ============================================================
+
+function Backup-File($path) {
+    if (Test-Path $path) {
+        $backupDir = "$env:USERPROFILE\.clawd-lobster\backup"
+        New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+        $name = Split-Path $path -Leaf
+        $ts = Get-Date -Format "yyyyMMdd-HHmmss"
+        Copy-Item $path "$backupDir\$name.$ts.bak"
+        return $true
+    }
+    return $false
+}
+
+function Merge-McpJson($existingPath, $mcpServerDir) {
+    # Merge: keep all existing MCP servers, add memory server if not present
+    $merged = @{ mcpServers = @{} }
+    if (Test-Path $existingPath) {
+        try {
+            $existing = Get-Content $existingPath -Raw | ConvertFrom-Json
+            if ($existing.mcpServers) {
+                foreach ($prop in $existing.mcpServers.PSObject.Properties) {
+                    $merged.mcpServers[$prop.Name] = $prop.Value
+                }
+            }
+        } catch { }
+    }
+    # Add or update memory server
+    $merged.mcpServers["memory"] = @{
+        command = "python"
+        args = @("-X", "utf8", "-m", "mcp_memory.server")
+        cwd = $mcpServerDir
+    }
+    return $merged
+}
+
+function Merge-Settings($existingPath, $templatePath) {
+    # Merge: keep existing permissions/hooks, add Lobster permissions if missing
+    $lobsterAllow = @(
+        "mcp__memory__memory_list", "mcp__memory__memory_get",
+        "mcp__memory__memory_search", "mcp__memory__memory_get_summary",
+        "mcp__memory__memory_status", "mcp__memory__memory_log_action",
+        "mcp__memory__memory_list_skills", "mcp__memory__memory_audit_search",
+        "mcp__memory__memory_activity_log"
+    )
+
+    $settings = @{}
+    if (Test-Path $existingPath) {
+        try { $settings = Get-Content $existingPath -Raw | ConvertFrom-Json } catch { $settings = @{} }
+    }
+
+    # Ensure permissions.allow exists
+    if (-not $settings.permissions) {
+        $settings | Add-Member -NotePropertyName "permissions" -NotePropertyValue @{ allow = @() } -Force
+    }
+    if (-not $settings.permissions.allow) {
+        $settings.permissions | Add-Member -NotePropertyName "allow" -NotePropertyValue @() -Force
+    }
+
+    # Add missing Lobster permissions
+    $currentAllow = @($settings.permissions.allow)
+    foreach ($perm in $lobsterAllow) {
+        if ($perm -notin $currentAllow) { $currentAllow += $perm }
+    }
+    $settings.permissions.allow = $currentAllow
+
+    # DON'T touch hooks if they already exist (user's hooks are sacred)
+    # DON'T touch settings.local.json (user's permissions override)
+    return $settings
+}
+
+function Merge-ClaudeMd($existingPath, $templateContent) {
+    # If no existing CLAUDE.md, just use template
+    if (-not (Test-Path $existingPath)) { return $templateContent }
+
+    $existing = Get-Content $existingPath -Raw
+
+    # If already has Lobster sections, don't duplicate
+    if ($existing -match "Clawd-Lobster") { return $existing }
+
+    # Append Lobster sections to existing content
+    $separator = "`n`n# ============================================================`n# Clawd-Lobster (auto-appended by installer)`n# ============================================================`n`n"
+    return $existing + $separator + $templateContent
+}
+
+# ============================================================
 # LANGUAGE SELECTION
 # ============================================================
 
@@ -454,19 +541,28 @@ Push-Location $mcpServerDir
 $pipResult = pip install -e . --quiet 2>&1
 Pop-Location
 if ($LASTEXITCODE -ne 0) { Write-Fail "pip install failed"; exit 1 }
-Write-OK "MCP Memory Server (21 tools)"
+Write-OK "MCP Memory Server (24 tools)"
 
 New-Item -ItemType Directory -Force -Path $claudeDir | Out-Null
-@{
-    mcpServers = @{
-        memory = @{
-            command = "python"
-            args = @("-X", "utf8", "-m", "mcp_memory.server")
-            cwd = $mcpServerDir
+$mcpJsonPath = "$claudeDir\.mcp.json"
+if (Test-Path $mcpJsonPath) {
+    Backup-File $mcpJsonPath | Out-Null
+    $mergedMcp = Merge-McpJson $mcpJsonPath $mcpServerDir
+    $mergedMcp | ConvertTo-Json -Depth 4 | Set-Content $mcpJsonPath -Encoding UTF8
+    $serverCount = ($mergedMcp.mcpServers.PSObject.Properties | Measure-Object).Count
+    Write-OK ".mcp.json (merged — $serverCount servers)"
+} else {
+    @{
+        mcpServers = @{
+            memory = @{
+                command = "python"
+                args = @("-X", "utf8", "-m", "mcp_memory.server")
+                cwd = $mcpServerDir
+            }
         }
-    }
-} | ConvertTo-Json -Depth 4 | Set-Content "$claudeDir\.mcp.json" -Encoding UTF8
-Write-OK ".mcp.json"
+    } | ConvertTo-Json -Depth 4 | Set-Content $mcpJsonPath -Encoding UTF8
+    Write-OK ".mcp.json (created)"
+}
 
 # ============================================================
 # STEP 5: CLAUDE.MD + SETTINGS
@@ -474,16 +570,39 @@ Write-OK ".mcp.json"
 
 Write-Step "6/9" "step_claude"
 
-$claudeMd = Get-Content "$wrapperDir\templates\global-CLAUDE.md" -Raw
-$claudeMd = $claudeMd -replace '\{\{DATA_DIR\}\}', $wrapperDir
-Set-Content "$claudeDir\CLAUDE.md" -Value $claudeMd -Encoding UTF8
-Write-OK "CLAUDE.md"
+$templateMd = Get-Content "$wrapperDir\templates\global-CLAUDE.md" -Raw
+$templateMd = $templateMd -replace '\{\{DATA_DIR\}\}', $wrapperDir
+$claudeMdPath = "$claudeDir\CLAUDE.md"
+if (Test-Path $claudeMdPath) {
+    Backup-File $claudeMdPath | Out-Null
+    $mergedMd = Merge-ClaudeMd $claudeMdPath $templateMd
+    Set-Content $claudeMdPath -Value $mergedMd -Encoding UTF8
+    Write-OK "CLAUDE.md (merged — existing content preserved)"
+} else {
+    Set-Content $claudeMdPath -Value $templateMd -Encoding UTF8
+    Write-OK "CLAUDE.md (created)"
+}
 
 $settingsPath = "$claudeDir\settings.json"
-if (-not (Test-Path $settingsPath) -or (Get-Content $settingsPath -Raw) -eq "{}") {
+if (Test-Path $settingsPath) {
+    $rawSettings = (Get-Content $settingsPath -Raw).Trim()
+    if ($rawSettings -ne "{}" -and $rawSettings -ne "") {
+        Backup-File $settingsPath | Out-Null
+        $mergedSettings = Merge-Settings $settingsPath "$wrapperDir\templates\settings.json.template"
+        $mergedSettings | ConvertTo-Json -Depth 4 | Set-Content $settingsPath -Encoding UTF8
+        Write-OK "settings.json (merged — added memory permissions)"
+    } else {
+        Copy-Item "$wrapperDir\templates\settings.json.template" $settingsPath
+        Write-OK "settings.json (created)"
+    }
+} else {
     Copy-Item "$wrapperDir\templates\settings.json.template" $settingsPath
-    Write-OK "settings.json"
-} else { Write-OK "settings.json (exists)" }
+    Write-OK "settings.json (created)"
+}
+# Never touch settings.local.json — user's permission overrides are sacred
+if (Test-Path "$claudeDir\settings.local.json") {
+    Write-OK "settings.local.json (preserved — not modified)"
+}
 
 # ============================================================
 # STEP 6: DEPLOY WORKSPACES
@@ -560,7 +679,7 @@ New-Item -ItemType Directory -Force -Path $clientsDir | Out-Null
     last_sync = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
     deployed_workspaces = $deployed
     claude_version = try { (claude --version 2>&1).ToString().Trim() } catch { "unknown" }
-    memory_server_version = "0.2.0"
+    memory_server_version = "0.3.0"
 } | ConvertTo-Json -Depth 3 | Set-Content "$clientsDir\$MachineId.json" -Encoding UTF8
 Write-OK "Machine: $MachineId"
 
@@ -573,17 +692,174 @@ if ($Env -eq "absorb") {
 
     # Scan for existing systems
     $found = @()
-    if (Test-Path "$env:USERPROFILE\Documents\claude-setup") { $found += "claude-setup" }
-    if (Test-Path "$env:USERPROFILE\.openclaw") { $found += "OpenClaw" }
-    if (Test-Path "$env:USERPROFILE\.hermes") { $found += "Hermes Agent" }
-    if (Test-Path "$claudeDir\CLAUDE.md") { $found += "Raw Claude Code" }
+    $openclawDir = "$env:USERPROFILE\.openclaw"
+    $claudeSetupDir = "$env:USERPROFILE\Documents\claude-setup"
+    $hermesDir = "$env:USERPROFILE\.hermes"
 
-    if ($found.Count -gt 0) {
-        Write-Host "  Detected: $($found -join ', ')" -ForegroundColor Yellow
-        Write-Host "  Run this inside Claude Code to absorb:" -ForegroundColor Yellow
-        Write-Host "    claude `"Read skills/migrate/SKILL.md and execute the migration`"" -ForegroundColor White
-    } else {
+    if (Test-Path $openclawDir) { $found += "OpenClaw" }
+    if (Test-Path $claudeSetupDir) { $found += "claude-setup" }
+    if (Test-Path $hermesDir) { $found += "Hermes Agent" }
+
+    if ($found.Count -eq 0) {
         Write-Skip "No previous systems detected"
+    } else {
+        Write-Host "  Detected: $($found -join ', ')" -ForegroundColor Yellow
+        $imported = 0
+
+        # --- OpenClaw Migration ---
+        if ("OpenClaw" -in $found) {
+            Write-Host "  --- OpenClaw ---" -ForegroundColor Cyan
+
+            # 1. Soul/Personality
+            $soulSrc = "$openclawDir\SOUL.md"
+            if (Test-Path $soulSrc) {
+                $soulDst = "$wrapperDir\soul\personality.md"
+                New-Item -ItemType Directory -Force -Path "$wrapperDir\soul" | Out-Null
+                Copy-Item $soulSrc $soulDst -Force
+                Write-OK "SOUL.md -> soul/personality.md"
+                $imported++
+            }
+
+            # 2. Identity files (IDENTITY.md, AGENTS.md, HEARTBEAT.md)
+            foreach ($idFile in @("IDENTITY.md", "AGENTS.md", "HEARTBEAT.md")) {
+                $src = "$openclawDir\$idFile"
+                if (Test-Path $src) {
+                    Copy-Item $src "$wrapperDir\soul\$idFile" -Force
+                    Write-OK "$idFile -> soul/$idFile"
+                    $imported++
+                }
+            }
+
+            # 3. Memory files → import key items to knowledge base
+            $memoryDir = "$openclawDir\memory"
+            if (Test-Path $memoryDir) {
+                $memFiles = Get-ChildItem "$memoryDir\*.md" -ErrorAction SilentlyContinue
+                if ($memFiles.Count -gt 0) {
+                    $knowledgeDst = "$wrapperDir\knowledge\imported-openclaw"
+                    New-Item -ItemType Directory -Force -Path $knowledgeDst | Out-Null
+                    foreach ($mf in $memFiles) {
+                        Copy-Item $mf.FullName "$knowledgeDst\$($mf.Name)" -Force
+                    }
+                    Write-OK "Memory files ($($memFiles.Count) files) -> knowledge/imported-openclaw/"
+                    $imported++
+                }
+            }
+
+            # 4. Skills inventory (list, don't copy — Lobster has its own skill format)
+            $skillsDir = "$openclawDir\skills"
+            if (Test-Path $skillsDir) {
+                $skillDirs = Get-ChildItem $skillsDir -Directory -ErrorAction SilentlyContinue
+                if ($skillDirs.Count -gt 0) {
+                    Write-OK "Skills found: $($skillDirs.Count) (use memory_learn_skill to recreate relevant ones)"
+                    # Save inventory for reference
+                    $skillList = $skillDirs | ForEach-Object { $_.Name }
+                    $skillList | Out-File "$wrapperDir\soul\openclaw-skills-inventory.txt" -Encoding UTF8
+                    $imported++
+                }
+            }
+
+            # 5. OpenClaw CLAUDE.md → extract useful sections
+            $ocClaudeMd = "$openclawDir\CLAUDE.md"
+            if (Test-Path $ocClaudeMd) {
+                Copy-Item $ocClaudeMd "$wrapperDir\soul\openclaw-CLAUDE.md.reference" -Force
+                Write-OK "CLAUDE.md saved as reference -> soul/openclaw-CLAUDE.md.reference"
+                $imported++
+            }
+
+            # 6. Extensions inventory
+            $extDir = "$openclawDir\extensions"
+            if (Test-Path $extDir) {
+                $exts = Get-ChildItem $extDir -Directory -ErrorAction SilentlyContinue
+                if ($exts.Count -gt 0) {
+                    Write-OK "Extensions found: $($exts.Name -join ', ') (keep alongside Lobster)"
+                }
+            }
+
+            # 7. Hooks → note them (user should manually add to settings.json if wanted)
+            $hooksDir = "$openclawDir\hooks"
+            if (Test-Path $hooksDir) {
+                $hooks = Get-ChildItem $hooksDir -Directory -ErrorAction SilentlyContinue
+                if ($hooks.Count -gt 0) {
+                    Write-OK "Hooks found: $($hooks.Name -join ', ') (add to settings.json hooks if needed)"
+                }
+            }
+
+            # 8. Learnings
+            $learningsDir = "C:\Vibe_Coding\Knowledge\Learnings"
+            if (Test-Path $learningsDir) {
+                $learningFiles = Get-ChildItem "$learningsDir\*.md" -ErrorAction SilentlyContinue
+                if ($learningFiles.Count -gt 0) {
+                    $lrnDst = "$wrapperDir\knowledge\learnings"
+                    New-Item -ItemType Directory -Force -Path $lrnDst | Out-Null
+                    foreach ($lf in $learningFiles) {
+                        Copy-Item $lf.FullName "$lrnDst\$($lf.Name)" -Force
+                    }
+                    Write-OK "Learnings ($($learningFiles.Count) files) -> knowledge/learnings/"
+                    $imported++
+                }
+            }
+        }
+
+        # --- claude-setup Migration ---
+        if ("claude-setup" -in $found) {
+            Write-Host "  --- claude-setup ---" -ForegroundColor Cyan
+
+            # Workspace map
+            $wsMap = "$claudeSetupDir\workspace-map.json"
+            if (Test-Path $wsMap) {
+                Copy-Item $wsMap "$wrapperDir\soul\claude-setup-workspace-map.json.reference" -Force
+                Write-OK "workspace-map.json saved as reference"
+                $imported++
+            }
+
+            # Soul files
+            $cssSoul = "$claudeSetupDir\global\soul"
+            if (Test-Path $cssSoul) {
+                Get-ChildItem "$cssSoul\*" -ErrorAction SilentlyContinue | ForEach-Object {
+                    Copy-Item $_.FullName "$wrapperDir\soul\$($_.Name)" -Force
+                }
+                Write-OK "Soul files -> soul/"
+                $imported++
+            }
+
+            # Memory databases (keep in place — Lobster can read them via workspace registry)
+            $cssMemDbs = Get-ChildItem "$claudeSetupDir\*\.claude-memory\memory.db" -Recurse -ErrorAction SilentlyContinue
+            if ($cssMemDbs.Count -gt 0) {
+                Write-OK "Memory databases: $($cssMemDbs.Count) (kept in place)"
+            }
+        }
+
+        # --- Hermes Agent Migration ---
+        if ("Hermes Agent" -in $found) {
+            Write-Host "  --- Hermes Agent ---" -ForegroundColor Cyan
+
+            # Memory + skills → reference only
+            if (Test-Path "$hermesDir\memory") {
+                Copy-Item "$hermesDir\memory" "$wrapperDir\soul\hermes-memory.reference" -Recurse -Force -ErrorAction SilentlyContinue
+                Write-OK "Memory -> soul/hermes-memory.reference/"
+                $imported++
+            }
+            if (Test-Path "$hermesDir\skills") {
+                $hermesSkills = Get-ChildItem "$hermesDir\skills" -ErrorAction SilentlyContinue
+                Write-OK "Skills found: $($hermesSkills.Count) (reference only)"
+            }
+        }
+
+        # --- CC Auto-Memory (always check) ---
+        $ccMemDir = "$claudeDir\projects"
+        if (Test-Path $ccMemDir) {
+            $ccMemFiles = Get-ChildItem "$ccMemDir\*\memory\*.md" -Recurse -ErrorAction SilentlyContinue
+            if ($ccMemFiles.Count -gt 0) {
+                Write-OK "CC auto-memory: $($ccMemFiles.Count) files (native — no migration needed)"
+            }
+        }
+
+        Write-Host ""
+        Write-Host "  Migration complete: $imported items imported" -ForegroundColor Green
+        Write-Host "  Backups saved to: $env:USERPROFILE\.clawd-lobster\backup\" -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "  For deep migration (reading content, storing to L2 memory):" -ForegroundColor Yellow
+        Write-Host "    Open Claude Code and run: /migrate" -ForegroundColor White
     }
 } else {
     Write-Step "9/9" "step_migrate"
