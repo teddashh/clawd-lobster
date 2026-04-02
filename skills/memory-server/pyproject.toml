@@ -1,6 +1,6 @@
 [project]
 name = "clawd-memory-server"
-version = "0.2.0"
+version = "0.3.0"
 description = "Clawd-Lobster MCP Memory Server — unified memory with SQLite + Oracle + Vector Search"
 requires-python = ">=3.11"
 dependencies = [

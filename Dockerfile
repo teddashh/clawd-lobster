@@ -7,9 +7,9 @@
 
 FROM node:22-slim
 
-# System dependencies
+# System dependencies (+ cron for scheduler)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-venv git curl ca-certificates \
+    python3 python3-pip python3-venv git curl ca-certificates cron \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Claude Code
@@ -36,8 +36,8 @@ RUN useradd -m -s /bin/bash clawd
 USER clawd
 RUN mkdir -p /home/clawd/Documents/Workspace /home/clawd/.clawd-lobster /home/clawd/.claude
 
-# Generate default config
-RUN echo '{"wrapper_dir":"/opt/clawd-lobster","data_dir":"/opt/clawd-lobster","workspace_root":"/home/clawd/Documents/Workspace","knowledge_dir":"/opt/clawd-lobster/knowledge","l4_provider":"github","oracle":{"enabled":false},"embedding":{"provider":"none"}}' \
+# Generate default config (with machine_id)
+RUN echo '{"machine_id":"docker","wrapper_dir":"/opt/clawd-lobster","data_dir":"/opt/clawd-lobster","workspace_root":"/home/clawd/Documents/Workspace","knowledge_dir":"/opt/clawd-lobster/knowledge","l4_provider":"github","oracle":{"enabled":false},"embedding":{"provider":"none"}}' \
     > /home/clawd/.clawd-lobster/config.json
 
 # Configure MCP
@@ -50,9 +50,18 @@ RUN sed 's|{{DATA_DIR}}|/opt/clawd-lobster|g' templates/global-CLAUDE.md > /home
 # Copy settings template
 RUN cp templates/settings.json.template /home/clawd/.claude/settings.json
 
+# Set up cron for sync + heartbeat (every 30 min)
+USER root
+RUN mkdir -p /opt/clawd-lobster/.claude-memory && chown clawd:clawd /opt/clawd-lobster/.claude-memory
+RUN echo "*/30 * * * * clawd bash /opt/clawd-lobster/scripts/sync-all.sh >> /opt/clawd-lobster/.claude-memory/sync.log 2>&1" > /etc/cron.d/clawd-lobster \
+    && echo "*/30 * * * * clawd bash /opt/clawd-lobster/scripts/heartbeat.sh >> /opt/clawd-lobster/.claude-memory/heartbeat.log 2>&1" >> /etc/cron.d/clawd-lobster \
+    && chmod 0644 /etc/cron.d/clawd-lobster
+RUN chmod +x /opt/clawd-lobster/scripts/*.sh
+USER clawd
+
 # Volumes for persistence
 VOLUME ["/home/clawd/.clawd-lobster", "/home/clawd/.claude", "/home/clawd/Documents/Workspace"]
 
-# Entry: authenticate and start
+# Entry: start cron + shell
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["echo 'Clawd-Lobster ready. Run: claude auth login' && exec bash"]
+CMD ["sudo cron 2>/dev/null; echo 'Clawd-Lobster ready. Cron started. Run: claude auth login' && exec bash"]

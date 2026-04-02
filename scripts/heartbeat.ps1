@@ -137,17 +137,33 @@ foreach ($ws in $registry.workspaces) {
         Log "  [$($ws.id)] alive"
         $alive++
     } else {
-        # Revive: start claude in this workspace with --resume
+        # Revive: find the most recent session for this workspace, then resume it
         Log "  [$($ws.id)] dead -> reviving..."
         try {
             $claudePath = (Get-Command claude -ErrorAction SilentlyContinue).Source
             if ($claudePath) {
-                # Start claude in a new terminal window, resuming last session
+                # Find the most recent session ID for this workspace
+                $resumeArg = "--resume"
+                $sessionDir = "$env:USERPROFILE\.claude\projects"
+                if (Test-Path $sessionDir) {
+                    $latestSession = Get-ChildItem "$sessionDir\*\sessions\*.json" -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
+                            $content -and ($content.Contains($ws.id) -or $content.Contains($ws.path))
+                        } |
+                        Sort-Object LastWriteTime -Descending |
+                        Select-Object -First 1
+                    if ($latestSession) {
+                        $sessionId = [System.IO.Path]::GetFileNameWithoutExtension($latestSession.Name)
+                        $resumeArg = "--resume $sessionId"
+                        Log "  [$($ws.id)] found session: $sessionId"
+                    }
+                }
                 Start-Process -FilePath "cmd.exe" `
-                    -ArgumentList "/c cd /d `"$wsPath`" && claude --resume" `
+                    -ArgumentList "/c cd /d `"$wsPath`" && claude $resumeArg" `
                     -WindowStyle Minimized
                 $revived++
-                Log "  [$($ws.id)] revived (claude --resume)"
+                Log "  [$($ws.id)] revived (claude $resumeArg)"
             } else {
                 Log "  [$($ws.id)] cannot revive: claude not in PATH"
                 $skipped++
@@ -161,6 +177,19 @@ foreach ($ws in $registry.workspaces) {
 
 Log "=== Heartbeat complete: $alive alive, $revived revived, $skipped skipped ==="
 
+# Health check: memory.db sizes, last sync age, learned skills count
+$healthData = @{}
+foreach ($ws in $registry.workspaces) {
+    $wsDomain = if ($ws.domain) { $ws.domain } else { "work" }
+    $wsRoot2 = $wsRoots[$wsDomain]
+    if (-not $wsRoot2) { $wsRoot2 = $defaultRoot }
+    $dbPath = "$wsRoot2\$($ws.path)\.claude-memory\memory.db"
+    if (Test-Path $dbPath) {
+        $dbSize = (Get-Item $dbPath).Length
+        $healthData[$ws.id] = @{ db_size_kb = [math]::Round($dbSize / 1024) }
+    }
+}
+
 # Update machine status
 $clientFile = "$wrapperDir\clients\$MachineId.json"
 if (Test-Path $clientFile) {
@@ -173,8 +202,12 @@ if (Test-Path $clientFile) {
         if (-not ($status | Get-Member "sessions_alive" -ErrorAction SilentlyContinue)) {
             $status | Add-Member -NotePropertyName "sessions_alive" -NotePropertyValue 0 -Force
         }
+        if (-not ($status | Get-Member "health" -ErrorAction SilentlyContinue)) {
+            $status | Add-Member -NotePropertyName "health" -NotePropertyValue @{} -Force
+        }
         $status.last_heartbeat = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
         $status.sessions_alive = $alive + $revived
-        $status | ConvertTo-Json -Depth 3 | Set-Content $clientFile -Encoding UTF8
+        $status.health = $healthData
+        $status | ConvertTo-Json -Depth 4 | Set-Content $clientFile -Encoding UTF8
     } catch { }
 }
