@@ -139,7 +139,76 @@ You have awareness of your own state. Use it:
 
 ---
 
-## How to Delegate
+## How to Call Codex (exact commands)
+
+There are TWO ways to delegate. Choose based on context:
+
+### Method 1: Via Claude Code Plugin Commands (if plugin installed)
+
+These work inside a Claude Code session:
+```
+/codex:rescue "<task>"                    # general delegation
+/codex:rescue --background "<task>"       # background (returns immediately)
+/codex:review                             # code review (read-only)
+/codex:adversarial-review                 # adversarial review (find flaws)
+/codex:status                             # check background jobs
+/codex:status <job-id>                    # detailed job status
+/codex:result <job-id>                    # retrieve completed output
+/codex:cancel <job-id>                    # cancel background job
+```
+
+Plugin: `claude plugin install codex` (from openai-codex marketplace).
+
+### Method 2: Via Codex CLI Directly (always works)
+
+Use Bash tool to run Codex directly:
+
+```bash
+# Non-interactive execution (run and return result)
+codex exec "Your prompt here"
+
+# Non-interactive execution in a specific directory
+codex exec --cwd /path/to/workspace "Your prompt here"
+
+# Code review of current repo
+codex exec review
+
+# Interactive mode (if you need back-and-forth)
+codex "Your prompt here"
+```
+
+**IMPORTANT syntax notes:**
+- `codex exec "prompt"` — non-interactive, returns result (USE THIS)
+- `codex "prompt"` — interactive mode (avoid in automation)
+- Do NOT use `codex -p` — that flag does not exist
+- The prompt goes AFTER the `exec` subcommand, not as a flag
+
+### Practical Examples
+
+**Ask for a second opinion on architecture:**
+```bash
+codex exec "Read README.md and design.md in this repo. 
+What are the 3 biggest architectural risks? Don't fix anything, just analyze."
+```
+
+**Delegate boilerplate generation:**
+```bash
+codex exec "Create unit test files for all modules in src/services/. 
+Follow the existing test patterns in tests/. Use pytest."
+```
+
+**Adversarial security review:**
+```bash
+codex exec "Review src/auth/ for security vulnerabilities.
+Act as a penetration tester. Report findings with severity ratings.
+Do NOT modify any files."
+```
+
+**Spec challenge before blitz:**
+```bash
+codex exec "Read openspec/changes/v1/proposal.md and design.md.
+Find 3 things that will break in production. Just list them with reasoning."
+```
 
 ### During Blitz (/spec:blitz)
 
@@ -153,31 +222,10 @@ Tasks in tasks.md can have a `[codex]` marker:
 
 When you encounter a `[codex]` task during blitz:
 ```bash
-node codex-companion.mjs task --background "Complete this task: <task description>. Working directory context: <relevant info>"
-```
-
-Or use the Claude Code command directly:
-```
-/codex:rescue --background "<task description>"
-```
-
-Check status periodically:
-```
-/codex:status
-```
-
-Retrieve results:
-```
-/codex:result <job-id>
-```
-
-### Ad-hoc Delegation
-
-Outside of blitz, you can delegate anytime:
-```
-/codex:rescue "investigate why the auth tests are failing"
-/codex:review --background
-/codex:adversarial-review
+codex exec "Complete this task in the current repo:
+Task: <task description>
+File: <target file path>
+Rules: Make minimal changes. Follow existing code style. Commit when done."
 ```
 
 ### Review Codex Output
@@ -189,8 +237,13 @@ infallible. Check:
 - Are there security concerns?
 - Does it integrate with recent changes?
 
-If the output is good, apply it. If not, do it yourself or give Codex
-clearer instructions.
+If Codex made commits (during `exec`), review the diff:
+```bash
+git log --oneline -5    # see what Codex committed
+git diff HEAD~1         # review the last commit
+```
+
+If the output is good, keep it. If not, `git revert` or do it yourself.
 
 ---
 
