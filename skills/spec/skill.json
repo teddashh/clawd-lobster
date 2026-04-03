@@ -1,0 +1,53 @@
+{
+  "id": "spec",
+  "name": "Spec-Driven Development",
+  "description": "Guided workspace creation and spec-driven development — Claude leads you through planning, then blitzes execution",
+  "version": "0.1.0",
+  "category": "core",
+  "tags": ["spec", "planning", "workspace", "openspec", "sdd", "blitz"],
+  "kind": "prompt-pattern",
+  "icon": "📋",
+  "alwaysOn": true,
+  "defaultEnabled": true,
+
+  "permissions": {
+    "allow": []
+  },
+
+  "credentials": [],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "default_depth": {
+        "type": "string",
+        "enum": ["mvp", "standard", "enterprise"],
+        "description": "Default spec depth for new workspaces"
+      },
+      "auto_create_github": {
+        "type": "boolean",
+        "description": "Automatically create GitHub repo when creating workspace"
+      },
+      "blitz_auto_approve": {
+        "type": "boolean",
+        "description": "Auto-approve all changes during blitz phase (use with caution)"
+      }
+    }
+  },
+  "configDefaults": {
+    "default_depth": "standard",
+    "auto_create_github": true,
+    "blitz_auto_approve": false
+  },
+
+  "healthCheck": {
+    "type": "none",
+    "intervalSeconds": 0
+  },
+
+  "dependencies": {
+    "skills": ["memory-server", "absorb", "evolve"],
+    "system": ["git", "claude"],
+    "python": []
+  }
+}

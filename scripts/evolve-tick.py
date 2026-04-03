@@ -11,6 +11,7 @@ Runs periodically (default: every 2 hours). Each tick:
 Usage:
   python scripts/evolve-tick.py                  # normal run
   python scripts/evolve-tick.py --dry-run        # scan only, don't execute
+  python scripts/evolve-tick.py --force          # ignore blitz gate
 """
 import json
 import os
@@ -31,6 +32,20 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 TIMEOUT_SECONDS = 300  # 5 minutes per TODO
 WORKTREE_PREFIX = "evolve-"
+
+# ---------------------------------------------------------------------------
+# Blitz Gate: When /spec is running a blitz (full-speed task execution),
+# evolve-tick must not interfere. The .blitz-active marker file is created
+# by /spec:blitz and removed when blitz completes. This prevents style
+# inconsistency from evolve modifying code mid-build.
+# ---------------------------------------------------------------------------
+
+
+def is_blitzing(workspace_path: str) -> bool:
+    """Check if workspace is in blitz mode (spec is executing tasks)."""
+    marker = Path(workspace_path) / ".blitz-active"
+    return marker.exists()
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -344,6 +359,7 @@ def cleanup_worktree(ws_path: str, todo_id: str):
 
 def main():
     dry_run = "--dry-run" in sys.argv
+    force = "--force" in sys.argv
 
     print(f"[evolve-tick] {datetime.utcnow().isoformat()} — scanning for pending TODOs")
 
@@ -364,6 +380,23 @@ def main():
     if not todos:
         print("[evolve-tick] No pending TODOs found. All clear.")
         return
+
+    # 3.5. Blitz gate — skip workspaces where /spec:blitz is active
+    if not force:
+        filtered = []
+        skipped_ws = set()
+        for t in todos:
+            ws_p = t["_ws_path"]
+            if is_blitzing(ws_p):
+                if ws_p not in skipped_ws:
+                    print(f"\u23ed Skipping {t['_ws_name']}: blitz mode active")
+                    skipped_ws.add(ws_p)
+            else:
+                filtered.append(t)
+        todos = filtered
+        if not todos:
+            print("[evolve-tick] All workspaces in blitz mode. Nothing to do.")
+            return
 
     print(f"[evolve-tick] Found {len(todos)} pending TODO(s)")
     for i, t in enumerate(todos[:5]):
