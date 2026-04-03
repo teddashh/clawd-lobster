@@ -1,5 +1,100 @@
 # Changelog
 
+## v0.4.0 — Skill Management Platform (2026-04-02)
+
+### Overview
+
+Every skill is now a first-class module with a `skill.json` manifest. A new CLI tool (`skill-manager.py`) and Web UI dashboard provide unified skill lifecycle management — enable/disable, configure, credential management, health checks, and registry reconciliation.
+
+### New: Skill Manifest System
+
+Each skill now has a `skill.json` manifest declaring:
+- **Identity**: id, name, description, version, icon, category, tags
+- **Kind**: `mcp-server`, `prompt-pattern`, `cron`, or `poller`
+- **MCP registration**: server name, command, args, cwd, env vars
+- **Permissions**: auto-allowed tool list for `settings.json`
+- **Credentials**: required fields with labels, types, placeholders, sensitivity flags
+- **Config**: JSON Schema for skill-specific settings with defaults
+- **Runtime**: entrypoint, cron schedule, timeout, retry policy (for pollers/crons)
+- **Health check**: type (mcp-ping/command/none), interval, timeout
+- **Dependencies**: other skills, system requirements, Python packages
+
+The manifest is the single source of truth. `.mcp.json` and `settings.json` are derived artifacts.
+
+### New: Skill Manager CLI
+
+`scripts/skill-manager.py` — stdlib-only, cross-platform (Windows + Unix):
+
+| Command | Description |
+|---------|-------------|
+| `list` | Table of all skills with status |
+| `status [id]` | Detailed skill info |
+| `enable <id>` | Enable + update .mcp.json + settings.json |
+| `disable <id>` | Disable + clean up config files |
+| `config <id>` | View/edit skill config (`--set key=value`) |
+| `credentials <id>` | Manage skill credentials (`--set cred-id value`) |
+| `health` | Run health checks on all enabled skills |
+| `reconcile` | Regenerate .mcp.json + settings.json from registry |
+
+Registry lives at `~/.clawd-lobster/skills/registry.json`. Credentials at `~/.clawd-lobster/credentials/` (chmod 600 on Unix).
+
+### New: Web Dashboard
+
+`webapp/index.html` rewritten from 292 to 1245 lines:
+- **3-tab layout**: Skills (default) | Setup | Settings
+- **Skill card grid**: responsive, category filters, search, ON/OFF toggles
+- **Detail panels**: inline config editing, credential inputs (password masked), health badges
+- **Toast notifications**, confirmation dialogs, smooth animations
+- **Setup wizard** preserved as a tab (existing functionality intact)
+- **Settings tab**: machine ID, platform info, credential summary table
+- Dark theme consistent with existing design (#0d1117 palette)
+
+### New: Odoo ERP Connector Skill
+
+`skills/connect-odoo/` — integration skill with:
+- **6 MCP tools**: `odoo_search`, `odoo_read`, `odoo_create`, `odoo_write`, `odoo_execute`, `odoo_poll_tasks`
+- **XML-RPC transport** using Python's built-in `xmlrpc.client` (zero external deps beyond FastMCP)
+- **Poller** (`poller.py --once`) for cron-scheduled task polling
+- **Health check** (`--health` flag) that tests connection + prints Odoo version
+- **Credential template**: url, db, user, password (sensitive field encrypted at rest)
+- Gracefully handles missing `arp.task` model (returns empty list)
+
+### Skill Manifests Created
+
+| Skill | Kind | Category | Always On |
+|-------|------|----------|-----------|
+| memory-server | mcp-server | core | yes |
+| heartbeat | cron | core | yes |
+| evolve | prompt-pattern | intelligence | no |
+| migrate | prompt-pattern | utility | no |
+| connect-odoo | poller | integration | no |
+
+### Installer Integration
+
+Both `install.ps1` and `install.sh` now run `skill-manager.py reconcile` after MCP server setup to initialize the skill registry automatically.
+
+### Files Changed
+
+```
+ NEW  scripts/skill-manager.py                         (+842)
+ NEW  skills/connect-odoo/skill.json
+ NEW  skills/connect-odoo/connect_odoo/__init__.py
+ NEW  skills/connect-odoo/connect_odoo/server.py       (+224)
+ NEW  skills/connect-odoo/connect_odoo/poller.py       (+56)
+ NEW  skills/connect-odoo/pyproject.toml
+ NEW  skills/connect-odoo/SKILL.md
+ NEW  skills/memory-server/skill.json
+ NEW  skills/evolve/skill.json
+ NEW  skills/heartbeat/skill.json
+ NEW  skills/migrate/skill.json
+ MOD  webapp/index.html                                (+1072/-173)
+ MOD  templates/global-CLAUDE.md                       (+26)
+ MOD  install.ps1                                      (+12)
+ MOD  install.sh                                       (+9)
+```
+
+---
+
 ## v0.3.0 — OpenClaw-Hardened (2026-04-02)
 
 ### Context

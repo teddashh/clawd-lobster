@@ -65,8 +65,8 @@ The installer asks you 4 questions. That's it. Everything else is automatic.
   [2] Authentication  — Claude + GitHub (OAuth clicks)
   [3] Create Hub      — copies template → private GitHub repo
   [4] Config          — writes ~/.clawd-lobster/config.json
-  [5] Memory Server   — installs 21-tool MCP server
-  [6] Claude Code     — configures CLAUDE.md + .mcp.json
+  [5] Memory Server   — installs 24-tool MCP server
+  [6] Claude Code     — configures CLAUDE.md + .mcp.json + skill registry
   [7] Workspaces      — clones repos, inits memory.db each
   [8] Scheduler       — registers sync + heartbeat tasks
   [9] Migration       — absorbs OpenClaw/Hermes/etc (if chosen)
@@ -112,6 +112,7 @@ We start with Claude Code — the most advanced coding agent in the world — an
 | **Agent engine** | Custom (self-maintained) | Anthropic | **Anthropic** |
 | **Codebase** | 300K+ lines | N/A | **~2K lines** |
 | **Opus 4.7 drops** | Rewrite adapters | Auto-upgrade | **Auto-upgrade** |
+| **Skill management** | Custom plugin SDK | N/A | **Manifest + Web UI + CLI** |
 | **Persistent memory** | Single-layer or none | None | **4-layer + salience** |
 | **Multi-machine** | Complex or impossible | No | **Built-in (MDM-style)** |
 | **Onboarding** | Half a day | Manual | **5 minutes** |
@@ -152,7 +153,7 @@ Most AI agents forget everything between sessions. Clawd-Lobster gives Claude Co
 | Layer | What | Speed | Scope |
 |-------|------|-------|-------|
 | **L1.5** | CC auto-memory (native) | Instant | Current project |
-| **L2** | SQLite + 21 MCP tools | ~1ms | Per workspace |
+| **L2** | SQLite + 24 MCP tools | ~1ms | Per workspace |
 | **L3** | Markdown knowledge base | ~10ms | Shared via git |
 | **L4** | Cloud DB (optional) | ~100ms | Cross-workspace |
 
@@ -343,25 +344,62 @@ cd clawd-lobster
 
 ---
 
-## Adding a Skill
+## Skill Management Platform
 
-A skill = 3 config entries. That's it.
+Every skill is a self-contained module with a `skill.json` manifest — like a Chrome extension. Manage them via **Web UI** or **CLI**.
+
+### Web Dashboard
+
+Open `webapp/index.html` — a dark-theme management console with:
+- **Card grid** with ON/OFF toggles, status indicators, category filters, search
+- **Inline config** — edit settings and credentials per skill
+- **Health checks** — green/yellow/red status for every enabled skill
+
+### CLI Manager
+
+```bash
+python scripts/skill-manager.py list                     # table of all skills
+python scripts/skill-manager.py enable connect-odoo      # enable a skill
+python scripts/skill-manager.py disable connect-odoo     # disable a skill
+python scripts/skill-manager.py status                   # detailed status
+python scripts/skill-manager.py config connect-odoo      # view/edit config
+python scripts/skill-manager.py credentials connect-odoo # manage credentials
+python scripts/skill-manager.py health                   # run all health checks
+python scripts/skill-manager.py reconcile                # regenerate .mcp.json + settings.json
+```
+
+### Adding a New Skill
+
+1. Create `skills/my-skill/skill.json` — the manifest declares everything:
 
 ```jsonc
-// 1. .mcp.json — register the MCP server
-{ "mcpServers": { "my-skill": { "command": "python", "args": ["-m", "my_skill"] } } }
-
-// 2. settings.json — auto-allow read tools
-{ "permissions": { "allow": ["mcp__my-skill__my_tool"] } }
+{
+  "id": "my-skill",
+  "name": "My Skill",
+  "description": "What it does",
+  "version": "0.1.0",
+  "category": "utility",       // core | integration | automation | intelligence | utility
+  "kind": "mcp-server",        // mcp-server | prompt-pattern | cron | poller
+  "alwaysOn": false,
+  "defaultEnabled": true,
+  "mcp": {
+    "serverName": "my-skill",
+    "command": "python",
+    "args": ["-m", "my_skill.server"],
+    "cwd": "."
+  },
+  "permissions": { "allow": ["mcp__my-skill__my_tool"] },
+  "credentials": [],
+  "configSchema": { ... },
+  "healthCheck": { "type": "mcp-ping", "intervalSeconds": 300 },
+  "dependencies": { "skills": [], "system": ["python>=3.11"], "python": ["fastmcp>=3.0"] }
+}
 ```
 
-```markdown
-<!-- 3. CLAUDE.md — teach the agent when to use it -->
-## My Skill
-Use my_tool when the user asks about X. Prefer it over Y for Z tasks.
-```
+2. Implement the skill (MCP server, script, or SKILL.md)
+3. Run `skill-manager.py reconcile` — it auto-registers and updates `.mcp.json` + `settings.json`
 
-No SDK to learn. No plugin interface. No build step. Just config.
+No SDK. No plugin API. The manifest **is** the contract.
 
 ---
 
@@ -369,36 +407,48 @@ No SDK to learn. No plugin interface. No build step. Just config.
 
 ```
 clawd-lobster/
-├── skills/
-│   ├── memory-server/        21-tool MCP memory with salience + evolution
-│   │   └── mcp_memory/       Python package (pip install -e .)
-│   ├── evolve/               Self-evolution skill specification
-│   ├── learned/              Auto-generated skills from experience
-│   └── migrate/              Import from existing setups
+├── skills/                          Skill modules (each with skill.json manifest)
+│   ├── memory-server/               24-tool MCP memory with salience + evolution
+│   │   ├── mcp_memory/              Python package (pip install -e .)
+│   │   └── skill.json               Manifest
+│   ├── connect-odoo/                Odoo ERP integration (XML-RPC + poller)
+│   │   ├── connect_odoo/            MCP server + poller
+│   │   └── skill.json               Manifest
+│   ├── evolve/                      Self-evolution prompt pattern
+│   │   └── skill.json               Manifest
+│   ├── heartbeat/                   Session keep-alive (cron)
+│   │   └── skill.json               Manifest
+│   ├── migrate/                     Import from existing setups
+│   │   └── skill.json               Manifest
+│   └── learned/                     Auto-generated skills from experience
 │
 ├── scripts/
-│   ├── sync-all.ps1          Windows: auto git sync + decay
-│   ├── sync-all.sh           Linux/macOS: auto git sync + decay
-│   ├── new-workspace.ps1     Create workspace + GitHub repo
-│   └── init_db.py            Initialize memory database
+│   ├── skill-manager.py             Skill Management CLI
+│   ├── sync-all.ps1                 Windows: auto git sync + decay
+│   ├── sync-all.sh                  Linux/macOS: auto git sync + decay
+│   ├── heartbeat.ps1                Windows: session keep-alive
+│   ├── heartbeat.sh                 Linux/macOS: session keep-alive
+│   ├── new-workspace.ps1            Create workspace + GitHub repo
+│   ├── init_db.py                   Initialize memory database
+│   └── security-scan.py             5-tool security scanner
 │
-├── templates/                Config templates (no secrets)
+├── templates/                       Config templates (no secrets)
 │   ├── global-CLAUDE.md
 │   ├── workspace-CLAUDE.md
 │   ├── mcp.json.template
 │   └── settings.json.template
 │
-├── webapp/                   Web-based setup wizard
-│   └── index.html            6-step dark-theme onboarding
+├── webapp/                          Skill Management Dashboard
+│   └── index.html                   3-tab UI: Skills + Setup + Settings
 │
-├── knowledge/                Shared knowledge base (git-synced)
-├── soul/                     Agent personality (optional)
-├── workspaces.json           Workspace registry
-├── install.ps1               Windows installer
-├── install.sh                Linux/macOS installer
-├── Dockerfile                Docker build
-├── docker-compose.yml        Docker Compose config
-├── LICENSE                   MIT
+├── knowledge/                       Shared knowledge base (git-synced)
+├── soul/                            Agent personality (optional)
+├── workspaces.json                  Workspace registry
+├── install.ps1                      Windows installer (4-phase)
+├── install.sh                       Linux/macOS installer (4-phase)
+├── Dockerfile                       Docker build
+├── docker-compose.yml               Docker Compose config
+├── LICENSE                          MIT
 └── README.md
 ```
 
@@ -436,33 +486,36 @@ When Anthropic ships Opus 4.7, 1M context, new tools — you get them instantly.
 | Always alive | No | Custom daemon | Custom daemon | **OS heartbeat + auto-revive** |
 | Persistent memory | None | Hybrid search | FTS5 + LLM | **4-layer + salience** |
 | Multi-agent shared memory | No | No | No | **Yes (git-synced)** |
-| Agent evolution | No | No | Self-improving skills | **Yes (21 MCP tools)** |
+| Skill management | Custom SDK | CLI only | Manual | **Web UI + CLI + manifest** |
+| Agent evolution | No | No | Self-improving skills | **Yes (24 MCP tools)** |
 | Multi-machine | No | No | No | **Yes (MDM-style)** |
 | Session management | Manual | Gateway process | Manual | **Auto-revive all sessions** |
 | Onboarding | Manual | Complex | Moderate | **Web wizard, 5 languages** |
 | Auto-upgrades | Yes | No | No | **Yes** |
 | Codebase size | N/A | ~300K LOC | ~50K LOC | **~2K LOC** |
 | Audit trail | No | Security audit | No | **Full (every action)** |
-| Skill install | — | Plugin SDK | 3-file change | **3 config entries** |
+| Skill install | — | Plugin SDK | 3-file change | **1 manifest + reconcile** |
 
 ---
 
 ## Roadmap
 
 **Skills**
+- [x] Odoo ERP Connector — XML-RPC integration with poller (v0.4.0)
 - [ ] Codex Bridge — delegate heavy tasks to OpenAI Codex in the background
 - [ ] SearXNG — private self-hosted web search, no data leaves your network
 - [ ] Docker Sandbox — isolated code execution for untrusted operations
 - [ ] Browser Automation — Playwright-powered web interaction
 
 **Platform**
-- [ ] Linux installer (bash) + macOS installer (zsh/launchd)
+- [x] Linux installer (bash) + macOS installer (v0.3.0)
+- [x] Skill Management Dashboard — Web UI + CLI for skill lifecycle (v0.4.0)
+- [x] Skill manifest system — `skill.json` with config, credentials, health checks (v0.4.0)
 - [ ] Supabase L4 — one-click cloud database (no Oracle wallet needed)
-- [ ] Dashboard — real-time view of all agents, memories, and sync status
 
 **Evolution**
 - [ ] Skill marketplace — community-contributed skills, one-click install
-- [ ] Auto-skill generation — agent learns from successful patterns, creates reusable skills
+- [x] Auto-skill generation — agent learns from successful patterns (v0.3.0 evolve skill)
 - [ ] Team mode — multi-user shared workspaces with role-based access
 - [ ] Agent-to-agent delegation — agents assign tasks to each other
 
