@@ -1067,6 +1067,39 @@
             configDefaults: { auto_delegate: true, preferred_model: 'gpt-5.3-codex', default_effort: 'medium' },
             healthCheck: { type: 'command', intervalSeconds: 3600 },
             dependencies: { skills: [], system: ['node>=18'], python: [] }
+        },
+        {
+            id: 'notebooklm-bridge',
+            name: 'NotebookLM Bridge',
+            icon: '\u{1F4D3}',
+            description: 'Free RAG + content engine via Google NotebookLM — slides, infographics, podcasts',
+            longDescription: 'Auto-syncs workspace docs to NotebookLM. Query with Gemini, generate slides/infographics/podcasts/videos/quizzes. 3-stage pipeline from 3-way AI debate (Claude + Codex + Gemini). Zero token cost.',
+            version: '0.1.0',
+            category: 'integration',
+            tags: ['notebooklm', 'google', 'slides', 'podcast', 'rag'],
+            kind: 'prompt-pattern',
+            alwaysOn: false,
+            defaultEnabled: false,
+            enabled: false,
+            status: { state: 'stopped' },
+            credentials: [
+                {
+                    id: 'google-notebooklm',
+                    label: 'Google NotebookLM Authentication',
+                    required: true,
+                    fields: [
+                        {key: 'auth_status', label: 'Auth Status', type: 'string', placeholder: 'Run: python -m notebooklm login', sensitive: false},
+                        {key: 'account', label: 'Google Account', type: 'email', placeholder: 'your@gmail.com', sensitive: false}
+                    ]
+                }
+            ],
+            configSchema: {
+                auto_sync_sources: { type: 'boolean', description: 'Auto-push workspace docs after blitz' },
+                default_language: { type: 'string', description: 'Default language (zh_Hant, en, ja)' }
+            },
+            configDefaults: { auto_sync_sources: true, default_language: 'zh_Hant' },
+            healthCheck: { type: 'command', intervalSeconds: 3600 },
+            dependencies: { skills: ['memory-server'], system: ['python>=3.10'], python: ['notebooklm-py'] }
         }
     ];
 

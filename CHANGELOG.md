@@ -21,16 +21,18 @@
 |-------|------|-------------|
 | **Spec** (core, locked) | prompt-pattern | Guided workspace + spec creation, 3W1H, blitz execution |
 | **Absorb** (core, locked) | prompt-pattern | Knowledge ingestion from folders, repos, URLs |
-| **Codex Bridge** (optional) | prompt-pattern | Delegate work to OpenAI Codex — worker + critic roles |
+| **Codex Bridge** (optional) | prompt-pattern | Delegate work to OpenAI Codex — worker + critic roles (installed + tested) |
+| **NotebookLM Bridge** (optional) | prompt-pattern | Free RAG + content engine via Google NotebookLM — auto-sync, slides, podcasts |
 
 ### New Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `workspace-create.py` | Automated workspace creation (git, GitHub, memory.db, openspec/) |
+| `workspace-create.py` | Automated workspace creation (git, GitHub, memory.db, openspec/) — also auto-creates NotebookLM notebook |
 | `validate-spec.py` | Hard validation for spec artifacts (15+ checks) |
 | `setup-hooks.sh/.ps1` | Install git pre-commit hook for spec validation |
 | `evolve-tick.py` | Rewritten: pattern extraction + proposals + salience decay |
+| `notebooklm-sync.py` | Auto-pushes entire workspace content to NotebookLM; JSON/TOML/YAML auto-wrapped as markdown for compatibility |
 
 ### New MCP Tools (Memory Server v0.4.0, 28 tools)
 
@@ -38,6 +40,15 @@
 - `memory_todo_list` — List/filter TODOs by status
 - `memory_todo_update` — Update TODO status, branch, notes
 - `memory_todo_search` — Search TODOs by title/description
+
+### NotebookLM Integration
+
+- **NotebookLM Bridge** skill with `notebooklm-sync.py` auto-sync script
+- `notebooklm-sync.py` auto-pushes entire workspace content to NotebookLM after blitz
+- `workspace-create.py` auto-creates NotebookLM notebook for each new workspace
+- 3-way AI debate (Claude + Codex + Gemini) produced 8 prompt rules + 3-stage content pipeline (Research → Debate → Generate)
+- JSON/TOML/YAML files auto-wrapped as markdown for NotebookLM source compatibility
+- `.notebooklm-id` auto-saved per workspace for zero-config syncing
 
 ### Web UI Updates
 

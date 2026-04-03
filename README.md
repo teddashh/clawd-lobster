@@ -327,9 +327,9 @@ One unified view. Three sources. Every skill on your system — whether it came 
 |---|---|---|
 | Memory Server | 28-tool MCP memory + SQLite | No memory = no agent |
 | Heartbeat | Session keep-alive via OS scheduler | No heartbeat = sessions die |
-| Evolve | Self-evolution + TODO processing | Core differentiator |
+| Evolve | System-level learning + proposal generation | Core differentiator |
 | Absorb | Knowledge ingestion from any source | Core learning ability |
-| Spec | Guided planning + blitz execution | Core development workflow |
+| Spec | Guided planning + blitz execution (3W1H) | Core development workflow |
 
 ### Optional Skills
 
@@ -337,6 +337,8 @@ One unified view. Three sources. Every skill on your system — whether it came 
 |---|---|---|
 | Migrate | Import from other AI setups | Enabled |
 | Connect-Odoo | Odoo ERP integration (XML-RPC) | Disabled |
+| Codex Bridge | Delegate work to OpenAI Codex (worker + critic) | Disabled |
+| NotebookLM Bridge | Free RAG + content engine via Google NotebookLM | Disabled |
 
 ### Skill Management
 
@@ -475,6 +477,8 @@ After v1 is built, your agent keeps getting better — automatically.
 
 ### The Evolution Loop
 
+Evolve now generates **proposals** as git-synced markdown files (not executing TODOs directly). Proposals use 3W1H format with effort estimates and are stored in `openspec/proposals/`. Any machine can review proposals; approved ones become TODOs for the next blitz.
+
 ```
 /absorb (input)
   ├── Scan folder → extract knowledge, decisions, TODOs
@@ -482,16 +486,24 @@ After v1 is built, your agent keeps getting better — automatically.
   └── Fetch URL → store insights
        ↓
 evolve-tick (every 2 hours)
-  ├── Pick highest-priority pending TODO
-  ├── Create git worktree (isolated branch)
-  ├── Run Claude to complete it (5 min timeout)
-  └── Stage for review (never auto-merge)
+  ├── Extract patterns from completed work
+  ├── Generate improvement proposals (git-synced files)
+  ├── Apply salience decay to stale knowledge
+  └── Sync knowledge across machines
        ↓
 Review (you decide)
-  ├── Web UI: see staged changes
-  ├── Claude explains what changed and why
-  └── Approve (merge) or Reject (archive + learn)
+  ├── Review proposals in openspec/proposals/
+  ├── Approve → becomes TODO for next blitz
+  └── Reject → archived with learning captured
 ```
+
+### 3-Stage Content Pipeline
+
+From a 3-way AI debate (Claude + Codex + Gemini), a content generation pipeline was established:
+
+1. **Research** — gather sources, absorb context, extract key insights
+2. **Debate** — multiple AI perspectives challenge and refine the content
+3. **Generate** — final output (slides, infographics, podcasts, videos, quizzes) via NotebookLM
 
 ### Absorb
 
@@ -517,10 +529,10 @@ Items are classified into knowledge (facts, architecture), decisions (lessons, p
 
 ### Evolve (Automatic)
 
-Every 2 hours, `evolve-tick.py` picks one pending TODO and works on it in an isolated git worktree. Key properties:
+Every 2 hours, `evolve-tick.py` reviews completed work and generates improvement proposals. Key properties:
 
-- **One TODO per tick** — keeps it simple and safe
-- **Never auto-merges** — all work stays on `evolve/<id>` branches for review
+- **Proposals, not TODOs** — evolve generates proposals as git-synced files, not executing directly
+- **Never auto-merges** — all proposals stay in `openspec/proposals/` for review
 - **Learned skills persist** — stored in both database and git-synced skill files
 - **Effectiveness tracking** — each use +2%, each improvement +10%, proven skills score > 2.0x
 - **Cross-agent sharing** — skills learned on Agent A are available to Agent B via git sync
@@ -571,10 +583,11 @@ The repo is ~13K lines total, but most of that is setup files, docs, and instruc
 
 | Layer | What | Lines | RAM | When |
 |-------|------|-------|-----|------|
-| **Runtime** | MCP Memory Server (28 tools + SQLite) | ~1,400 | ~25 MB | Always on |
+| **Runtime** | MCP Memory Server (32 tools + SQLite) | ~1,400 | ~25 MB | Always on |
 | **Runtime** | Odoo Connector (if enabled) | ~280 | ~22 MB | When enabled |
-| **Cron** | evolve-tick (TODO processor) | ~465 | ~20 MB peak | Every 2h, then exits |
+| **Cron** | evolve-tick (proposal generator) | ~465 | ~20 MB peak | Every 2h, then exits |
 | **Cron** | heartbeat + sync | ~300 | ~5 MB peak | Every 30min, then exits |
+| **Cron** | NotebookLM sync (if enabled) | ~200 | ~15 MB peak | After blitz, then exits |
 | **Static** | Web UI (browser renders it) | ~1,900 | 0 on server | On demand |
 | **Setup** | Installers, workspace-create, skill-manager | ~2,800 | 0 | Run once |
 | **Docs** | SKILL.md files, README, CHANGELOG | ~3,500 | 0 | Claude reads on demand |
@@ -674,6 +687,14 @@ clawd-lobster/
 │   │   └── skill.json               Manifest
 │   ├── heartbeat/                   Session keep-alive (cron)
 │   │   └── skill.json               Manifest
+│   ├── absorb/                      Knowledge ingestion from any source
+│   │   └── skill.json               Manifest
+│   ├── spec/                        Guided planning + blitz execution
+│   │   └── skill.json               Manifest
+│   ├── codex-bridge/                Delegate work to OpenAI Codex
+│   │   └── skill.json               Manifest
+│   ├── notebooklm-bridge/           Free RAG + content engine via NotebookLM
+│   │   └── skill.json               Manifest
 │   ├── migrate/                     Import from existing setups
 │   │   └── skill.json               Manifest
 │   └── learned/                     Auto-generated skills from experience
@@ -685,6 +706,12 @@ clawd-lobster/
 │   ├── heartbeat.ps1                Windows: session keep-alive
 │   ├── heartbeat.sh                 Linux/macOS: session keep-alive
 │   ├── new-workspace.ps1            Create workspace + GitHub repo
+│   ├── workspace-create.py          Automated workspace creation
+│   ├── validate-spec.py             Hard validation for spec artifacts
+│   ├── setup-hooks.sh               Install git pre-commit hooks (Unix)
+│   ├── setup-hooks.ps1              Install git pre-commit hooks (Windows)
+│   ├── evolve-tick.py               Pattern extraction + proposals + salience decay
+│   ├── notebooklm-sync.py           Auto-push workspace docs to NotebookLM
 │   ├── init_db.py                   Initialize memory database
 │   └── security-scan.py             5-tool security scanner
 │
@@ -737,7 +764,9 @@ clawd-lobster/
 
 **Skills**
 - [x] Odoo ERP Connector — XML-RPC integration with poller (v0.4.0)
-- [ ] Codex Bridge — delegate heavy tasks to OpenAI Codex in the background
+- [x] Codex Bridge — delegate work to OpenAI Codex, worker + critic roles (v0.5.0)
+- [x] NotebookLM Bridge — free RAG + content engine via Google NotebookLM (v0.5.0)
+- [x] Spec-Driven Development — guided planning with OpenSpec methodology (v0.5.0)
 - [ ] SearXNG — private self-hosted web search, no data leaves your network
 - [ ] Docker Sandbox — isolated code execution for untrusted operations
 - [ ] Browser Automation — Playwright-powered web interaction
@@ -749,6 +778,7 @@ clawd-lobster/
 - [ ] Supabase L4 — one-click cloud database (no Oracle wallet needed)
 
 **Evolution**
+- [x] Evolution Loop with proposals — evolve generates git-synced proposals, not direct TODOs (v0.5.0)
 - [ ] Skill marketplace — community-contributed skills, one-click install
 - [x] Auto-skill generation — agent learns from successful patterns (v0.3.0 evolve skill)
 - [ ] Team mode — multi-user shared workspaces with role-based access
