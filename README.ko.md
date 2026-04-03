@@ -337,6 +337,8 @@ OS 레벨 스케줄러 (Windows Task Scheduler / cron / launchd) — Claude Code
 |---|---|---|
 | Migrate | 다른 AI 설정에서 가져오기 | 활성화 |
 | Connect-Odoo | Odoo ERP 연동 (XML-RPC) | 비활성화 |
+| Codex Bridge | OpenAI Codex에 작업 위임 (worker + critic) | 비활성화 |
+| NotebookLM Bridge | Google NotebookLM을 통한 무료 RAG + 콘텐츠 엔진 | 비활성화 |
 
 ### 스킬 관리
 
@@ -492,6 +494,14 @@ Review (you decide)
   ├── Claude explains what changed and why
   └── Approve (merge) or Reject (archive + learn)
 ```
+
+### 3단계 콘텐츠 파이프라인
+
+Claude, Codex, Gemini 간의 3자 AI 토론에서 콘텐츠 생성 파이프라인이 확립되었습니다:
+
+1. **리서치** — 소스 수집, 컨텍스트 흡수, 핵심 인사이트 추출
+2. **토론** — 다수의 AI 관점이 콘텐츠를 도전하고 정제
+3. **생성** — NotebookLM을 통한 최종 출력 (슬라이드, 인포그래픽, 팟캐스트, 영상, 퀴즈)
 
 ### 흡수 (Absorb)
 
@@ -674,6 +684,14 @@ clawd-lobster/
 │   │   └── skill.json               Manifest
 │   ├── heartbeat/                   세션 유지 (cron)
 │   │   └── skill.json               Manifest
+│   ├── absorb/                      모든 소스에서 지식 흡수
+│   │   └── skill.json               Manifest
+│   ├── spec/                        가이드 플래닝 + blitz 실행
+│   │   └── skill.json               Manifest
+│   ├── codex-bridge/                OpenAI Codex에 작업 위임
+│   │   └── skill.json               Manifest
+│   ├── notebooklm-bridge/           NotebookLM을 통한 무료 RAG + 콘텐츠 엔진
+│   │   └── skill.json               Manifest
 │   ├── migrate/                     기존 설정에서 가져오기
 │   │   └── skill.json               Manifest
 │   └── learned/                     경험에서 자동 생성된 스킬
@@ -685,6 +703,12 @@ clawd-lobster/
 │   ├── heartbeat.ps1                Windows: 세션 유지
 │   ├── heartbeat.sh                 Linux/macOS: 세션 유지
 │   ├── new-workspace.ps1            워크스페이스 + GitHub 저장소 생성
+│   ├── workspace-create.py          자동 워크스페이스 생성
+│   ├── validate-spec.py             Spec 산출물 검증
+│   ├── setup-hooks.sh               git pre-commit hooks 설치 (Unix)
+│   ├── setup-hooks.ps1              git pre-commit hooks 설치 (Windows)
+│   ├── evolve-tick.py               패턴 추출 + 제안 + salience 감쇠
+│   ├── notebooklm-sync.py           워크스페이스 문서를 NotebookLM에 자동 푸시
 │   ├── init_db.py                   메모리 데이터베이스 초기화
 │   └── security-scan.py             5 도구 보안 스캐너
 │
@@ -737,7 +761,9 @@ clawd-lobster/
 
 **스킬**
 - [x] Odoo ERP Connector — XML-RPC 연동 + poller (v0.4.0)
-- [ ] Codex Bridge — 무거운 작업을 백그라운드에서 OpenAI Codex에 위임
+- [x] Codex Bridge — OpenAI Codex에 작업 위임, worker + critic 역할 (v0.5.0)
+- [x] NotebookLM Bridge — Google NotebookLM을 통한 무료 RAG + 콘텐츠 엔진 (v0.5.0)
+- [x] Spec 기반 개발 — OpenSpec 방법론을 활용한 가이드 플래닝 (v0.5.0)
 - [ ] SearXNG — 프라이빗 자체 호스팅 웹 검색, 데이터가 네트워크 밖으로 나가지 않음
 - [ ] Docker Sandbox — 신뢰할 수 없는 작업을 위한 격리된 코드 실행
 - [ ] Browser Automation — Playwright 기반 웹 상호작용
@@ -749,6 +775,7 @@ clawd-lobster/
 - [ ] Supabase L4 — 원클릭 클라우드 데이터베이스 (Oracle wallet 불필요)
 
 **진화**
+- [x] 진화 루프 + 제안 — evolve가 git 동기화된 제안을 생성, 직접 TODO가 아님 (v0.5.0)
 - [ ] 스킬 마켓플레이스 — 커뮤니티 기여 스킬, 원클릭 설치
 - [x] 자동 스킬 생성 — 에이전트가 성공 패턴에서 학습 (v0.3.0 evolve skill)
 - [ ] 팀 모드 — 역할 기반 접근 제어가 있는 다중 사용자 공유 워크스페이스

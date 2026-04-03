@@ -337,6 +337,8 @@ OSレベルのスケジューラ（Windows Task Scheduler / cron / launchd）—
 |---|---|---|
 | Migrate | 他のAIセットアップからのインポート | 有効 |
 | Connect-Odoo | Odoo ERP連携（XML-RPC） | 無効 |
+| Codex Bridge | OpenAI Codexに作業を委任（worker + critic） | 無効 |
+| NotebookLM Bridge | Google NotebookLMによる無料RAG + コンテンツエンジン | 無効 |
 
 ### スキル管理
 
@@ -492,6 +494,14 @@ Review (you decide)
   ├── Claude explains what changed and why
   └── Approve (merge) or Reject (archive + learn)
 ```
+
+### 3段階コンテンツパイプライン
+
+Claude、Codex、Geminiによる3者間AIディベートから、コンテンツ生成パイプラインが確立されました：
+
+1. **リサーチ** — ソースを収集し、コンテキストを吸収し、重要なインサイトを抽出
+2. **ディベート** — 複数のAI視点がコンテンツに挑戦し、精製
+3. **生成** — NotebookLMを通じて最終アウトプット（スライド、インフォグラフィック、ポッドキャスト、動画、クイズ）
 
 ### Absorb（吸収）
 
@@ -674,6 +684,14 @@ clawd-lobster/
 │   │   └── skill.json               Manifest
 │   ├── heartbeat/                   セッションキープアライブ (cron)
 │   │   └── skill.json               Manifest
+│   ├── absorb/                      あらゆるソースからのナレッジ取り込み
+│   │   └── skill.json               Manifest
+│   ├── spec/                        ガイド付きプランニング + blitz実行
+│   │   └── skill.json               Manifest
+│   ├── codex-bridge/                OpenAI Codexに作業を委任
+│   │   └── skill.json               Manifest
+│   ├── notebooklm-bridge/           NotebookLMによる無料RAG + コンテンツエンジン
+│   │   └── skill.json               Manifest
 │   ├── migrate/                     既存セットアップからのインポート
 │   │   └── skill.json               Manifest
 │   └── learned/                     経験から自動生成されたスキル
@@ -685,6 +703,12 @@ clawd-lobster/
 │   ├── heartbeat.ps1                Windows: セッションキープアライブ
 │   ├── heartbeat.sh                 Linux/macOS: セッションキープアライブ
 │   ├── new-workspace.ps1            ワークスペース + GitHubリポジトリ作成
+│   ├── workspace-create.py          自動ワークスペース作成
+│   ├── validate-spec.py             Specアーティファクトのハードバリデーション
+│   ├── setup-hooks.sh               git pre-commit hooksのインストール (Unix)
+│   ├── setup-hooks.ps1              git pre-commit hooksのインストール (Windows)
+│   ├── evolve-tick.py               パターン抽出 + 提案 + salience減衰
+│   ├── notebooklm-sync.py           ワークスペースドキュメントをNotebookLMに自動プッシュ
 │   ├── init_db.py                   メモリデータベース初期化
 │   └── security-scan.py             5ツールセキュリティスキャナー
 │
@@ -737,7 +761,9 @@ clawd-lobster/
 
 **スキル**
 - [x] Odoo ERP Connector — XML-RPC連携 + poller (v0.4.0)
-- [ ] Codex Bridge — 重いタスクをバックグラウンドでOpenAI Codexに委任
+- [x] Codex Bridge — OpenAI Codexに作業を委任、worker + criticロール (v0.5.0)
+- [x] NotebookLM Bridge — Google NotebookLMによる無料RAG + コンテンツエンジン (v0.5.0)
+- [x] Spec駆動開発 — OpenSpec方法論によるガイド付きプランニング (v0.5.0)
 - [ ] SearXNG — プライベートなセルフホスト型Web検索、データがネットワーク外に出ない
 - [ ] Docker Sandbox — 信頼できないオペレーション用の隔離されたコード実行環境
 - [ ] Browser Automation — Playwrightを活用したWebインタラクション
@@ -749,6 +775,7 @@ clawd-lobster/
 - [ ] Supabase L4 — ワンクリックのクラウドデータベース（Oracle wallet不要）
 
 **進化**
+- [x] 進化ループ + 提案 — evolveがgit同期された提案を生成、直接TODOではない (v0.5.0)
 - [ ] スキルマーケットプレイス — コミュニティ貢献のスキル、ワンクリックインストール
 - [x] 自動スキル生成 — エージェントが成功パターンから学習 (v0.3.0 evolve skill)
 - [ ] チームモード — ロールベースアクセス制御付きマルチユーザー共有ワークスペース

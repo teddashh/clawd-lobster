@@ -337,6 +337,8 @@ OS 级调度器（Windows Task Scheduler / cron / launchd）— 即使 Claude Co
 |---|---|---|
 | Migrate | 从其他 AI 方案导入 | 启用 |
 | Connect-Odoo | Odoo ERP 集成（XML-RPC） | 禁用 |
+| Codex Bridge | 将工作委派给 OpenAI Codex（worker + critic） | 禁用 |
+| NotebookLM Bridge | 通过 Google NotebookLM 实现免费 RAG + 内容引擎 | 禁用 |
 
 ### 技能管理
 
@@ -492,6 +494,14 @@ Review (you decide)
   ├── Claude explains what changed and why
   └── Approve (merge) or Reject (archive + learn)
 ```
+
+### 三阶段内容管线
+
+源自 Claude、Codex 与 Gemini 的三方 AI 辩论，建立了一套内容生成流程：
+
+1. **研究** — 收集来源、吸收上下文、提取关键洞察
+2. **辩论** — 多个 AI 视角互相挑战和精炼内容
+3. **生成** — 通过 NotebookLM 输出最终成品（幻灯片、信息图、播客、视频、测验）
 
 ### 吸收（Absorb）
 
@@ -674,6 +684,14 @@ clawd-lobster/
 │   │   └── skill.json               Manifest
 │   ├── heartbeat/                   Session 保活 (cron)
 │   │   └── skill.json               Manifest
+│   ├── absorb/                      从任何来源吸收知识
+│   │   └── skill.json               Manifest
+│   ├── spec/                        引导式规划 + blitz 执行
+│   │   └── skill.json               Manifest
+│   ├── codex-bridge/                将工作委派给 OpenAI Codex
+│   │   └── skill.json               Manifest
+│   ├── notebooklm-bridge/           通过 NotebookLM 实现免费 RAG + 内容引擎
+│   │   └── skill.json               Manifest
 │   ├── migrate/                     从现有方案导入
 │   │   └── skill.json               Manifest
 │   └── learned/                     从经验自动生成的技能
@@ -685,6 +703,12 @@ clawd-lobster/
 │   ├── heartbeat.ps1                Windows: session 保活
 │   ├── heartbeat.sh                 Linux/macOS: session 保活
 │   ├── new-workspace.ps1            创建工作区 + GitHub 仓库
+│   ├── workspace-create.py          自动化工作区创建
+│   ├── validate-spec.py             Spec 产物硬性验证
+│   ├── setup-hooks.sh               安装 git pre-commit hooks (Unix)
+│   ├── setup-hooks.ps1              安装 git pre-commit hooks (Windows)
+│   ├── evolve-tick.py               模式提取 + 提案 + 重要性衰减
+│   ├── notebooklm-sync.py           自动推送工作区文档至 NotebookLM
 │   ├── init_db.py                   初始化记忆数据库
 │   └── security-scan.py             5 工具安全扫描器
 │
@@ -737,7 +761,9 @@ clawd-lobster/
 
 **技能**
 - [x] Odoo ERP Connector — XML-RPC 集成 + poller (v0.4.0)
-- [ ] Codex Bridge — 将重型任务委托给 OpenAI Codex 在后台执行
+- [x] Codex Bridge — 将工作委派给 OpenAI Codex，worker + critic 角色 (v0.5.0)
+- [x] NotebookLM Bridge — 通过 Google NotebookLM 实现免费 RAG + 内容引擎 (v0.5.0)
+- [x] Spec 驱动开发 — 使用 OpenSpec 方法论的引导式规划 (v0.5.0)
 - [ ] SearXNG — 私有自托管网页搜索，数据不出内网
 - [ ] Docker Sandbox — 隔离的代码执行环境，用于不受信任的操作
 - [ ] Browser Automation — 基于 Playwright 的网页交互
@@ -749,6 +775,7 @@ clawd-lobster/
 - [ ] Supabase L4 — 一键部署云数据库（无需 Oracle wallet）
 
 **进化**
+- [x] 进化循环 + 提案 — evolve 生成 git 同步的提案，而非直接 TODO (v0.5.0)
 - [ ] 技能商城 — 社区贡献的技能，一键安装
 - [x] 自动技能生成 — 智能体从成功模式中学习 (v0.3.0 evolve skill)
 - [ ] 团队模式 — 多用户共享工作区，基于角色的访问控制
