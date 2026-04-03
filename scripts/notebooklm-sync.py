@@ -92,6 +92,11 @@ def get_existing_sources(notebook_id: str) -> set[str]:
 
 def push_source(notebook_id: str, filepath: Path, title: str) -> bool:
     """Push a file as a source to NotebookLM. Returns True on success."""
+    # Non-markdown files (json/yaml/toml) fail as file uploads.
+    # Wrap them in markdown so NotebookLM accepts them as text.
+    if filepath.suffix in {'.json', '.yaml', '.yml', '.toml'}:
+        return _push_as_markdown(notebook_id, filepath, title)
+
     try:
         result = subprocess.run(
             [sys.executable, "-m", "notebooklm", "source", "add",
@@ -101,6 +106,30 @@ def push_source(notebook_id: str, filepath: Path, title: str) -> bool:
         )
         return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
+def _push_as_markdown(notebook_id: str, filepath: Path, title: str) -> bool:
+    """Wrap a config file in markdown code block and push as text."""
+    import tempfile
+    try:
+        content = filepath.read_text(encoding="utf-8")
+        md_content = f"# {title}\n\n```{filepath.suffix.lstrip('.')}\n{content}\n```\n"
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False,
+                                         encoding='utf-8') as tmp:
+            tmp.write(md_content)
+            tmp_path = tmp.name
+
+        result = subprocess.run(
+            [sys.executable, "-m", "notebooklm", "source", "add",
+             tmp_path, "-n", notebook_id, "--title", title],
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        os.unlink(tmp_path)
+        return result.returncode == 0
+    except Exception:
         return False
 
 
@@ -126,15 +155,70 @@ def make_title(filepath: Path, workspace: Path) -> str:
     return str(rel)
 
 
+def save_notebook_id(workspace: Path, notebook_id: str):
+    """Save notebook ID to workspace for future use."""
+    id_file = workspace / ".notebooklm-id"
+    id_file.write_text(notebook_id.strip(), encoding="utf-8")
+
+
+def load_notebook_id(workspace: Path) -> str | None:
+    """Load saved notebook ID from workspace."""
+    id_file = workspace / ".notebooklm-id"
+    if id_file.exists():
+        return id_file.read_text(encoding="utf-8").strip()
+    return None
+
+
+def create_notebook(workspace_name: str) -> str | None:
+    """Create a new NotebookLM notebook and return its ID."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "notebooklm", "create", workspace_name],
+            capture_output=True, text=True, timeout=30,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            # Parse: "Created notebook: <id> - <name>"
+            line = result.stdout.strip()
+            if ":" in line:
+                parts = line.split(":", 1)[1].strip()
+                nb_id = parts.split(" - ")[0].strip() if " - " in parts else parts.strip()
+                return nb_id
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    return None
+
+
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python notebooklm-sync.py <workspace-path> <notebook-id> [--dry-run] [--full]")
+    dry_run = "--dry-run" in sys.argv
+    full = "--full" in sys.argv
+
+    if len(sys.argv) < 2 or sys.argv[1].startswith("--"):
+        print("Usage: python notebooklm-sync.py <workspace-path> [notebook-id] [--dry-run] [--full]")
+        print("  If notebook-id is omitted, uses saved ID or creates a new notebook.")
         sys.exit(1)
 
     workspace = Path(sys.argv[1]).resolve()
-    notebook_id = sys.argv[2]
-    dry_run = "--dry-run" in sys.argv
-    full = "--full" in sys.argv
+
+    # Get notebook ID: from arg, from saved file, or create new
+    notebook_id = None
+    args_without_flags = [a for a in sys.argv[2:] if not a.startswith("--")]
+    if args_without_flags:
+        notebook_id = args_without_flags[0]
+    else:
+        notebook_id = load_notebook_id(workspace)
+
+    if not notebook_id:
+        print(f"No notebook ID found. Creating new notebook...")
+        notebook_id = create_notebook(workspace.name)
+        if not notebook_id:
+            print("Error: Failed to create notebook. Is notebooklm-py authenticated?")
+            sys.exit(1)
+        print(f"Created notebook: {notebook_id}")
+
+    # Always save the ID for next time
+    if not dry_run:
+        save_notebook_id(workspace, notebook_id)
 
     if not workspace.is_dir():
         print(f"Error: {workspace} is not a directory")

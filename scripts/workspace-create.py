@@ -590,8 +590,57 @@ def print_summary(summary: dict) -> None:
     if summary["registered"]:
         print(f"  Registry: {green('registered')}")
 
+    # Auto-create NotebookLM notebook if skill is available
+    nb_status = _try_notebooklm_setup(summary)
+    if nb_status:
+        print(f"  NotebookLM: {green(nb_status)}")
+
     print(f"\n  {bold('Next:')} cd \"{summary['path']}\" && claude")
     print(f"  Then: /spec to start planning\n")
+
+
+def _try_notebooklm_setup(summary: dict) -> str | None:
+    """Try to create a NotebookLM notebook and sync workspace. Non-fatal."""
+    if summary.get("dry_run"):
+        return "would create notebook (dry run)"
+    try:
+        # Check if notebooklm-py is available
+        result = subprocess.run(
+            [sys.executable, "-m", "notebooklm", "--version"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.returncode != 0:
+            return None  # not installed, skip silently
+
+        # Check if authenticated
+        result = subprocess.run(
+            [sys.executable, "-m", "notebooklm", "auth", "check"],
+            capture_output=True, text=True, timeout=10,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        if "fail" in result.stdout.lower():
+            return None  # not authenticated, skip silently
+
+        # Create notebook
+        name = summary.get("name", "workspace")
+        result = subprocess.run(
+            [sys.executable, "-m", "notebooklm", "create", name],
+            capture_output=True, text=True, timeout=30,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            line = result.stdout.strip()
+            if ":" in line:
+                parts = line.split(":", 1)[1].strip()
+                nb_id = parts.split(" - ")[0].strip() if " - " in parts else parts
+                # Save notebook ID
+                id_file = Path(summary["path"]) / ".notebooklm-id"
+                id_file.write_text(nb_id, encoding="utf-8")
+                return f"notebook created ({nb_id[:8]}...)"
+
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+    return None
 
 
 # ── CLI Entry Point ──────────────────────────────────────────────────────────
