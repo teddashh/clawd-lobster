@@ -599,6 +599,40 @@ Ours do too — but smarter. Instead of running a custom daemon process, we use 
 
 The OS scheduler never crashes, never needs debugging, and never burns tokens when idle. When Claude Code ships native 24/7 mode (KAIROS — it's in the codebase), we get it for free. Zero code change.
 
+### "Claude Code already has MCP and skills. Why build another skill layer?"
+
+Claude Code gives you MCP — a protocol for registering tool servers. That's like saying Chrome gives you the ability to install extensions. True. But Chrome also has the **Chrome Web Store** — because installing a `.crx` file manually is not managing extensions.
+
+What Claude Code gives you:
+- `.mcp.json` — a flat list of server commands. No metadata. No lifecycle.
+- `settings.json` — a flat list of allowed tools. No grouping. No toggle.
+- `CLAUDE.md` — free-form text. No schema. No validation.
+
+What that means in practice:
+- **Install a skill?** Manually edit 3 JSON files and run `pip install`.
+- **Disable a skill?** Manually delete entries from 2 files. Hope you got them all.
+- **Credentials?** Each skill stores them differently. Some in env vars, some in files, some hardcoded.
+- **Is it working?** No idea. Open the terminal and hope for the best.
+- **Second machine?** Redo everything from scratch.
+- **10 skills?** Your `.mcp.json` is an unreadable wall of JSON. Good luck.
+
+Clawd-Lobster's skill layer adds what MCP doesn't have:
+
+| MCP (raw) | Skill Management (ours) |
+|---|---|
+| Flat JSON config | `skill.json` manifest with schema, credentials, health checks, dependencies |
+| Manual edit to install | `skill-manager.py enable <id>` — one command |
+| Manual edit to remove | `skill-manager.py disable <id>` — one command, clean removal |
+| No credential standard | Centralized `~/.clawd-lobster/credentials/`, per-skill field definitions |
+| No health monitoring | Built-in health checks (mcp-ping, command, HTTP) |
+| No UI | Web dashboard with card grid, toggles, search, category filters |
+| Per-machine config | Registry syncs across machines via git |
+| No dependency tracking | Skills declare what they need — other skills, system tools, Python packages |
+
+**MCP is the protocol. We're the package manager.**
+
+The same way `npm` doesn't replace Node.js — it makes Node.js usable at scale. Our skill layer doesn't replace MCP — it makes MCP manageable when you have 5, 10, or 50 skills across multiple machines.
+
 ### "Won't Anthropic block this?"
 
 We don't do anything Anthropic prohibits. Let's be precise:
