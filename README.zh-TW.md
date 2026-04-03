@@ -2,6 +2,10 @@
 
 # Clawd-Lobster
 
+![Version](https://img.shields.io/badge/version-0.5.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Runtime](https://img.shields.io/badge/footprint-25MB_RAM-orange)
+
 <p align="center">
 <strong>你終究要用 Claude Code 的，何必在那邊一直試其他 Agent？</strong><br>
 <em>終極 agent 體驗 — 最輕量、精選功能、極致效能。</em>
@@ -48,6 +52,14 @@ Disk: 672 KB (程式碼 + 設定，不含 .git 和圖片)
 RAM:  ~25 MB (MCP server，唯一常駐 process)
 CPU:  0% 閒置 (無輪詢、無 daemon — OS 排程器負責喚醒)
 ```
+
+---
+
+## 系統需求
+
+- **Node.js** 18+ 和 **Python** 3.11+ 和 **Git** 2.x+
+- **Claude Code** CLI（[安裝指南](https://docs.anthropic.com/en/docs/claude-code/getting-started)）
+- **GitHub** 帳號（用於你的私有 Hub repo）
 
 ---
 
@@ -99,18 +111,9 @@ docker compose up -d && docker compose exec clawd bash
   │     → Machine: home-pc / office-vm / laptop       │
   │     → Domain: work / personal / hybrid            │
   └──────────────────────────────────────────────────┘
-             │
-             ▼  接著 9 個自動化步驟
-  [1] Prerequisites   — Node, Python, Git, Claude Code
-  [2] Authentication  — Claude + GitHub (OAuth clicks)
-  [3] Create Hub      — copies template → private GitHub repo
-  [4] Config          — writes ~/.clawd-lobster/config.json
-  [5] Memory Server   — installs 24-tool MCP server
-  [6] Claude Code     — configures CLAUDE.md + .mcp.json + skill registry
-  [7] Workspaces      — clones repos, inits memory.db each
-  [8] Scheduler       — registers sync + heartbeat tasks
-  [9] Migration       — absorbs OpenClaw/Hermes/etc (if chosen)
 ```
+
+接著自動執行 9 個步驟：
 
 ### 9 個步驟各做了什麼
 
@@ -120,7 +123,7 @@ docker compose up -d && docker compose exec clawd bash
 | 2 | 驗證 Claude Code + GitHub（2 次 OAuth 點擊） | 30 秒 |
 | 3 | **建立你的 Hub**（私人 repo）或 clone 已有的 | 10 秒 |
 | 4 | 寫入設定 | 5 秒 |
-| 5 | 安裝 MCP Memory Server（21 個工具） | 10 秒 |
+| 5 | 安裝 MCP Memory Server（32 個工具） | 10 秒 |
 | 6 | 設定 Claude Code（CLAUDE.md + .mcp.json） | 5 秒 |
 | 7 | 部署 workspace（clone repo、初始化 memory.db） | 視情況 |
 | 8 | 註冊排程器 + heartbeat | 5 秒 |
@@ -161,7 +164,7 @@ cd clawd-lobster
 | 層級 | 內容 | 速度 | 範圍 |
 |-------|------|-------|-------|
 | **L1.5** | CC 自動記憶（原生） | 即時 | 當前專案 |
-| **L2** | SQLite + 24 個 MCP 工具 | ~1ms | 每個 workspace |
+| **L2** | SQLite + 32 個 MCP 工具 | ~1ms | 每個 workspace |
 | **L3** | Markdown 知識庫 | ~10ms | 透過 git 共享 |
 | **L4** | 雲端資料庫（選用） | ~100ms | 跨 workspace |
 
@@ -325,7 +328,7 @@ OS 層級排程器（Windows Task Scheduler / cron / launchd）— 就算 Claude
 
 | 技能 | 功能 | 為什麼鎖定 |
 |---|---|---|
-| Memory Server | 28 工具 MCP memory + SQLite | 沒有記憶 = 沒有 agent |
+| Memory Server | 32 工具 MCP memory + SQLite | 沒有記憶 = 沒有 agent |
 | Heartbeat | 透過 OS 排程器的 session 保活 | 沒有 heartbeat = session 會死 |
 | Evolve | 自我進化 + TODO 處理 | 核心差異化功能 |
 | Absorb | 從任何來源吸收知識 | 核心學習能力 |
@@ -495,14 +498,6 @@ Review (you decide)
   └── Approve (merge) or Reject (archive + learn)
 ```
 
-### 三階段內容產線
-
-源自 Claude、Codex 與 Gemini 的三方 AI 辯論，建立了一套內容產生流程：
-
-1. **研究** — 收集來源、吸收脈絡、萃取關鍵洞察
-2. **辯論** — 多個 AI 觀點互相挑戰與精煉內容
-3. **產出** — 透過 NotebookLM 輸出最終成品（簡報、資訊圖表、Podcast、影片、測驗）
-
 ### 吸收（Absorb）
 
 餵它任何東西 — 資料夾、GitHub repo、URL。Claude 會自動分類所有找到的內容：
@@ -581,7 +576,7 @@ Detected environments:
 
 | 層級 | 內容 | 行數 | RAM | 何時 |
 |-------|------|-------|-----|------|
-| **Runtime** | MCP Memory Server (28 tools + SQLite) | ~1,400 | ~25 MB | 常駐 |
+| **Runtime** | MCP Memory Server (32 tools + SQLite) | ~1,400 | ~25 MB | 常駐 |
 | **Runtime** | Odoo Connector (if enabled) | ~280 | ~22 MB | 啟用時 |
 | **Cron** | evolve-tick (TODO processor) | ~465 | ~20 MB peak | 每 2 小時，跑完就結束 |
 | **Cron** | heartbeat + sync | ~300 | ~5 MB peak | 每 30 分鐘，跑完就結束 |
@@ -625,112 +620,28 @@ GitHub 是一切的控制平面：
 - **Heartbeat 狀態** — 機器健康度推送到 git
 - **Spec 產物** — 提交到 workspace repo
 
-### 為什麼不自己做引擎？
-
-其他框架從頭重建整個 AI agent — 30 萬行程式碼、自訂 agent loop、自訂工具系統、什麼都自己來。等 Anthropic 出了更好的模型，他們就得忙著改寫 adapter。
-
-**Clawd-Lobster 不跟 Claude Code 競爭，而是讓它更完整。**
-
-我們從 Claude Code 出發 — 世界上最強的 coding agent — 然後只加上它缺的東西：持久記憶、多 agent 協作、精選技能。不多不少，剛剛好。
-
-> *零贅肉。零重寫。純粹的 Claude Code，放大再放大。*
-
 ### 設計哲學
 
-#### 1. 最好的 agent 已經存在了，直接用就好。
+**1. 站在巨人的肩膀上。** Claude Code 背後是數百萬工程小時。從頭重建不是野心 — 是浪費。我們只加缺少的部分（~2K 行），保留最好的引擎。
 
-Claude Code 背後是世界上最大的 AI 安全實驗室。上百萬工程小時打造了它的 agent loop、串流、權限和工具系統。從頭重寫不是雄心壯志 — 是浪費。**站在巨人的肩膀上吧。**
+**2. 少寫少壞。** 三個設定 = 一個 skill。零 SDK。OS 排程器從 1970 年代就很可靠 — 我們用 `cron` + `claude --resume` 取代自建 daemon。你沒寫的那行 code，就是不會壞的那行。
 
-#### 2. 少即是多，而且多很多。
-
-框架的每一行程式碼都是你要維護的。Clawd-Lobster 只有大約 2 千行，因為 Claude Code 原生的擴充點（MCP、hooks、CLAUDE.md）本身就是最好的 plugin 系統。**三筆設定 = 一個技能。零 SDK。**
-
-#### 3. 會忘記的 agent 就是會失敗的 agent。
-
-大部分 AI agent 每次開始都從零開始。它們重複犯錯、重新學習 context、浪費你的時間。Clawd-Lobster 的 4 層記憶加上重要度追蹤，確保**重要的東西浮上來、雜訊慢慢消失、關鍵資訊永遠不會搞丟。**
-
-#### 4. 你的 agent 應該跟你走到哪都能用。
-
-一台電腦？沒問題。三台機器？它們應該共用同一個大腦。GitHub 當控制平面，git sync 當協定。**2 分鐘加入一台新機器。零基礎設施。**
-
-#### 5. 永遠站在最新的浪頭上。
-
-當 Anthropic 推出 Opus 4.7、1M context、新工具 — 你立刻就能用。不用改寫 adapter。不用釘死版本。不用等社群補丁。**用 Claude Code 最好的時間是昨天，第二好的時間是現在。**
-
-#### 6. 能排程的就不要自己寫。
-
-其他框架寫自訂 daemon 讓 agent 24/7 跑。我們用 `cron` + `claude --resume`。其他框架管理 OAuth token 來呼叫 Claude 的 API。我們讓使用者打一次 `claude login` 就好。**你寫的每一行 auth 程式碼，都是 provider 改版時可能壞掉的一行。你沒寫的每一行，就是壞不了的一行。** OS 排程器從 1970 年代就穩定運行到現在。你的自訂 daemon 上禮拜二才寫的。
-
-#### 7. 巨人長高了，你也跟著長高。
-
-Claude Code 內部有記憶整合（autoDream）、常駐 agent（KAIROS）、多 agent 協調（Coordinator Mode）和複雜規劃（ULTRAPLAN）等系統。有些已上線，有些還在 feature flag 後面。我們已經用 2K 行程式碼建了大部分等價功能。
-
-但重點是：**當 Anthropic 原生推出這些功能，我們不用重寫 — 我們退役。** KAIROS 上線了？我們的 heartbeat 優雅讓位。autoDream 改進了？它跟我們的重要度引擎共存。Coordinator Mode 出了？我們的 evolve-tick 直接用。
-
-其他框架跟 Claude Code 競爭。我們跟它互補。他們在 Claude Code 加功能時得重寫。我們得到的是刪程式碼的機會。**我們的程式碼隨時間縮小，他們的則不斷膨脹。**
+**3. 巨人長高，你也長高。** 當 Anthropic 推出原生記憶、24/7 agent 或多 agent 協調 — 我們不重寫，我們退役 code。其他框架跟 Claude Code 競爭，我們補完它。**我們的 codebase 隨時間縮小，他們的隨時間膨脹。**
 
 ### 專案結構
 
 ```
 clawd-lobster/
-├── skills/                          技能模組（每個都有 skill.json manifest）
-│   ├── memory-server/               24 工具 MCP 記憶 + 重要度 + 進化
-│   │   ├── mcp_memory/              Python package (pip install -e .)
-│   │   └── skill.json               Manifest
-│   ├── connect-odoo/                Odoo ERP 整合 (XML-RPC + poller)
-│   │   ├── connect_odoo/            MCP server + poller
-│   │   └── skill.json               Manifest
-│   ├── evolve/                      自我進化 prompt pattern
-│   │   └── skill.json               Manifest
-│   ├── heartbeat/                   Session 保活 (cron)
-│   │   └── skill.json               Manifest
-│   ├── absorb/                      從任何來源吸收知識
-│   │   └── skill.json               Manifest
-│   ├── spec/                        引導式規劃 + blitz 執行
-│   │   └── skill.json               Manifest
-│   ├── codex-bridge/                將工作委派給 OpenAI Codex
-│   │   └── skill.json               Manifest
-│   ├── notebooklm-bridge/           透過 NotebookLM 實現免費 RAG + 內容引擎
-│   │   └── skill.json               Manifest
-│   ├── migrate/                     從既有設定匯入
-│   │   └── skill.json               Manifest
-│   └── learned/                     從經驗自動產生的技能
-│
-├── scripts/
-│   ├── skill-manager.py             技能管理 CLI
-│   ├── sync-all.ps1                 Windows: 自動 git 同步 + 衰減
-│   ├── sync-all.sh                  Linux/macOS: 自動 git 同步 + 衰減
-│   ├── heartbeat.ps1                Windows: session 保活
-│   ├── heartbeat.sh                 Linux/macOS: session 保活
-│   ├── new-workspace.ps1            建立 workspace + GitHub repo
-│   ├── workspace-create.py          自動化 workspace 建立
-│   ├── validate-spec.py             Spec 產物硬性驗證
-│   ├── setup-hooks.sh               安裝 git pre-commit hooks (Unix)
-│   ├── setup-hooks.ps1              安裝 git pre-commit hooks (Windows)
-│   ├── evolve-tick.py               模式萃取 + 提案 + 重要度衰減
-│   ├── notebooklm-sync.py           自動推送 workspace 文件至 NotebookLM
-│   ├── init_db.py                   初始化記憶資料庫
-│   └── security-scan.py             5 工具安全掃描器
-│
-├── templates/                       設定範本（不含密鑰）
-│   ├── global-CLAUDE.md
-│   ├── workspace-CLAUDE.md
-│   ├── mcp.json.template
-│   └── settings.json.template
-│
-├── webapp/                          技能管理 Dashboard
-│   └── index.html                   3 分頁 UI：Skills + Setup + Settings
-│
-├── knowledge/                       共享知識庫（git 同步）
-├── soul/                            Agent 個性（選用）
-├── workspaces.json                  Workspace 註冊表
-├── install.ps1                      Windows 安裝程式（4 階段）
-├── install.sh                       Linux/macOS 安裝程式（4 階段）
-├── Dockerfile                       Docker build
-├── docker-compose.yml               Docker Compose 設定
-├── LICENSE                          MIT
-└── README.md
+├── skills/          9 個 skill 模組（各含 skill.json manifest）
+├── scripts/         CLI 工具：skill-manager、heartbeat、sync、evolve-tick 等
+├── templates/       設定範本（不含機密）
+├── webapp/          Skill 管理儀表板（3 分頁 Web UI）
+├── knowledge/       共享知識庫（git 同步）
+├── install.ps1/sh   安裝程式（Windows / macOS / Linux）
+└── Dockerfile       Docker 支援
 ```
+
+完整檔案樹見 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ---
 
@@ -745,7 +656,7 @@ clawd-lobster/
 | 持久記憶 | 沒有 | 混合搜尋 | FTS5 + LLM | **4 層 + 重要度引擎** |
 | 多 agent 共享記憶 | 沒有 | 沒有 | 沒有 | **有（git 同步）** |
 | 技能管理 | 不適用 | 僅 CLI | 手動 | **Web UI + CLI + manifest** |
-| Agent 進化 | 沒有 | 沒有 | 自我改進技能 | **有（24 MCP 工具）** |
+| Agent 進化 | 沒有 | 沒有 | 自我改進技能 | **有（proposals + learned skills）** |
 | 多機器 | 沒有 | 沒有 | 沒有 | **有（MDM 風格）** |
 | Session 管理 | 手動 | Gateway process | 手動 | **自動復活所有 session** |
 | 上手時間 | 手動設定 | 複雜 | 中等 | **網頁精靈，5 種語言** |
@@ -799,83 +710,30 @@ Claude Code 是目前最強的 coding agent — 背後是 Anthropic 數百萬工
 
 heartbeat 確保 session 持續存活：如果終端機關了，OS 排程器偵測到就用 `claude --resume` 復活 — 完整 context 還原。不需要自訂 daemon。就是 Claude Code，永遠在線。參見[架構](#跟-claude-code-的關係)章節了解我們如何與按 token 計費的 API 框架不同地處理 24/7。
 
-### 「其他 agent 也有 heartbeat 和時間感知」
+### 「Claude Code 已經有內建 skill 和 MCP 了，為什麼還需要？」
 
-我們也有 — 但更聰明。我們不跑自訂 daemon process，而是用 OS 排程器（Task Scheduler / launchd / cron）做 heartbeat。它每 30 分鐘檢查：session 還活著嗎？需要 git 同步嗎？重要度衰減到了嗎？用戶端狀態？全部搞定。OS 排程器從不當機、從不需要除錯、閒置時也不燒 token。當 Claude Code 推出原生 24/7 模式（KAIROS — 已經在程式碼裡了），我們免費直接用。零程式碼改動。詳見 [Chapter 2](#永不斷線--heartbeat)。
+Claude Code 有內建技能（`/commit`、`/review-pr`）和 MCP 協定。但內建技能是封閉的 — 你不能新增、修改或分享。MCP 是原始協定 — 手動改 JSON、沒有生命週期、沒有 UI。
 
-### 「Claude Code 已經有內建技能了，為什麼還需要更多？」
-
-Claude Code 內建了 `/commit`、`/review-pr`、`/init` 等技能。它們很好用，但也是**封閉的** — Anthropic 決定它們做什麼、怎麼運作、何時改變。你不能新增自己的。你不能修改它們。你不能跟團隊分享。
-
-那就像你手機上的內建 app。Clawd-Lobster 是 App Store。
-
-| | Claude Code 內建 | **Clawd-Lobster 技能** |
-|---|---|---|
-| 誰建立 | Anthropic | 你、你的團隊、社群 |
-| 誰控制 | Anthropic | 你 |
-| 可以修改嗎 | 不行 | 可以 — 那是你的程式碼 |
-| 可以新增嗎 | 不行 | 可以 — `skill.json` + 實作 |
-| 可以分享嗎 | 不行 | 可以 — 推到 GitHub / ClawHub |
-| 領域專屬 | 不行（通用開發工具） | 可以 — 你的 ERP、CRM、工作流程 |
-| 憑證管理 | 不適用 | 內建每技能憑證系統 |
-| 啟用/停用 | 不適用 | 一個開關，Web UI 或 CLI |
-
-你的公司需要一個部署前跑合規檢查的技能？一個每 5 分鐘從 Odoo 同步 CRM 資料的技能？一個用你特定格式產生雙語 PDF 報告的技能？Claude Code 永遠不會出這些。**你的技能就是你的競爭優勢。它們應該在你的系統裡，不是別人的。**
-
-### 「Claude Code 已經有 MCP 和技能了，為什麼還要再做一層？」
-
-Claude Code 給你 MCP — 一個註冊工具伺服器的協定。這就像說 Chrome 讓你安裝擴充功能。沒錯。但 Chrome 還有 **Chrome 線上應用程式商店** — 因為手動安裝 `.crx` 檔案不叫管理擴充功能。
-
-Claude Code 給你的：
-- `.mcp.json` — 一個扁平的伺服器指令列表。沒有 metadata。沒有生命週期。
-- `settings.json` — 一個扁平的允許工具列表。沒有分組。沒有開關。
-- `CLAUDE.md` — 自由格式文字。沒有 schema。沒有驗證。
-
-實際上這代表：
-- **安裝技能？** 手動改 3 個 JSON 檔案然後跑 `pip install`。
-- **停用技能？** 手動從 2 個檔案刪除項目，希望你沒漏掉。
-- **憑證？** 每個技能存在不同地方。有的用環境變數、有的用檔案、有的寫死。
-- **有在跑嗎？** 不知道。打開終端機隨緣。
-- **第二台機器？** 全部從頭再來一次。
-- **10 個技能？** 你的 `.mcp.json` 變成一面看不懂的 JSON 牆。祝你好運。
-
-Clawd-Lobster 的技能層加上了 MCP 沒有的東西：
+**MCP 是協定。我們是套件管理器。**
 
 | MCP（原生） | 技能管理（我們的） |
 |---|---|
 | 扁平 JSON 設定 | `skill.json` manifest 含 schema、憑證、健康檢查、相依性 |
-| 手動編輯安裝 | `skill-manager.py enable <id>` — 一個指令 |
-| 手動編輯移除 | `skill-manager.py disable <id>` — 一個指令，乾淨移除 |
-| 沒有憑證標準 | 集中式 `~/.clawd-lobster/credentials/`，每技能欄位定義 |
+| 手動編輯安裝/移除 | `skill-manager.py enable/disable <id>` — 一個指令 |
+| 沒有憑證標準 | 集中式 `~/.clawd-lobster/credentials/` |
 | 沒有健康監控 | 內建健康檢查（mcp-ping、command、HTTP） |
-| 沒有 UI | Web dashboard 含卡片、開關、搜尋、分類篩選 |
-| 每台機器各自設定 | 透過 git 跨機器同步註冊表 |
-| 沒有相依性追蹤 | 技能宣告所需 — 其他技能、系統工具、Python 套件 |
+| 沒有 UI | Web dashboard 含卡片、開關、搜尋 |
+| 每台機器各自設定 | 透過 git 跨機器同步 |
 
-**MCP 是協定。我們是套件管理器。**
-
-就像 `npm` 不是要取代 Node.js — 它讓 Node.js 在規模化時能用。我們的技能層不是要取代 MCP — 它讓 MCP 在你有 5、10 或 50 個技能分散在多台機器上時能管理。詳見 [Chapter 3](#chapter-3技能--你的-agent-能做什麼) 完整的技能管理系統。
+詳見 [Chapter 3](#chapter-3技能--你的-agent-能做什麼)。
 
 ### 「Anthropic 會封鎖這個嗎？」
 
-我們沒做任何 Anthropic 禁止的事。精確地說：
-
-- **我們做的事：** 透過 OS cron/Task Scheduler 排程 `claude` CLI 指令。用 `claude --resume` 恢復既有 session。使用 Anthropic 自己定義的 MCP 協定。
-- **我們不做的事：** 程式化 OAuth 登入。API key 自動化。Token 擷取。認證繞過。逆向工程。
-
-使用者跑一次 `claude login` — 一個人，在瀏覽器裡，用他們的 Pro 訂閱。之後，OS 排程器用 Anthropic 自己在 CLI 裡提供的 flag（`--resume`、`-p`、`--allowedTools`）保持 session 存活。這跟用 cron 排程 `git pull` 沒什麼不同。**我們是自動化一個 CLI 工具，不是冒充使用者。**
-
-其他框架直接呼叫 Claude 的 API — 他們需要 API key、管理 OAuth refresh token、處理 rate limit、然後祈禱定價不要變。每次 API 改版對他們來說都是破壞性的改動。對我們來說，是透明的 — Claude Code 自己處理自己的認證。
+我們透過 OS cron 排程 `claude` CLI，跟排程 `git pull` 一樣。沒有 API key 自動化、沒有 OAuth 擷取、沒有逆向工程。使用者跑一次 `claude login`，之後 OS 排程器用 Anthropic 自己提供的 flag（`--resume`、`-p`）保持 session 存活。
 
 ### 「重度工作量的 API 費用呢？」
 
-「昂貴的 API」這個論點，是基於按 token 計費的假設。有了 Pro 訂閱（$20/月），**沒有按 token 的費用。** 你的第 1 個任務和第 480 個任務花的都一樣：邊際成本 $0。
-
-這直接消除了其他框架需要的「思考用貴模型，苦力用便宜模型」的架構。你不需要在本機跑 Ollama 7B 處理便宜任務。你不需要兩套推論架構。你不需要一個模型路由器來決定用哪個大腦。
-
-一個訂閱。一個引擎。一個大腦。無限任務。
-
-當 rate limit 打到了（遲早的），Clawd-Lobster 的 skill-manager 會優雅地排隊工作。沒有 token 預算恐慌。沒有帳單驚喜。**可預測的費用本身就是功能。**
+Pro 訂閱 = 沒有按 token 的費用。你的第 1 個任務和第 480 個任務花的都一樣：邊際成本 $0。不需要「思考用貴模型、苦力用便宜模型」的架構。**可預測的費用本身就是功能。**
 
 ---
 
