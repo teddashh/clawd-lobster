@@ -88,3 +88,29 @@ After completing complex multi-step tasks (3+ tool calls), evaluate whether a re
 - Don't cross-read other workspace memory
 - Knowledge base is shared (read-only)
 - MCP tools auto-detect current workspace
+
+## Skill Management
+
+Skills are self-contained modules managed via `skill-manager.py`. Each skill has a `skill.json` manifest.
+
+### Available Commands
+- `python scripts/skill-manager.py list` — Show all skills with status
+- `python scripts/skill-manager.py enable <id>` — Enable a skill
+- `python scripts/skill-manager.py disable <id>` — Disable a skill
+- `python scripts/skill-manager.py status` — Detailed status of all skills
+- `python scripts/skill-manager.py config <id>` — View/edit skill config
+- `python scripts/skill-manager.py credentials <id>` — Manage skill credentials
+- `python scripts/skill-manager.py health` — Run health checks
+- `python scripts/skill-manager.py reconcile` — Regenerate .mcp.json + settings.json from registry
+
+### Skill Kinds
+- **mcp-server**: Provides MCP tools (e.g., memory-server, connect-odoo)
+- **prompt-pattern**: Instructions embedded in CLAUDE.md (e.g., evolve, migrate)
+- **cron**: Scheduled tasks (e.g., heartbeat)
+- **poller**: Long-running integration with external systems (e.g., connect-odoo)
+
+### Adding a New Skill
+1. Create directory under `skills/<skill-id>/`
+2. Write `skill.json` manifest
+3. Implement the skill (MCP server, script, or SKILL.md)
+4. Run `skill-manager.py reconcile` to register

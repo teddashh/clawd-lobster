@@ -563,6 +563,18 @@ $serverCount = ($mergedMcp.mcpServers.PSObject.Properties | Measure-Object).Coun
 $action = if ($serverCount -gt 1) { "merged — $serverCount servers" } else { "created" }
 Write-OK ".mcp.json ($action)"
 
+# Initialize skill registry
+Write-Host "  Initializing skill registry..." -ForegroundColor Gray
+$skillManagerPath = Join-Path $wrapperDir "scripts" "skill-manager.py"
+if (Test-Path $skillManagerPath) {
+    python $skillManagerPath reconcile 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  ✓ Skill registry initialized" -ForegroundColor Green
+    } else {
+        Write-Host "  ⚠ Skill registry init skipped (non-critical)" -ForegroundColor Yellow
+    }
+}
+
 # ============================================================
 # STEP 5: CLAUDE.MD + SETTINGS
 # ============================================================

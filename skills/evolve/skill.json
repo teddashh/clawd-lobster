@@ -1,0 +1,47 @@
+{
+  "id": "evolve",
+  "name": "Evolve",
+  "description": "Self-evolution prompt pattern — agents learn reusable skills from completed tasks",
+  "version": "0.3.0",
+  "category": "intelligence",
+  "tags": ["self-improvement", "learning", "skills", "patterns"],
+  "kind": "prompt-pattern",
+  "alwaysOn": false,
+  "defaultEnabled": true,
+  "icon": "🧬",
+
+  "permissions": {
+    "allow": []
+  },
+
+  "credentials": [],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "auto_detect": {
+        "type": "boolean",
+        "description": "Automatically detect skill-worthy patterns after task completion"
+      },
+      "retirement_days": {
+        "type": "integer",
+        "description": "Days of inactivity before suggesting skill retirement"
+      }
+    }
+  },
+  "configDefaults": {
+    "auto_detect": true,
+    "retirement_days": 90
+  },
+
+  "healthCheck": {
+    "type": "none",
+    "intervalSeconds": 0
+  },
+
+  "dependencies": {
+    "skills": ["memory-server"],
+    "system": [],
+    "python": []
+  }
+}

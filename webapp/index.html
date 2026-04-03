@@ -3,18 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clawd-Lobster Setup</title>
+    <title>Clawd-Lobster — Skill Management</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* ── Reset & Base ─────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0d1117; color: #c9d1d9; min-height: 100vh;
-            display: flex; flex-direction: column; align-items: center;
         }
-        .container { max-width: 700px; width: 100%; padding: 2rem; }
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #58a6ff; }
-        h1 span { color: #f78166; }
-        .subtitle { color: #8b949e; margin-bottom: 2rem; }
+
+        /* ── Top Navigation ───────────────────────────────────── */
+        .top-bar {
+            background: #161b22; border-bottom: 1px solid #30363d;
+            display: flex; align-items: center; padding: 0 1.5rem;
+            height: 56px; position: sticky; top: 0; z-index: 100;
+        }
+        .brand { display: flex; align-items: baseline; gap: 0.15rem; margin-right: 2rem; text-decoration: none; }
+        .brand-name { font-size: 1.25rem; font-weight: 700; color: #58a6ff; }
+        .brand-name span { color: #f78166; }
+        .brand-ver { font-size: 0.7rem; color: #484f58; margin-left: 0.4rem; }
+
+        .tab-nav { display: flex; gap: 0; height: 100%; }
+        .tab-btn {
+            background: none; border: none; color: #8b949e; font-size: 0.9rem;
+            padding: 0 1.25rem; cursor: pointer; position: relative;
+            display: flex; align-items: center; gap: 0.4rem;
+            transition: color 0.2s; height: 100%;
+        }
+        .tab-btn:hover { color: #c9d1d9; }
+        .tab-btn.active { color: #c9d1d9; }
+        .tab-btn.active::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+            height: 2px; background: #f78166; border-radius: 2px 2px 0 0;
+        }
+        .tab-icon { font-size: 1rem; }
+
+        .top-spacer { flex: 1; }
+        .machine-id {
+            font-size: 0.75rem; color: #484f58; font-family: 'Cascadia Code', 'Fira Code', monospace;
+        }
+
+        /* ── Content Area ─────────────────────────────────────── */
+        .page { display: none; padding: 1.5rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .page.active { display: block; }
+
+        /* ── Skills Dashboard ─────────────────────────────────── */
+        .skills-toolbar {
+            display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+        .search-box {
+            flex: 1; min-width: 200px; position: relative;
+        }
+        .search-box input {
+            width: 100%; padding: 0.55rem 0.75rem 0.55rem 2.25rem;
+            background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+            color: #c9d1d9; font-size: 0.9rem; transition: border-color 0.2s;
+        }
+        .search-box input:focus { outline: none; border-color: #58a6ff; }
+        .search-box::before {
+            content: '\1F50D'; position: absolute; left: 0.65rem; top: 50%;
+            transform: translateY(-50%); font-size: 0.85rem; pointer-events: none;
+        }
+
+        .cat-filters { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .cat-pill {
+            background: #21262d; border: 1px solid #30363d; border-radius: 20px;
+            padding: 0.3rem 0.85rem; font-size: 0.8rem; color: #8b949e;
+            cursor: pointer; transition: all 0.2s; user-select: none;
+        }
+        .cat-pill:hover { border-color: #58a6ff; color: #c9d1d9; }
+        .cat-pill.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+        .skill-count { font-size: 0.8rem; color: #484f58; margin-bottom: 1rem; }
+
+        /* ── Skill Card Grid ──────────────────────────────────── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1rem;
+        }
+
+        .skill-card {
+            background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+            padding: 1.25rem; cursor: pointer; transition: all 0.25s;
+            position: relative;
+        }
+        .skill-card:hover { border-color: #484f58; transform: translateY(-1px); }
+        .skill-card.expanded { border-color: #58a6ff; }
+
+        .card-top { display: flex; align-items: flex-start; gap: 0.75rem; }
+        .card-icon { font-size: 1.6rem; flex-shrink: 0; line-height: 1; }
+        .card-info { flex: 1; min-width: 0; }
+        .card-name { font-size: 1rem; font-weight: 600; color: #e6edf3; }
+        .card-desc { font-size: 0.82rem; color: #8b949e; margin-top: 0.3rem; line-height: 1.45; }
+
+        .card-meta {
+            display: flex; align-items: center; gap: 1rem; margin-top: 0.85rem;
+            font-size: 0.75rem; color: #484f58; flex-wrap: wrap;
+        }
+        .card-cat {
+            background: #21262d; border-radius: 4px; padding: 0.15rem 0.5rem;
+            text-transform: capitalize;
+        }
+        .card-version { font-family: 'Cascadia Code', 'Fira Code', monospace; }
+
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+            margin-right: 0.25rem; flex-shrink: 0;
+        }
+        .status-dot.running { background: #3fb950; box-shadow: 0 0 6px rgba(63,185,80,0.4); }
+        .status-dot.degraded { background: #d29922; box-shadow: 0 0 6px rgba(210,153,34,0.4); }
+        .status-dot.error { background: #f85149; box-shadow: 0 0 6px rgba(248,81,73,0.4); }
+        .status-dot.stopped { background: #484f58; }
+
+        .card-status { display: flex; align-items: center; font-size: 0.75rem; text-transform: capitalize; }
+
+        .card-actions { display: flex; gap: 0.5rem; margin-top: 0.85rem; }
+        .card-actions button {
+            background: #21262d; border: 1px solid #30363d; border-radius: 6px;
+            color: #8b949e; font-size: 0.78rem; padding: 0.35rem 0.7rem;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.3rem;
+        }
+        .card-actions button:hover { border-color: #58a6ff; color: #c9d1d9; }
+
+        /* ── Toggle Switch ────────────────────────────────────── */
+        .toggle-wrap { flex-shrink: 0; display: flex; align-items: center; gap: 0.4rem; }
+        .toggle {
+            width: 40px; height: 22px; border-radius: 11px; background: #30363d;
+            position: relative; cursor: pointer; transition: background 0.25s;
+            border: none; padding: 0;
+        }
+        .toggle::after {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 16px; height: 16px; border-radius: 50%; background: #8b949e;
+            transition: all 0.25s;
+        }
+        .toggle.on { background: #238636; }
+        .toggle.on::after { left: 21px; background: #fff; }
+        .toggle.locked {
+            opacity: 0.5; cursor: not-allowed;
+        }
+        .lock-icon { font-size: 0.7rem; color: #484f58; }
+
+        /* ── Expanded Detail Panel ────────────────────────────── */
+        .card-detail {
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease, opacity 0.3s;
+            opacity: 0;
+        }
+        .skill-card.expanded .card-detail {
+            max-height: 800px; opacity: 1; margin-top: 1rem;
+            border-top: 1px solid #30363d; padding-top: 1rem;
+        }
+        .detail-section { margin-bottom: 1rem; }
+        .detail-section:last-child { margin-bottom: 0; }
+        .detail-label {
+            font-size: 0.72rem; font-weight: 600; color: #8b949e;
+            text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
+        }
+        .detail-value { font-size: 0.85rem; line-height: 1.5; }
+        .detail-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .detail-tag {
+            background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+            padding: 0.15rem 0.5rem; font-size: 0.72rem; color: #8b949e;
+        }
+        .detail-deps { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .detail-dep {
+            background: #1c2333; border: 1px solid #1f6feb33; border-radius: 4px;
+            padding: 0.15rem 0.5rem; font-size: 0.72rem; color: #58a6ff;
+        }
+
+        .config-field { margin-bottom: 0.65rem; }
+        .config-field label {
+            display: block; font-size: 0.78rem; color: #8b949e; margin-bottom: 0.2rem;
+        }
+        .config-field input, .config-field select {
+            width: 100%; max-width: 320px; padding: 0.4rem 0.6rem;
+            background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+            color: #c9d1d9; font-size: 0.85rem;
+        }
+        .config-field input:focus, .config-field select:focus {
+            outline: none; border-color: #58a6ff;
+        }
+
+        .cred-field { margin-bottom: 0.5rem; }
+        .cred-field label {
+            display: block; font-size: 0.78rem; color: #8b949e; margin-bottom: 0.2rem;
+        }
+        .cred-field input {
+            width: 100%; max-width: 320px; padding: 0.4rem 0.6rem;
+            background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+            color: #c9d1d9; font-size: 0.85rem;
+        }
+        .cred-field input:focus { outline: none; border-color: #58a6ff; }
+
+        .health-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.78rem;
+        }
+        .health-badge.ok { background: #238636; color: #fff; }
+        .health-badge.warn { background: #9e6a03; color: #fff; }
+        .health-badge.err { background: #da3633; color: #fff; }
+        .health-badge.none { background: #21262d; color: #8b949e; }
+
+        /* ── Setup Wizard (existing, moved into tab) ──────────── */
+        .setup-container { max-width: 700px; }
+        .setup-subtitle { color: #8b949e; margin-bottom: 2rem; }
+
         .step {
             background: #161b22; border: 1px solid #30363d; border-radius: 8px;
             padding: 1.5rem; margin-bottom: 1rem; transition: border-color 0.3s;
@@ -32,6 +227,7 @@
         .step-title { font-size: 1.1rem; font-weight: 600; }
         .step-body { margin-top: 1rem; padding-left: 2.75rem; display: none; }
         .step.active .step-body { display: block; }
+
         .check-item {
             display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0;
             color: #8b949e;
@@ -39,6 +235,7 @@
         .check-item.ok { color: #3fb950; }
         .check-item.fail { color: #f85149; }
         .indicator { font-size: 1.2rem; width: 24px; text-align: center; }
+
         code {
             background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
             padding: 0.5rem 0.75rem; display: block; margin: 0.75rem 0;
@@ -49,21 +246,24 @@
             content: 'Click to copy'; position: absolute; right: 8px; top: 50%;
             transform: translateY(-50%); font-size: 0.75rem; color: #8b949e;
         }
+
         .btn {
             background: #238636; color: #fff; border: none; padding: 0.6rem 1.5rem;
             border-radius: 6px; font-size: 1rem; cursor: pointer; margin-top: 0.75rem;
-            transition: background 0.2s;
+            transition: background 0.2s; display: inline-block;
         }
         .btn:hover { background: #2ea043; }
         .btn:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
         .btn-secondary { background: #30363d; }
         .btn-secondary:hover { background: #484f58; }
+
         .input-group { margin: 0.75rem 0; }
         .input-group label { display: block; color: #8b949e; margin-bottom: 0.25rem; font-size: 0.85rem; }
         .input-group input {
             width: 100%; padding: 0.5rem; background: #0d1117; border: 1px solid #30363d;
             border-radius: 4px; color: #c9d1d9; font-size: 0.9rem;
         }
+
         .mode-select { display: flex; gap: 1rem; margin: 1.5rem 0; }
         .mode-card {
             flex: 1; background: #161b22; border: 2px solid #30363d; border-radius: 8px;
@@ -73,219 +273,973 @@
         .mode-card.selected { border-color: #58a6ff; background: #1c2333; }
         .mode-card h3 { margin-bottom: 0.5rem; }
         .mode-card p { color: #8b949e; font-size: 0.85rem; }
-        .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
-        .skill-card {
+
+        .setup-skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; }
+        .setup-skill-card {
             background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
             padding: 0.75rem; cursor: pointer; transition: border-color 0.2s;
         }
-        .skill-card:hover { border-color: #58a6ff; }
-        .skill-card.installed { border-color: #3fb950; }
-        .skill-name { font-weight: 600; font-size: 0.9rem; }
-        .skill-desc { color: #8b949e; font-size: 0.8rem; margin-top: 0.25rem; }
-        .footer { margin-top: 2rem; color: #484f58; font-size: 0.8rem; text-align: center; }
+        .setup-skill-card:hover { border-color: #58a6ff; }
+        .setup-skill-card.installed { border-color: #3fb950; }
+        .setup-skill-name { font-weight: 600; font-size: 0.9rem; }
+        .setup-skill-desc { color: #8b949e; font-size: 0.8rem; margin-top: 0.25rem; }
+
+        /* ── Settings Tab ─────────────────────────────────────── */
+        .settings-container { max-width: 700px; }
+        .settings-section {
+            background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+            padding: 1.5rem; margin-bottom: 1.25rem;
+        }
+        .settings-section h3 {
+            font-size: 1rem; font-weight: 600; color: #e6edf3; margin-bottom: 1rem;
+            padding-bottom: 0.75rem; border-bottom: 1px solid #30363d;
+        }
+        .settings-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.6rem 0; border-bottom: 1px solid #21262d;
+        }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-row-label { font-size: 0.85rem; }
+        .settings-row-value {
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.82rem; color: #58a6ff;
+        }
+        .settings-row-hint { font-size: 0.75rem; color: #484f58; margin-top: 0.15rem; }
+
+        .cred-table { width: 100%; border-collapse: collapse; }
+        .cred-table th {
+            text-align: left; font-size: 0.72rem; font-weight: 600; color: #8b949e;
+            text-transform: uppercase; letter-spacing: 0.05em; padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid #30363d;
+        }
+        .cred-table td {
+            padding: 0.5rem 0.6rem; font-size: 0.82rem; border-bottom: 1px solid #21262d;
+        }
+        .cred-table td:last-child { text-align: right; }
+        .cred-masked { color: #484f58; font-family: 'Cascadia Code', 'Fira Code', monospace; }
+
+        /* ── Toast ────────────────────────────────────────────── */
+        .toast-container {
+            position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1000;
+            display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;
+        }
+        .toast {
+            background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            padding: 0.75rem 1.25rem; font-size: 0.85rem; color: #c9d1d9;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: flex; align-items: center;
+            gap: 0.5rem; animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            max-width: 360px;
+        }
+        .toast.success { border-left: 3px solid #3fb950; }
+        .toast.error { border-left: 3px solid #f85149; }
+        .toast.info { border-left: 3px solid #58a6ff; }
+        .toast-icon { font-size: 1rem; flex-shrink: 0; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* ── Confirm Dialog ───────────────────────────────────── */
+        .dialog-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+        .dialog-box {
+            background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+            padding: 1.75rem; max-width: 400px; width: 90%;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+        }
+        .dialog-title { font-size: 1.1rem; font-weight: 600; color: #e6edf3; margin-bottom: 0.5rem; }
+        .dialog-msg { font-size: 0.88rem; color: #8b949e; margin-bottom: 1.25rem; line-height: 1.5; }
+        .dialog-btns { display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .dialog-btns button {
+            padding: 0.5rem 1.25rem; border-radius: 6px; font-size: 0.88rem;
+            cursor: pointer; border: none; transition: background 0.2s;
+        }
+        .dialog-cancel { background: #21262d; color: #c9d1d9; }
+        .dialog-cancel:hover { background: #30363d; }
+        .dialog-confirm { background: #da3633; color: #fff; }
+        .dialog-confirm:hover { background: #f85149; }
+
+        /* ── Footer ───────────────────────────────────────────── */
+        .footer {
+            margin-top: 3rem; padding: 1.5rem; text-align: center;
+            color: #484f58; font-size: 0.78rem; border-top: 1px solid #21262d;
+        }
+
+        /* ── Responsive ───────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .top-bar { padding: 0 0.75rem; }
+            .brand { margin-right: 1rem; }
+            .tab-btn { padding: 0 0.75rem; font-size: 0.82rem; }
+            .tab-label { display: none; }
+            .tab-icon { font-size: 1.15rem; }
+            .page { padding: 1rem; }
+            .card-grid { grid-template-columns: 1fr; }
+            .skills-toolbar { flex-direction: column; }
+            .machine-id { display: none; }
+        }
+        @media (max-width: 480px) {
+            .mode-select { flex-direction: column; }
+            .setup-skills-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Clawd-<span>Lobster</span></h1>
-        <p class="subtitle">You'll end up using the best anyway. Why install a bunch of stuff you don't need?</p>
 
-        <!-- Mode Selection -->
-        <div class="mode-select" id="modeSelect">
-            <div class="mode-card" onclick="selectMode('master')">
-                <h3>New System</h3>
-                <p>I'm setting up for the first time (Master)</p>
+    <!-- ════════ Top Bar ════════ -->
+    <nav class="top-bar">
+        <a class="brand" href="#">
+            <span class="brand-name">Clawd-<span>Lobster</span></span>
+            <span class="brand-ver">v0.3.0</span>
+        </a>
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('skills')" data-tab="skills">
+                <span class="tab-icon">&#9881;</span>
+                <span class="tab-label">Skills</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('setup')" data-tab="setup">
+                <span class="tab-icon">&#9889;</span>
+                <span class="tab-label">Setup</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('settings')" data-tab="settings">
+                <span class="tab-icon">&#9878;</span>
+                <span class="tab-label">Settings</span>
+            </button>
+        </div>
+        <div class="top-spacer"></div>
+        <span class="machine-id" id="machineId"></span>
+    </nav>
+
+    <!-- ════════ Skills Dashboard ════════ -->
+    <div class="page active" id="page-skills">
+
+        <div class="skills-toolbar">
+            <div class="search-box">
+                <input type="text" id="skillSearch" placeholder="Search skills..." oninput="filterSkills()">
             </div>
-            <div class="mode-card" onclick="selectMode('agent')">
-                <h3>Join Existing</h3>
-                <p>I'm adding a machine to an existing system (Agent)</p>
-            </div>
+            <div class="cat-filters" id="catFilters"></div>
         </div>
 
-        <!-- Steps -->
-        <div id="steps" style="display:none;">
-
-            <!-- Step 1: Foundation -->
-            <div class="step active" id="step1">
-                <div class="step-header" onclick="toggleStep(1)">
-                    <div class="step-number">1</div>
-                    <div class="step-title">Foundation</div>
-                </div>
-                <div class="step-body">
-                    <div class="check-item" id="chk-node"><span class="indicator">&#9744;</span> Node.js 22+</div>
-                    <div class="check-item" id="chk-python"><span class="indicator">&#9744;</span> Python 3.11+</div>
-                    <div class="check-item" id="chk-git"><span class="indicator">&#9744;</span> Git</div>
-                    <div class="check-item" id="chk-claude"><span class="indicator">&#9744;</span> Claude Code CLI</div>
-                    <div class="check-item" id="chk-gh"><span class="indicator">&#9744;</span> GitHub CLI (optional)</div>
-                    <p style="margin-top:1rem; color:#8b949e;">Run this in your terminal:</p>
-                    <code onclick="copyCmd(this)">git clone https://github.com/YOUR_USERNAME/clawd-lobster && cd clawd-lobster && .\install.ps1</code>
-                    <button class="btn" onclick="completeStep(1)">I've run the installer</button>
-                </div>
-            </div>
-
-            <!-- Step 2: Authentication -->
-            <div class="step" id="step2">
-                <div class="step-header" onclick="toggleStep(2)">
-                    <div class="step-number">2</div>
-                    <div class="step-title">Authentication</div>
-                </div>
-                <div class="step-body">
-                    <div class="check-item" id="chk-claude-auth"><span class="indicator">&#9744;</span> Claude Code authenticated</div>
-                    <div class="check-item" id="chk-gh-auth"><span class="indicator">&#9744;</span> GitHub authenticated</div>
-                    <code onclick="copyCmd(this)">claude auth login</code>
-                    <code onclick="copyCmd(this)">gh auth login</code>
-                    <button class="btn" onclick="completeStep(2)">Both authenticated</button>
-                </div>
-            </div>
-
-            <!-- Step 3: Knowledge System -->
-            <div class="step" id="step3">
-                <div class="step-header" onclick="toggleStep(3)">
-                    <div class="step-number">3</div>
-                    <div class="step-title">Knowledge System</div>
-                </div>
-                <div class="step-body">
-                    <div class="check-item ok"><span class="indicator">&#9745;</span> L1.5 — CC Auto-Memory (native)</div>
-                    <div class="check-item ok"><span class="indicator">&#9745;</span> L2 — MCP Memory Server (21 tools)</div>
-                    <div class="check-item ok"><span class="indicator">&#9745;</span> L3 — Knowledge Base (Markdown)</div>
-                    <div class="check-item"><span class="indicator">&#9744;</span> L4 — Cloud Database (optional)</div>
-                    <div class="input-group" id="oracleConfig" style="display:none;">
-                        <label>Oracle Wallet Path</label>
-                        <input type="text" placeholder="C:\path\to\wallet" id="oracleWallet">
-                        <label style="margin-top:0.5rem;">Oracle DSN</label>
-                        <input type="text" placeholder="mydb_tp" id="oracleDsn">
-                        <label style="margin-top:0.5rem;">Password</label>
-                        <input type="password" id="oraclePass">
-                    </div>
-                    <button class="btn-secondary btn" onclick="document.getElementById('oracleConfig').style.display='block'">Configure Oracle L4</button>
-                    <button class="btn" onclick="completeStep(3)">Continue (L4 optional)</button>
-                </div>
-            </div>
-
-            <!-- Step 4: Scheduler -->
-            <div class="step" id="step4">
-                <div class="step-header" onclick="toggleStep(4)">
-                    <div class="step-number">4</div>
-                    <div class="step-title">Scheduler</div>
-                </div>
-                <div class="step-body">
-                    <div class="check-item"><span class="indicator">&#9744;</span> Git Sync — every 30 min</div>
-                    <div class="check-item"><span class="indicator">&#9744;</span> Salience Decay — daily</div>
-                    <p style="margin-top:0.75rem; color:#8b949e;">The installer registers these automatically. Verify:</p>
-                    <code onclick="copyCmd(this)">Get-ScheduledTask -TaskName "Clawd-Lobster*"</code>
-                    <button class="btn" onclick="completeStep(4)">Scheduler verified</button>
-                </div>
-            </div>
-
-            <!-- Step 5: Skills -->
-            <div class="step" id="step5">
-                <div class="step-header" onclick="toggleStep(5)">
-                    <div class="step-number">5</div>
-                    <div class="step-title">Skills</div>
-                </div>
-                <div class="step-body">
-                    <p style="color:#8b949e; margin-bottom:0.5rem;">Core skills (auto-installed):</p>
-                    <div class="skills-grid">
-                        <div class="skill-card installed">
-                            <div class="skill-name">Memory System</div>
-                            <div class="skill-desc">21 MCP tools, salience + evolution</div>
-                        </div>
-                        <div class="skill-card installed">
-                            <div class="skill-name">Workspace Manager</div>
-                            <div class="skill-desc">Auto-detect, create, sync</div>
-                        </div>
-                    </div>
-                    <p style="color:#8b949e; margin-top:1rem; margin-bottom:0.5rem;">Optional skills:</p>
-                    <div class="skills-grid">
-                        <div class="skill-card" onclick="this.classList.toggle('installed')">
-                            <div class="skill-name">Codex Bridge</div>
-                            <div class="skill-desc">Delegate to OpenAI Codex</div>
-                        </div>
-                        <div class="skill-card" onclick="this.classList.toggle('installed')">
-                            <div class="skill-name">SearXNG Search</div>
-                            <div class="skill-desc">Private web search</div>
-                        </div>
-                        <div class="skill-card" onclick="this.classList.toggle('installed')">
-                            <div class="skill-name">Docker Sandbox</div>
-                            <div class="skill-desc">Isolated code execution</div>
-                        </div>
-                        <div class="skill-card" onclick="this.classList.toggle('installed')">
-                            <div class="skill-name">Migration</div>
-                            <div class="skill-desc">Import from OpenClaw/Hermes</div>
-                        </div>
-                    </div>
-                    <button class="btn" onclick="completeStep(5)">Continue</button>
-                </div>
-            </div>
-
-            <!-- Step 6: Workspaces -->
-            <div class="step" id="step6">
-                <div class="step-header" onclick="toggleStep(6)">
-                    <div class="step-number">6</div>
-                    <div class="step-title">Workspaces</div>
-                </div>
-                <div class="step-body">
-                    <p style="color:#8b949e;">Create your first workspace or scan for existing ones:</p>
-                    <code onclick="copyCmd(this)">.\scripts\new-workspace.ps1 -name "my-project"</code>
-                    <p style="color:#8b949e; margin-top:0.75rem;">Or migrate existing workspaces:</p>
-                    <code onclick="copyCmd(this)">claude "/migrate"</code>
-                    <button class="btn" onclick="completeStep(6)">Done!</button>
-                </div>
-            </div>
-
-        </div>
+        <div class="skill-count" id="skillCount"></div>
+        <div class="card-grid" id="cardGrid"></div>
 
         <div class="footer">
-            <p>Clawd-Lobster — Claude Code Skills Wrapper</p>
+            <p>Clawd-Lobster &mdash; Claude Code Skills Wrapper</p>
             <p>Not affiliated with Anthropic. MIT License.</p>
         </div>
     </div>
 
+    <!-- ════════ Setup Wizard ════════ -->
+    <div class="page" id="page-setup">
+        <div class="setup-container">
+            <h2 style="font-size:1.5rem; color:#58a6ff; margin-bottom:0.35rem;">First-Time Setup</h2>
+            <p class="setup-subtitle">Walk through each step to get your system running.</p>
+
+            <!-- Mode Selection -->
+            <div class="mode-select" id="modeSelect">
+                <div class="mode-card" onclick="selectMode('master')">
+                    <h3>New System</h3>
+                    <p>I'm setting up for the first time (Master)</p>
+                </div>
+                <div class="mode-card" onclick="selectMode('agent')">
+                    <h3>Join Existing</h3>
+                    <p>I'm adding a machine to an existing system (Agent)</p>
+                </div>
+            </div>
+
+            <!-- Steps -->
+            <div id="steps" style="display:none;">
+
+                <!-- Step 1: Foundation -->
+                <div class="step active" id="step1">
+                    <div class="step-header" onclick="toggleStep(1)">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Foundation</div>
+                    </div>
+                    <div class="step-body">
+                        <div class="check-item" id="chk-node"><span class="indicator">&#9744;</span> Node.js 22+</div>
+                        <div class="check-item" id="chk-python"><span class="indicator">&#9744;</span> Python 3.11+</div>
+                        <div class="check-item" id="chk-git"><span class="indicator">&#9744;</span> Git</div>
+                        <div class="check-item" id="chk-claude"><span class="indicator">&#9744;</span> Claude Code CLI</div>
+                        <div class="check-item" id="chk-gh"><span class="indicator">&#9744;</span> GitHub CLI (optional)</div>
+                        <p style="margin-top:1rem; color:#8b949e;">Run this in your terminal:</p>
+                        <code onclick="copyCmd(this)">git clone https://github.com/teddashh/clawd-lobster && cd clawd-lobster && .\install.ps1</code>
+                        <button class="btn" onclick="completeStep(1)">I've run the installer</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Authentication -->
+                <div class="step" id="step2">
+                    <div class="step-header" onclick="toggleStep(2)">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Authentication</div>
+                    </div>
+                    <div class="step-body">
+                        <div class="check-item" id="chk-claude-auth"><span class="indicator">&#9744;</span> Claude Code authenticated</div>
+                        <div class="check-item" id="chk-gh-auth"><span class="indicator">&#9744;</span> GitHub authenticated</div>
+                        <code onclick="copyCmd(this)">claude auth login</code>
+                        <code onclick="copyCmd(this)">gh auth login</code>
+                        <button class="btn" onclick="completeStep(2)">Both authenticated</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Knowledge System -->
+                <div class="step" id="step3">
+                    <div class="step-header" onclick="toggleStep(3)">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Knowledge System</div>
+                    </div>
+                    <div class="step-body">
+                        <div class="check-item ok"><span class="indicator">&#9745;</span> L1.5 — CC Auto-Memory (native)</div>
+                        <div class="check-item ok"><span class="indicator">&#9745;</span> L2 — MCP Memory Server (21 tools)</div>
+                        <div class="check-item ok"><span class="indicator">&#9745;</span> L3 — Knowledge Base (Markdown)</div>
+                        <div class="check-item"><span class="indicator">&#9744;</span> L4 — Cloud Database (optional)</div>
+                        <div class="input-group" id="oracleConfig" style="display:none;">
+                            <label>Oracle Wallet Path</label>
+                            <input type="text" placeholder="/path/to/wallet" id="oracleWallet">
+                            <label style="margin-top:0.5rem;">Oracle DSN</label>
+                            <input type="text" placeholder="mydb_tp" id="oracleDsn">
+                            <label style="margin-top:0.5rem;">Password</label>
+                            <input type="password" id="oraclePass">
+                        </div>
+                        <button class="btn-secondary btn" onclick="document.getElementById('oracleConfig').style.display='block'">Configure Oracle L4</button>
+                        <button class="btn" onclick="completeStep(3)">Continue (L4 optional)</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Scheduler -->
+                <div class="step" id="step4">
+                    <div class="step-header" onclick="toggleStep(4)">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Scheduler</div>
+                    </div>
+                    <div class="step-body">
+                        <div class="check-item"><span class="indicator">&#9744;</span> Git Sync — every 30 min</div>
+                        <div class="check-item"><span class="indicator">&#9744;</span> Salience Decay — daily</div>
+                        <p style="margin-top:0.75rem; color:#8b949e;">The installer registers these automatically. Verify:</p>
+                        <code onclick="copyCmd(this)">Get-ScheduledTask -TaskName "Clawd-Lobster*"</code>
+                        <button class="btn" onclick="completeStep(4)">Scheduler verified</button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Skills -->
+                <div class="step" id="step5">
+                    <div class="step-header" onclick="toggleStep(5)">
+                        <div class="step-number">5</div>
+                        <div class="step-title">Skills</div>
+                    </div>
+                    <div class="step-body">
+                        <p style="color:#8b949e; margin-bottom:0.5rem;">Core skills (auto-installed):</p>
+                        <div class="setup-skills-grid">
+                            <div class="setup-skill-card installed">
+                                <div class="setup-skill-name">Memory System</div>
+                                <div class="setup-skill-desc">21 MCP tools, salience + evolution</div>
+                            </div>
+                            <div class="setup-skill-card installed">
+                                <div class="setup-skill-name">Workspace Manager</div>
+                                <div class="setup-skill-desc">Auto-detect, create, sync</div>
+                            </div>
+                        </div>
+                        <p style="color:#8b949e; margin-top:1rem; margin-bottom:0.5rem;">Optional skills:</p>
+                        <div class="setup-skills-grid">
+                            <div class="setup-skill-card" onclick="this.classList.toggle('installed')">
+                                <div class="setup-skill-name">Codex Bridge</div>
+                                <div class="setup-skill-desc">Delegate to OpenAI Codex</div>
+                            </div>
+                            <div class="setup-skill-card" onclick="this.classList.toggle('installed')">
+                                <div class="setup-skill-name">SearXNG Search</div>
+                                <div class="setup-skill-desc">Private web search</div>
+                            </div>
+                            <div class="setup-skill-card" onclick="this.classList.toggle('installed')">
+                                <div class="setup-skill-name">Docker Sandbox</div>
+                                <div class="setup-skill-desc">Isolated code execution</div>
+                            </div>
+                            <div class="setup-skill-card" onclick="this.classList.toggle('installed')">
+                                <div class="setup-skill-name">Migration</div>
+                                <div class="setup-skill-desc">Import from OpenClaw/Hermes</div>
+                            </div>
+                        </div>
+                        <button class="btn" onclick="completeStep(5)">Continue</button>
+                    </div>
+                </div>
+
+                <!-- Step 6: Workspaces -->
+                <div class="step" id="step6">
+                    <div class="step-header" onclick="toggleStep(6)">
+                        <div class="step-number">6</div>
+                        <div class="step-title">Workspaces</div>
+                    </div>
+                    <div class="step-body">
+                        <p style="color:#8b949e;">Create your first workspace or scan for existing ones:</p>
+                        <code onclick="copyCmd(this)">.\scripts\new-workspace.ps1 -name "my-project"</code>
+                        <p style="color:#8b949e; margin-top:0.75rem;">Or migrate existing workspaces:</p>
+                        <code onclick="copyCmd(this)">claude "/migrate"</code>
+                        <button class="btn" onclick="completeStep(6)">Done!</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ Settings ════════ -->
+    <div class="page" id="page-settings">
+        <div class="settings-container">
+            <h2 style="font-size:1.5rem; color:#58a6ff; margin-bottom:1.25rem;">Settings</h2>
+
+            <!-- Machine Info -->
+            <div class="settings-section">
+                <h3>Machine</h3>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Machine ID</div>
+                        <div class="settings-row-hint">Auto-generated unique identifier for this device</div>
+                    </div>
+                    <div class="settings-row-value" id="settingsMachineId"></div>
+                </div>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Platform</div>
+                    </div>
+                    <div class="settings-row-value" id="settingsPlatform"></div>
+                </div>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Skills Registered</div>
+                    </div>
+                    <div class="settings-row-value" id="settingsSkillCount"></div>
+                </div>
+            </div>
+
+            <!-- Credentials -->
+            <div class="settings-section">
+                <h3>Credentials</h3>
+                <p style="font-size:0.82rem; color:#8b949e; margin-bottom:1rem;">
+                    Credentials used by skills. Sensitive values are masked.
+                </p>
+                <table class="cred-table" id="credTable">
+                    <thead>
+                        <tr>
+                            <th>Skill</th>
+                            <th>Credential</th>
+                            <th>Field</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="credTableBody"></tbody>
+                </table>
+                <p id="noCredsMsg" style="font-size:0.82rem; color:#484f58; margin-top:0.5rem;"></p>
+            </div>
+
+            <!-- Appearance (future) -->
+            <div class="settings-section">
+                <h3>Appearance</h3>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Theme</div>
+                        <div class="settings-row-hint">Additional themes coming soon</div>
+                    </div>
+                    <div class="settings-row-value" style="color:#8b949e;">Dark (default)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ Confirm Dialog ════════ -->
+    <div class="dialog-overlay" id="dialogOverlay">
+        <div class="dialog-box">
+            <div class="dialog-title" id="dialogTitle">Confirm</div>
+            <div class="dialog-msg" id="dialogMsg"></div>
+            <div class="dialog-btns">
+                <button class="dialog-cancel" onclick="closeDialog()">Cancel</button>
+                <button class="dialog-confirm" id="dialogConfirm">Disable</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ Toast Container ════════ -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <script>
-        let currentStep = 1;
-        let selectedMode = null;
-
-        function selectMode(mode) {
-            selectedMode = mode;
-            document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
-            document.getElementById('steps').style.display = 'block';
-            document.getElementById('modeSelect').style.display = 'none';
+    /* ═══════════════════════════════════════════════════════
+       SKILL DATA — will be replaced by API later
+       ═══════════════════════════════════════════════════════ */
+    const SKILLS = [
+        {
+            id: 'memory-server',
+            name: 'Memory Server',
+            icon: '\u{1F9E0}',
+            description: 'Unified MCP memory server with SQLite + optional Oracle + vector search',
+            longDescription: 'Provides 21+ MCP tools for persistent memory across sessions. Supports salience-based decay, skill learning, audit logging, daily reports, and optional L4 Oracle cloud sync. All memory operations go through this server.',
+            version: '0.3.0',
+            category: 'core',
+            tags: ['memory', 'mcp', 'sqlite', 'oracle', 'search', 'audit'],
+            kind: 'mcp-server',
+            alwaysOn: true,
+            defaultEnabled: true,
+            enabled: true,
+            status: { state: 'running' },
+            credentials: [],
+            configSchema: {
+                oracle_enabled: { type: 'boolean', description: 'Enable Oracle L4 cross-workspace sync', default: false },
+                embeddings_enabled: { type: 'boolean', description: 'Enable OpenAI embeddings for vector search', default: false }
+            },
+            configValues: { oracle_enabled: false, embeddings_enabled: false },
+            healthCheck: { type: 'mcp-ping', intervalSeconds: 300 },
+            dependencies: { skills: [], system: ['python'], python: ['fastmcp>=3.0,<4.0'] }
+        },
+        {
+            id: 'heartbeat',
+            name: 'Heartbeat',
+            icon: '\u{1F493}',
+            description: 'Session keep-alive — OS scheduler revives dead Claude Code sessions every 30 minutes',
+            longDescription: 'Uses the OS task scheduler (cron / Task Scheduler / launchd) to check session health at regular intervals. Dead sessions are automatically revived with --resume to preserve full context. Zero custom daemon code.',
+            version: '0.3.0',
+            category: 'core',
+            tags: ['session', 'keep-alive', 'scheduler', 'lifecycle'],
+            kind: 'cron',
+            alwaysOn: true,
+            defaultEnabled: true,
+            enabled: true,
+            status: { state: 'running' },
+            credentials: [],
+            configSchema: {
+                interval_minutes: { type: 'integer', description: 'Heartbeat interval in minutes', default: 30 },
+                auto_revive: { type: 'boolean', description: 'Automatically revive dead sessions', default: true }
+            },
+            configValues: { interval_minutes: 30, auto_revive: true },
+            healthCheck: { type: 'command', intervalSeconds: 1800 },
+            dependencies: { skills: [], system: ['claude'], python: [] }
+        },
+        {
+            id: 'evolve',
+            name: 'Evolve',
+            icon: '\u{1F9EC}',
+            description: 'Self-evolution prompt pattern — agents learn reusable skills from completed tasks',
+            longDescription: 'After completing complex or multi-step tasks, the agent automatically evaluates whether the experience contains a reusable pattern worth saving. Generated skills are stored in skills/learned/ and improved over time. Includes automatic retirement of stale skills.',
+            version: '0.3.0',
+            category: 'intelligence',
+            tags: ['self-improvement', 'learning', 'skills', 'patterns'],
+            kind: 'prompt-pattern',
+            alwaysOn: false,
+            defaultEnabled: true,
+            enabled: true,
+            status: { state: 'running' },
+            credentials: [],
+            configSchema: {
+                auto_detect: { type: 'boolean', description: 'Automatically detect skill-worthy patterns after task completion', default: true },
+                retirement_days: { type: 'integer', description: 'Days of inactivity before suggesting skill retirement', default: 90 }
+            },
+            configValues: { auto_detect: true, retirement_days: 90 },
+            healthCheck: { type: 'none', intervalSeconds: 0 },
+            dependencies: { skills: ['memory-server'], system: [], python: [] }
+        },
+        {
+            id: 'migrate',
+            name: 'Migrate',
+            icon: '\u{1F4E6}',
+            description: 'Import workspaces, memory, and configs from OpenClaw, Hermes, or raw Claude Code setups',
+            longDescription: 'Scans common predecessor paths (claude-setup, ~/.claude, ~/.openclaw, ~/.hermes) and imports decisions, knowledge, configs, and workspace definitions. Merges without overwriting. Supports --dry-run for safe preview.',
+            version: '0.3.0',
+            category: 'utility',
+            tags: ['migration', 'import', 'openclaw', 'hermes', 'onboarding'],
+            kind: 'command',
+            alwaysOn: false,
+            defaultEnabled: false,
+            enabled: false,
+            status: { state: 'stopped' },
+            credentials: [],
+            configSchema: {},
+            configValues: {},
+            healthCheck: { type: 'none', intervalSeconds: 0 },
+            dependencies: { skills: ['memory-server'], system: [], python: [] }
+        },
+        {
+            id: 'connect-odoo',
+            name: 'Odoo ERP Connector',
+            icon: '\u{1F3E2}',
+            description: 'Connect to Odoo ERP via XML-RPC for CRM, HR, invoicing, and more',
+            longDescription: 'Full bidirectional integration with Odoo ERP. Polls for assigned tasks, reads/writes CRM leads, HR records, and invoices. Runs as an MCP server providing 6 tools (search, read, create, write, execute, poll_tasks). Requires Odoo server credentials.',
+            version: '0.1.0',
+            category: 'integration',
+            tags: ['erp', 'odoo', 'crm', 'hr', 'poller'],
+            kind: 'poller',
+            alwaysOn: false,
+            defaultEnabled: false,
+            enabled: false,
+            status: { state: 'stopped' },
+            credentials: [
+                {
+                    id: 'odoo-server',
+                    label: 'Odoo Server Connection',
+                    required: true,
+                    fields: [
+                        { key: 'url', label: 'Odoo URL', type: 'url', placeholder: 'http://your-odoo:8069', sensitive: false },
+                        { key: 'db', label: 'Database', type: 'string', placeholder: 'mydb', sensitive: false },
+                        { key: 'user', label: 'Username', type: 'email', placeholder: 'admin@company.com', sensitive: false },
+                        { key: 'password', label: 'Password', type: 'password', sensitive: true }
+                    ]
+                }
+            ],
+            configSchema: {
+                poll_interval_seconds: { type: 'number', description: 'Polling interval in seconds', default: 300 },
+                modules: { type: 'array', description: 'Odoo modules to connect', default: ['crm'] },
+                sync_direction: { type: 'string', description: 'Sync direction', enum: ['pull', 'push', 'bidirectional'], default: 'bidirectional' }
+            },
+            configValues: { poll_interval_seconds: 300, modules: ['crm'], sync_direction: 'bidirectional' },
+            healthCheck: { type: 'command', intervalSeconds: 600 },
+            dependencies: { skills: ['memory-server'], system: ['python>=3.11'], python: [] }
         }
+    ];
 
-        function toggleStep(n) {
-            const step = document.getElementById('step' + n);
-            if (step.classList.contains('done') || n === currentStep) {
-                step.classList.toggle('active');
+    const CATEGORIES = [
+        { id: 'all', label: 'All' },
+        { id: 'core', label: 'Core' },
+        { id: 'integration', label: 'Integration' },
+        { id: 'automation', label: 'Automation' },
+        { id: 'intelligence', label: 'Intelligence' },
+        { id: 'utility', label: 'Utility' }
+    ];
+
+    /* ═══════════════════════════════════════════════════════
+       STATE
+       ═══════════════════════════════════════════════════════ */
+    let activeTab = 'skills';
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let expandedCard = null;
+    let dialogCallback = null;
+
+    // Setup wizard state
+    let currentStep = 1;
+    let selectedMode = null;
+
+    /* ═══════════════════════════════════════════════════════
+       INIT
+       ═══════════════════════════════════════════════════════ */
+    function init() {
+        const machineId = generateMachineId();
+        document.getElementById('machineId').textContent = machineId;
+        document.getElementById('settingsMachineId').textContent = machineId;
+        document.getElementById('settingsPlatform').textContent = detectPlatform();
+        document.getElementById('settingsSkillCount').textContent = SKILLS.length;
+
+        renderCategoryFilters();
+        renderSkillCards();
+        renderCredentialTable();
+    }
+
+    function generateMachineId() {
+        let id = localStorage.getItem('clawd-machine-id');
+        if (!id) {
+            const chars = 'abcdef0123456789';
+            id = 'cl-';
+            for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
+            localStorage.setItem('clawd-machine-id', id);
+        }
+        return id;
+    }
+
+    function detectPlatform() {
+        const ua = navigator.userAgent.toLowerCase();
+        if (ua.includes('win')) return 'Windows';
+        if (ua.includes('mac')) return 'macOS';
+        if (ua.includes('linux')) return 'Linux';
+        return 'Unknown';
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       TAB NAVIGATION
+       ═══════════════════════════════════════════════════════ */
+    function switchTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === tab);
+        });
+        document.querySelectorAll('.page').forEach(p => {
+            p.classList.toggle('active', p.id === 'page-' + tab);
+        });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CATEGORY FILTERS
+       ═══════════════════════════════════════════════════════ */
+    function renderCategoryFilters() {
+        const container = document.getElementById('catFilters');
+        container.innerHTML = CATEGORIES.map(c => {
+            const count = c.id === 'all'
+                ? SKILLS.length
+                : SKILLS.filter(s => s.category === c.id).length;
+            if (c.id !== 'all' && count === 0) return '';
+            return `<button class="cat-pill${c.id === activeCategory ? ' active' : ''}"
+                            onclick="setCategory('${c.id}')">${c.label} (${count})</button>`;
+        }).join('');
+    }
+
+    function setCategory(cat) {
+        activeCategory = cat;
+        renderCategoryFilters();
+        renderSkillCards();
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SEARCH
+       ═══════════════════════════════════════════════════════ */
+    function filterSkills() {
+        searchQuery = document.getElementById('skillSearch').value.toLowerCase().trim();
+        renderSkillCards();
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SKILL CARDS
+       ═══════════════════════════════════════════════════════ */
+    function getFilteredSkills() {
+        return SKILLS.filter(s => {
+            if (activeCategory !== 'all' && s.category !== activeCategory) return false;
+            if (searchQuery) {
+                const hay = (s.name + ' ' + s.description + ' ' + s.tags.join(' ')).toLowerCase();
+                return hay.includes(searchQuery);
             }
+            return true;
+        });
+    }
+
+    function renderSkillCards() {
+        const filtered = getFilteredSkills();
+        const grid = document.getElementById('cardGrid');
+        document.getElementById('skillCount').textContent =
+            `Showing ${filtered.length} of ${SKILLS.length} skills`;
+
+        grid.innerHTML = filtered.map(s => {
+            const isExpanded = expandedCard === s.id;
+            const statusClass = s.status.state;
+            const statusLabel = s.status.state;
+            return `
+            <div class="skill-card${isExpanded ? ' expanded' : ''}" id="card-${s.id}">
+                <div class="card-top" onclick="toggleCard('${s.id}')">
+                    <div class="card-icon">${s.icon}</div>
+                    <div class="card-info">
+                        <div class="card-name">${s.name}</div>
+                        <div class="card-desc">${s.description}</div>
+                    </div>
+                    <div class="toggle-wrap" onclick="event.stopPropagation()">
+                        ${s.alwaysOn
+                            ? `<span class="lock-icon" title="Always on">\u{1F512}</span>
+                               <button class="toggle on locked" disabled title="This skill cannot be disabled"></button>`
+                            : `<button class="toggle${s.enabled ? ' on' : ''}"
+                                       onclick="toggleSkill('${s.id}')"
+                                       title="${s.enabled ? 'Disable' : 'Enable'} ${s.name}"></button>`
+                        }
+                    </div>
+                </div>
+
+                <div class="card-meta">
+                    <span class="card-cat">${s.category}</span>
+                    <span class="card-version">v${s.version}</span>
+                    <span class="card-status">
+                        <span class="status-dot ${statusClass}"></span> ${statusLabel}
+                    </span>
+                    <span style="color:#484f58;">${s.kind}</span>
+                </div>
+
+                <div class="card-actions">
+                    <button onclick="event.stopPropagation(); toggleCard('${s.id}')">
+                        \u2699\uFE0F Configure
+                    </button>
+                    <button onclick="event.stopPropagation(); showToast('Log viewer coming soon', 'info')">
+                        \u{1F4CB} Logs
+                    </button>
+                </div>
+
+                <div class="card-detail">
+                    ${renderDetail(s)}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderDetail(s) {
+        let html = '';
+
+        // Long description
+        if (s.longDescription) {
+            html += `<div class="detail-section">
+                <div class="detail-label">Description</div>
+                <div class="detail-value">${s.longDescription}</div>
+            </div>`;
         }
 
-        function completeStep(n) {
-            const step = document.getElementById('step' + n);
-            step.classList.remove('active');
-            step.classList.add('done');
-            step.querySelector('.step-number').textContent = '\u2713';
-
-            if (n < 6) {
-                currentStep = n + 1;
-                const next = document.getElementById('step' + currentStep);
-                next.classList.add('active');
-                next.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                // All done
-                const doneMsg = document.createElement('div');
-                doneMsg.className = 'step done';
-                doneMsg.innerHTML = '<div class="step-header"><div class="step-number" style="background:#238636;color:#fff;font-size:1.2rem;">\u2713</div><div class="step-title" style="color:#3fb950;">Setup Complete! Open Claude Code and start working.</div></div>';
-                document.getElementById('steps').appendChild(doneMsg);
-            }
+        // Config fields
+        const configKeys = Object.keys(s.configSchema || {});
+        if (configKeys.length > 0) {
+            html += `<div class="detail-section"><div class="detail-label">Configuration</div>`;
+            configKeys.forEach(key => {
+                const schema = s.configSchema[key];
+                const val = s.configValues[key];
+                if (schema.type === 'boolean') {
+                    html += `<div class="config-field">
+                        <label>
+                            <input type="checkbox" ${val ? 'checked' : ''}
+                                   onchange="updateConfig('${s.id}','${key}',this.checked)">
+                            ${schema.description || key}
+                        </label>
+                    </div>`;
+                } else if (schema.enum) {
+                    html += `<div class="config-field">
+                        <label>${schema.description || key}</label>
+                        <select onchange="updateConfig('${s.id}','${key}',this.value)">
+                            ${schema.enum.map(e => `<option value="${e}" ${val === e ? 'selected' : ''}>${e}</option>`).join('')}
+                        </select>
+                    </div>`;
+                } else {
+                    html += `<div class="config-field">
+                        <label>${schema.description || key}</label>
+                        <input type="${schema.type === 'integer' || schema.type === 'number' ? 'number' : 'text'}"
+                               value="${Array.isArray(val) ? val.join(', ') : val}"
+                               onchange="updateConfig('${s.id}','${key}',this.value)">
+                    </div>`;
+                }
+            });
+            html += `</div>`;
         }
 
-        function copyCmd(el) {
-            navigator.clipboard.writeText(el.textContent.trim());
-            const orig = el.style.borderColor;
-            el.style.borderColor = '#3fb950';
-            setTimeout(() => el.style.borderColor = orig, 1000);
+        // Credentials
+        if (s.credentials.length > 0) {
+            html += `<div class="detail-section"><div class="detail-label">Credentials</div>`;
+            s.credentials.forEach(cred => {
+                html += `<p style="font-size:0.82rem;color:#c9d1d9;margin-bottom:0.5rem;">${cred.label}</p>`;
+                cred.fields.forEach(f => {
+                    html += `<div class="cred-field">
+                        <label>${f.label}</label>
+                        <input type="${f.sensitive ? 'password' : 'text'}"
+                               placeholder="${f.placeholder || ''}"
+                               onchange="updateCredential('${s.id}','${cred.id}','${f.key}',this.value)">
+                    </div>`;
+                });
+            });
+            html += `</div>`;
         }
+
+        // Health check
+        const hcType = s.healthCheck?.type || 'none';
+        let hcClass = 'none';
+        let hcLabel = 'No health check';
+        if (hcType !== 'none') {
+            if (s.enabled && s.status.state === 'running') { hcClass = 'ok'; hcLabel = 'Healthy'; }
+            else if (s.status.state === 'degraded') { hcClass = 'warn'; hcLabel = 'Degraded'; }
+            else if (s.status.state === 'error') { hcClass = 'err'; hcLabel = 'Error'; }
+            else { hcClass = 'none'; hcLabel = 'Inactive'; }
+        }
+        html += `<div class="detail-section">
+            <div class="detail-label">Health Check</div>
+            <span class="health-badge ${hcClass}">${hcLabel}</span>
+            <span style="font-size:0.72rem;color:#484f58;margin-left:0.5rem;">
+                ${hcType !== 'none' ? `(${hcType}, every ${s.healthCheck.intervalSeconds}s)` : ''}
+            </span>
+        </div>`;
+
+        // Dependencies
+        const allDeps = [
+            ...(s.dependencies.skills || []).map(d => ({label: d, type: 'skill'})),
+            ...(s.dependencies.system || []).map(d => ({label: d, type: 'system'})),
+            ...(s.dependencies.python || []).map(d => ({label: d, type: 'python'})),
+        ];
+        if (allDeps.length > 0) {
+            html += `<div class="detail-section">
+                <div class="detail-label">Dependencies</div>
+                <div class="detail-deps">
+                    ${allDeps.map(d => `<span class="detail-dep">${d.label}</span>`).join('')}
+                </div>
+            </div>`;
+        }
+
+        // Tags
+        if (s.tags.length > 0) {
+            html += `<div class="detail-section">
+                <div class="detail-label">Tags</div>
+                <div class="detail-tags">
+                    ${s.tags.map(t => `<span class="detail-tag">${t}</span>`).join('')}
+                </div>
+            </div>`;
+        }
+
+        return html;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CARD EXPAND / COLLAPSE
+       ═══════════════════════════════════════════════════════ */
+    function toggleCard(id) {
+        expandedCard = expandedCard === id ? null : id;
+        renderSkillCards();
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       TOGGLE SKILL ON/OFF
+       ═══════════════════════════════════════════════════════ */
+    function toggleSkill(id) {
+        const skill = SKILLS.find(s => s.id === id);
+        if (!skill || skill.alwaysOn) return;
+
+        if (skill.enabled) {
+            // Disable — ask confirmation
+            showDialog(
+                `Disable ${skill.name}?`,
+                `This will stop the "${skill.name}" skill. It can be re-enabled at any time.`,
+                'Disable',
+                () => {
+                    skill.enabled = false;
+                    skill.status.state = 'stopped';
+                    renderSkillCards();
+                    showToast(`${skill.name} disabled`, 'success');
+                }
+            );
+        } else {
+            // Enable
+            skill.enabled = true;
+            skill.status.state = 'running';
+            renderSkillCards();
+            showToast(`${skill.name} enabled`, 'success');
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CONFIG / CREDENTIALS (local state only)
+       ═══════════════════════════════════════════════════════ */
+    function updateConfig(skillId, key, value) {
+        const skill = SKILLS.find(s => s.id === skillId);
+        if (skill) {
+            skill.configValues[key] = value;
+            showToast(`${skill.name}: ${key} updated`, 'success');
+        }
+    }
+
+    function updateCredential(skillId, credId, fieldKey, value) {
+        showToast(`Credential saved (local only)`, 'info');
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SETTINGS — CREDENTIAL TABLE
+       ═══════════════════════════════════════════════════════ */
+    function renderCredentialTable() {
+        const tbody = document.getElementById('credTableBody');
+        const noMsg = document.getElementById('noCredsMsg');
+        let rows = '';
+        let count = 0;
+        SKILLS.forEach(s => {
+            s.credentials.forEach(cred => {
+                cred.fields.forEach(f => {
+                    count++;
+                    rows += `<tr>
+                        <td>${s.name}</td>
+                        <td>${cred.label}</td>
+                        <td>${f.label}</td>
+                        <td>${f.sensitive
+                            ? '<span class="cred-masked">********</span>'
+                            : '<span style="color:#3fb950;">-</span>'}</td>
+                    </tr>`;
+                });
+            });
+        });
+        if (count === 0) {
+            noMsg.textContent = 'No credentials required by currently registered skills.';
+            tbody.innerHTML = '';
+        } else {
+            noMsg.textContent = '';
+            tbody.innerHTML = rows;
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       DIALOG
+       ═══════════════════════════════════════════════════════ */
+    function showDialog(title, msg, confirmLabel, onConfirm) {
+        document.getElementById('dialogTitle').textContent = title;
+        document.getElementById('dialogMsg').textContent = msg;
+        const btn = document.getElementById('dialogConfirm');
+        btn.textContent = confirmLabel;
+        btn.onclick = () => { closeDialog(); onConfirm(); };
+        document.getElementById('dialogOverlay').classList.add('visible');
+    }
+    function closeDialog() {
+        document.getElementById('dialogOverlay').classList.remove('visible');
+    }
+    // Close on overlay click
+    document.getElementById('dialogOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeDialog();
+    });
+
+    /* ═══════════════════════════════════════════════════════
+       TOAST
+       ═══════════════════════════════════════════════════════ */
+    function showToast(message, type) {
+        type = type || 'info';
+        const icons = { success: '\u2705', error: '\u274C', info: '\u2139\uFE0F' };
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.innerHTML = `<span class="toast-icon">${icons[type] || ''}</span>${message}`;
+        container.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3200);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SETUP WIZARD (original logic, preserved)
+       ═══════════════════════════════════════════════════════ */
+    function selectMode(mode) {
+        selectedMode = mode;
+        document.querySelectorAll('#modeSelect .mode-card').forEach(c => c.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+        document.getElementById('steps').style.display = 'block';
+        document.getElementById('modeSelect').style.display = 'none';
+    }
+
+    function toggleStep(n) {
+        const step = document.getElementById('step' + n);
+        if (step.classList.contains('done') || n === currentStep) {
+            step.classList.toggle('active');
+        }
+    }
+
+    function completeStep(n) {
+        const step = document.getElementById('step' + n);
+        step.classList.remove('active');
+        step.classList.add('done');
+        step.querySelector('.step-number').textContent = '\u2713';
+
+        if (n < 6) {
+            currentStep = n + 1;
+            const next = document.getElementById('step' + currentStep);
+            next.classList.add('active');
+            next.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            const doneMsg = document.createElement('div');
+            doneMsg.className = 'step done';
+            doneMsg.innerHTML = '<div class="step-header"><div class="step-number" style="background:#238636;color:#fff;font-size:1.2rem;">\u2713</div><div class="step-title" style="color:#3fb950;">Setup Complete! Open Claude Code and start working.</div></div>';
+            document.getElementById('steps').appendChild(doneMsg);
+            showToast('Setup complete! Head to the Skills tab to manage your skills.', 'success');
+        }
+    }
+
+    function copyCmd(el) {
+        navigator.clipboard.writeText(el.textContent.trim());
+        const orig = el.style.borderColor;
+        el.style.borderColor = '#3fb950';
+        showToast('Copied to clipboard', 'success');
+        setTimeout(() => el.style.borderColor = orig, 1000);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       BOOT
+       ═══════════════════════════════════════════════════════ */
+    init();
     </script>
 </body>
 </html>

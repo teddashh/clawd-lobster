@@ -1,0 +1,52 @@
+{
+  "id": "heartbeat",
+  "name": "Heartbeat",
+  "description": "Session keep-alive — OS scheduler revives dead Claude Code sessions every 30 minutes",
+  "version": "0.3.0",
+  "category": "core",
+  "tags": ["session", "keep-alive", "scheduler", "lifecycle"],
+  "kind": "cron",
+  "alwaysOn": true,
+  "defaultEnabled": true,
+  "icon": "💓",
+
+  "permissions": {
+    "allow": []
+  },
+
+  "credentials": [],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "interval_minutes": {
+        "type": "integer",
+        "description": "Heartbeat interval in minutes"
+      },
+      "auto_revive": {
+        "type": "boolean",
+        "description": "Automatically revive dead sessions"
+      }
+    }
+  },
+  "configDefaults": {
+    "interval_minutes": 30,
+    "auto_revive": true
+  },
+
+  "runtime": {
+    "entrypoint": "scripts/heartbeat.sh",
+    "schedule": "*/30 * * * *"
+  },
+
+  "healthCheck": {
+    "type": "command",
+    "intervalSeconds": 1800
+  },
+
+  "dependencies": {
+    "skills": [],
+    "system": ["claude"],
+    "python": []
+  }
+}

@@ -306,6 +306,15 @@ MCPEOF
     ok ".mcp.json (created)"
 fi
 
+# Initialize skill registry
+echo "  Initializing skill registry..."
+skill_manager="$WRAPPER_DIR/scripts/skill-manager.py"
+if [ -f "$skill_manager" ]; then
+    python3 "$skill_manager" reconcile 2>/dev/null && \
+        echo "  ✓ Skill registry initialized" || \
+        echo "  ⚠ Skill registry init skipped (non-critical)"
+fi
+
 # ============================================================
 # STEP 6: CLAUDE.MD + SETTINGS
 # ============================================================

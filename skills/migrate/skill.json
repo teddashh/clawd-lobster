@@ -1,0 +1,51 @@
+{
+  "id": "migrate",
+  "name": "Migrate",
+  "description": "Import memories and configs from existing AI agent setups (claude-setup, OpenClaw, Hermes)",
+  "version": "0.3.0",
+  "category": "utility",
+  "tags": ["migration", "import", "onboarding", "setup"],
+  "kind": "prompt-pattern",
+  "alwaysOn": false,
+  "defaultEnabled": true,
+  "icon": "📦",
+
+  "permissions": {
+    "allow": []
+  },
+
+  "credentials": [],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "dry_run": {
+        "type": "boolean",
+        "description": "Preview changes without writing anything"
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["claude-setup", "raw-claude", "openclaw", "hermes"]
+        },
+        "description": "Which sources to scan for migration"
+      }
+    }
+  },
+  "configDefaults": {
+    "dry_run": false,
+    "sources": ["claude-setup", "raw-claude", "openclaw", "hermes"]
+  },
+
+  "healthCheck": {
+    "type": "none",
+    "intervalSeconds": 0
+  },
+
+  "dependencies": {
+    "skills": ["memory-server"],
+    "system": [],
+    "python": []
+  }
+}

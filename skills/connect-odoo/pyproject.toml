@@ -1,0 +1,11 @@
+[project]
+name = "clawd-connect-odoo"
+version = "0.1.0"
+description = "Clawd-Lobster Odoo ERP Connector — XML-RPC integration skill"
+requires-python = ">=3.11"
+dependencies = [
+    "fastmcp>=3.0,<4.0",
+]
+
+[project.scripts]
+clawd-odoo = "connect_odoo.server:main"

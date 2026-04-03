@@ -1,0 +1,77 @@
+{
+  "id": "connect-odoo",
+  "name": "Odoo ERP Connector",
+  "description": "Connect to Odoo ERP via XML-RPC for CRM, HR, invoicing, and more",
+  "version": "0.1.0",
+  "category": "integration",
+  "tags": ["erp", "odoo", "crm", "hr", "poller"],
+  "kind": "poller",
+  "icon": "🏢",
+  "alwaysOn": false,
+  "defaultEnabled": false,
+  "mcp": {
+    "serverName": "odoo",
+    "command": "python",
+    "args": ["-X", "utf8", "-m", "connect_odoo.server"],
+    "cwd": ".",
+    "env": {
+      "ODOO_URL": "${credential:odoo-server.url}",
+      "ODOO_DB": "${credential:odoo-server.db}",
+      "ODOO_USER": "${credential:odoo-server.user}",
+      "ODOO_PASSWORD": "${credential:odoo-server.password}"
+    }
+  },
+  "permissions": {
+    "allow": [
+      "mcp__odoo__odoo_search",
+      "mcp__odoo__odoo_read",
+      "mcp__odoo__odoo_create",
+      "mcp__odoo__odoo_write",
+      "mcp__odoo__odoo_execute",
+      "mcp__odoo__odoo_poll_tasks"
+    ]
+  },
+  "credentials": [
+    {
+      "id": "odoo-server",
+      "label": "Odoo Server Connection",
+      "required": true,
+      "fields": [
+        {"key": "url", "label": "Odoo URL", "type": "url", "placeholder": "http://your-odoo:8069", "sensitive": false},
+        {"key": "db", "label": "Database", "type": "string", "placeholder": "mydb", "sensitive": false},
+        {"key": "user", "label": "Username", "type": "email", "placeholder": "admin@company.com", "sensitive": false},
+        {"key": "password", "label": "Password", "type": "password", "sensitive": true}
+      ]
+    }
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "poll_interval_seconds": {"type": "number", "minimum": 60, "default": 300},
+      "modules": {"type": "array", "items": {"type": "string"}, "default": ["crm"]},
+      "sync_direction": {"type": "string", "enum": ["pull", "push", "bidirectional"], "default": "bidirectional"}
+    }
+  },
+  "configDefaults": {
+    "poll_interval_seconds": 300,
+    "modules": ["crm"],
+    "sync_direction": "bidirectional"
+  },
+  "runtime": {
+    "entrypoint": "connect_odoo/poller.py",
+    "schedule": "*/5 * * * *",
+    "timeoutSeconds": 120,
+    "retryPolicy": {"maxRetries": 3, "backoffMs": 5000}
+  },
+  "healthCheck": {
+    "type": "command",
+    "target": "python -m connect_odoo.server --health",
+    "intervalSeconds": 600,
+    "timeoutSeconds": 15
+  },
+  "dependencies": {
+    "skills": ["memory-server"],
+    "system": ["python>=3.11"],
+    "python": []
+  }
+}

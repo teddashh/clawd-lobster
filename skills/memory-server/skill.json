@@ -1,0 +1,77 @@
+{
+  "id": "memory-server",
+  "name": "Memory Server",
+  "description": "Unified MCP memory server with SQLite + optional Oracle + vector search",
+  "version": "0.3.0",
+  "category": "core",
+  "tags": ["memory", "mcp", "sqlite", "oracle", "search", "audit"],
+  "kind": "mcp-server",
+  "alwaysOn": true,
+  "defaultEnabled": true,
+  "icon": "🧠",
+
+  "mcp": {
+    "serverName": "clawd-memory",
+    "command": "python",
+    "args": ["-m", "mcp_memory.server"],
+    "cwd": "."
+  },
+
+  "permissions": {
+    "allow": [
+      "mcp__clawd-memory__memory_store",
+      "mcp__clawd-memory__memory_record_decision",
+      "mcp__clawd-memory__memory_record_resolved",
+      "mcp__clawd-memory__memory_record_question",
+      "mcp__clawd-memory__memory_record_knowledge",
+      "mcp__clawd-memory__memory_list",
+      "mcp__clawd-memory__memory_get",
+      "mcp__clawd-memory__memory_get_summary",
+      "mcp__clawd-memory__memory_delete",
+      "mcp__clawd-memory__memory_search",
+      "mcp__clawd-memory__memory_reinforce",
+      "mcp__clawd-memory__memory_learn_skill",
+      "mcp__clawd-memory__memory_list_skills",
+      "mcp__clawd-memory__memory_improve_skill",
+      "mcp__clawd-memory__memory_log_action",
+      "mcp__clawd-memory__memory_audit_search",
+      "mcp__clawd-memory__memory_audit_stats",
+      "mcp__clawd-memory__memory_daily_report",
+      "mcp__clawd-memory__memory_activity_log",
+      "mcp__clawd-memory__memory_compact",
+      "mcp__clawd-memory__memory_status",
+      "mcp__clawd-memory__memory_oracle_summary"
+    ]
+  },
+
+  "credentials": [],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "oracle_enabled": {
+        "type": "boolean",
+        "description": "Enable Oracle L4 cross-workspace sync"
+      },
+      "embeddings_enabled": {
+        "type": "boolean",
+        "description": "Enable OpenAI embeddings for vector search"
+      }
+    }
+  },
+  "configDefaults": {
+    "oracle_enabled": false,
+    "embeddings_enabled": false
+  },
+
+  "healthCheck": {
+    "type": "mcp-ping",
+    "intervalSeconds": 300
+  },
+
+  "dependencies": {
+    "skills": [],
+    "system": ["python"],
+    "python": ["fastmcp>=3.0,<4.0"]
+  }
+}
