@@ -524,6 +524,14 @@ When Anthropic ships Opus 4.7, 1M context, new tools — you get them instantly.
 
 Other frameworks build custom daemons to run agents 24/7. We use `cron` + `claude --resume`. Other frameworks manage OAuth tokens to call Claude's API. We let the user type `claude login` once. **Every line of auth code you write is a line that can break when the provider changes. Every line you don't write is a line that can't.** The OS scheduler has been running reliably since the 1970s. Your custom daemon was written last Tuesday.
 
+### 7. When the giant grows taller, you grow taller.
+
+Claude Code internally has systems for memory consolidation (autoDream), always-on agents (KAIROS), multi-agent coordination (Coordinator Mode), and complex planning (ULTRAPLAN). Some are live, some are behind feature flags. We've already built equivalents for most of them — with 2K lines.
+
+But here's what matters: **when Anthropic ships these features natively, we don't rewrite — we retire.** KAIROS goes live? Our heartbeat gracefully steps aside. autoDream improves? It coexists with our salience engine. Coordinator Mode ships? Our evolve-tick uses it.
+
+Other frameworks compete with Claude Code. We complement it. They have to rewrite when Claude Code adds features. We get to delete code. **Our codebase shrinks over time. Theirs grows.**
+
 ---
 
 ## Comparison
