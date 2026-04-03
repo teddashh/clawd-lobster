@@ -308,11 +308,13 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
         f"{task_summary or '(none)'}\n\n"
         "## Instructions\n"
         "Based on the completed work, suggest 1-3 concrete improvements.\n"
-        "For each suggestion, output a JSON block like this:\n"
+        "For each suggestion, output a JSON block with 3W1H format:\n"
         "```json\n"
         '{"title": "Short title", "workspace": "workspace-name", '
         '"why": "Why this improvement matters", '
         '"what": "What specifically to change", '
+        '"who": "Who benefits from this change", '
+        '"how": "High-level approach to implement", '
         '"effort": "small|medium|large"}\n'
         "```\n"
         "Only suggest things that are genuinely valuable. If nothing worth "
@@ -375,18 +377,31 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
                 if filepath.exists():
                     continue  # don't overwrite
 
+                why = proposal.get("why", "")
+                what = proposal.get("what", "")
+                who = proposal.get("who", "system")
+                how = proposal.get("how", "")
+                effort = proposal.get("effort", "medium")
+
+                # Write proposal file (syncs via git)
                 content = (
                     f"# Proposal: {title}\n\n"
                     f"**Source:** evolve-tick on {_get_machine_id()}\n"
                     f"**Date:** {timestamp}\n"
                     f"**Workspace:** {workspace}\n"
-                    f"**Effort:** {proposal.get('effort', 'medium')}\n"
+                    f"**Effort:** {effort}\n"
                     f"**Status:** pending\n\n"
-                    f"## Why\n{proposal.get('why', '')}\n\n"
-                    f"## What\n{proposal.get('what', '')}\n"
+                    f"## Why\n{why}\n\n"
+                    f"## What\n{what}\n\n"
+                    f"## Who\n{who}\n\n"
+                    f"## How\n{how}\n"
                 )
 
                 filepath.write_text(content, encoding="utf-8")
+
+                # Also store in memory.db as knowledge (L2, syncs to L4 Oracle)
+                _store_proposal_in_memory(db_list, workspace, title, why, what, who, how, effort)
+
                 proposals_written += 1
                 print(f"[evolve] Proposal written: {filename}")
 
@@ -397,6 +412,56 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
 
     except (subprocess.TimeoutExpired, FileNotFoundError):
         return 0
+
+
+def _store_proposal_in_memory(db_list: list, workspace: str,
+                              title: str, why: str, what: str,
+                              who: str, how: str, effort: str):
+    """Store proposal as a knowledge item in the workspace's memory.db.
+    This makes it searchable via memory_search and syncable to Oracle L4."""
+    for ws_name, db_path, ws_path in db_list:
+        if ws_name == workspace or workspace in str(ws_path):
+            try:
+                conn = sqlite3.connect(str(db_path))
+                conn.execute(
+                    "INSERT INTO knowledge_items "
+                    "(title, content, tags, created_at, machine_id, salience) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        f"[proposal] {title}",
+                        f"## Why\n{why}\n\n## What\n{what}\n\n## Who\n{who}\n\n## How\n{how}\n\nEffort: {effort}",
+                        json.dumps(["proposal", "evolve", effort]),
+                        _now(),
+                        _get_machine_id(),
+                        1.0,
+                    ),
+                )
+                conn.commit()
+                conn.close()
+            except sqlite3.Error:
+                pass
+            return
+    # Fallback: store in first available workspace
+    if db_list:
+        try:
+            conn = sqlite3.connect(str(db_list[0][1]))
+            conn.execute(
+                "INSERT INTO knowledge_items "
+                "(title, content, tags, created_at, machine_id, salience) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    f"[proposal] {title}",
+                    f"## Why\n{why}\n\n## What\n{what}\n\n## Who\n{who}\n\n## How\n{how}\n\nEffort: {effort}",
+                    json.dumps(["proposal", "evolve", effort]),
+                    _now(),
+                    _get_machine_id(),
+                    1.0,
+                ),
+            )
+            conn.commit()
+            conn.close()
+        except sqlite3.Error:
+            pass
 
 
 # ---------------------------------------------------------------------------
