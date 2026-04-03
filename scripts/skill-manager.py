@@ -262,10 +262,20 @@ def sync_registry_with_manifests(reg: dict) -> bool:
     manifests = discover_manifests()
     changed = False
     for sid, manifest in manifests.items():
+        always_on = manifest.get("alwaysOn", False)
+        default_enabled = manifest.get("defaultEnabled", False)
         if sid not in reg["skills"]:
             entry = copy.deepcopy(_EMPTY_SKILL_ENTRY)
             entry["manifestPath"] = manifest["_manifest_path"]
             entry["installedVersion"] = manifest.get("version", "")
+            # Enforce alwaysOn / defaultEnabled on first registration
+            if always_on:
+                entry["enabled"] = True
+                entry["locked"] = True
+                entry["status"]["state"] = "running"
+            elif default_enabled:
+                entry["enabled"] = True
+                entry["status"]["state"] = "running"
             reg["skills"][sid] = entry
             changed = True
         else:
@@ -277,6 +287,12 @@ def sync_registry_with_manifests(reg: dict) -> bool:
             ver = manifest.get("version", "")
             if e["installedVersion"] != ver:
                 e["installedVersion"] = ver
+                changed = True
+            # Enforce alwaysOn: manifest is the source of truth
+            if always_on and not e.get("locked"):
+                e["locked"] = True
+                e["enabled"] = True
+                e["status"]["state"] = "running"
                 changed = True
     return changed
 
