@@ -4,8 +4,9 @@ Connect any workspace to Google NotebookLM. Push your docs as sources,
 query with Gemini, generate slides/infographics/podcasts — all from terminal.
 Zero token cost. Powered by notebooklm-py.
 
-**This guide was co-authored by Claude, Codex (GPT-5.4), and Gemini via a
-three-way debate on prompt engineering best practices.**
+**This guide was forged through a 4-round debate between Claude (Opus 4.6),
+Codex (GPT-5.4), and Gemini — with two judgment reversals, one concession,
+and a unified methodology that none of them would have reached alone.**
 
 ---
 
@@ -55,114 +56,106 @@ python -m notebooklm source add "<workspace>/CHANGELOG.md" -n $NB --title "Chang
 
 ---
 
-## The 10 Rules of NotebookLM Prompting
+## The 3-Stage Pipeline (from the debate)
 
-*Consolidated from Claude, Codex, and Gemini's independent analyses.*
+The debate resolved that extract→outline→draft and script-first are NOT
+competing methods — they are STAGES of the same pipeline:
+
+```
+Stage 1: Discovery (Codex's method)
+  Extract → Outline → Draft from raw sources
+  "List the top 10 insights" → "Group into themes" → "Build outline"
+  ↓
+Stage 2: Forge Single Source of Truth
+  Save your approved outline as a "Synthesis Note"
+  Convert that note into a source
+  UNCHECK all raw files
+  ↓
+Stage 3: Controlled Generation (Claude's method)
+  Generate final deliverables from the Synthesis Note ONLY
+  NotebookLM handles visuals, you control the narrative
+```
+
+**Never generate final deliverables from raw sources.**
+Extract first, lock the narrative, then generate.
+
+---
+
+## The 8 Rules of NotebookLM Prompting
+
+*Final version from 4-round, 3-AI debate. Two judgment reversals, one
+concession. These rules survived cross-examination.*
 
 ### Rule 1: Source Engineering > Prompt Engineering
 
-Your sources define your output ceiling. Clean sources in, quality out.
+Clean sources first. Remove broken OCR, duplicates, decorative junk.
+Prefer structured markdown over raw PDFs.
 
-- Remove duplicate sections, broken OCR text, decorative junk
-- Prefer well-structured markdown over raw PDFs
-- Each source should have a clear purpose — don't dump everything
+### Rule 2: Forge a Single Source of Truth
 
-### Rule 2: Add a Context Brief
+Don't generate from a messy pile of raw docs. Distill insights into a
+"Synthesis Note," convert it into a source, isolate it, generate from that.
 
-Upload a 1-page "briefing" document into your notebook that tells NotebookLM
-WHO you are, WHAT you're building, WHO the audience is, and what to EXCLUDE.
-NotebookLM uses this to contextualize everything else.
+### Rule 3: Use Source-Targeted Syntax
 
-```markdown
-# Project Brief: Clawd-Lobster
+Defeat lazy RAG chunking. Name the specific document, chapter, or slide:
 
-## Objective
-Explain Clawd-Lobster's architecture to potential users and developers.
+Bad: "What is the market strategy?"
+Good: "Focus exclusively on Chapter 4 of 'Q3_Strategy.pdf'. Explain the
+main argument using specific examples from Slide Deck 3."
 
-## Audience
-Technical users who know Claude Code but haven't heard of Clawd-Lobster.
+### Rule 4: Apply Negative Constraints
 
-## Tone
-Confident, concise, opinionated. Not academic.
+What NOT to do is as important as what to do:
 
-## Exclusions
-Do not mention internal development history or personal names.
+```
+Do NOT use vague claims like "revolutionary" unless directly supported.
+Do NOT repeat the same point across slides.
+Do NOT infer unstated numbers.
+If data is unavailable, say so explicitly.
 ```
 
-### Rule 3: Five-Layer Prompt Framework
-
-Every prompt should define:
-
-1. **Role** — who is NotebookLM writing as?
-2. **Task** — exact deliverable (slides, infographic, podcast)
-3. **Audience** — who consumes it?
-4. **Constraints** — length, format, exclusions
-5. **Grounding** — what MUST come from sources only
-
-### Rule 4: Define Audience Before Tone
+### Rule 5: Define Audience AND Decision Context
 
 Bad: "Make it compelling"
-Good: "Make it understandable to a non-technical executive using plain
-language and decision-oriented framing"
+Good: "Make it understandable to a non-technical executive making a Q3
+budget decision, using plain language and decision-oriented framing."
 
-The audience determines everything — vocabulary, depth, examples, structure.
-
-### Rule 5: Positive Instructions + Negative Constraints
-
-Tell it exactly what to do, AND what NOT to do:
+### Rule 6: Dictate Exact Information Hierarchy
 
 ```
-Base every claim on the provided sources.
-Do NOT use vague words like "revolutionary" or "cutting-edge"
-unless directly supported by the source text.
-Do NOT repeat the same point in different words across slides.
-```
-
-### Rule 6: Extract → Outline → Draft (Never One Shot)
-
-Never ask for the final product in one prompt. Break it into steps:
-
-1. "Extract the top 10 insights from these sources"
-2. "Group those insights into 3-4 themes"
-3. "Create a slide outline with one theme per section"
-4. "Generate the final slide deck from this outline"
-
-This gives you control at each step and prevents generic outputs.
-
-### Rule 7: Force Compression
-
-NotebookLM defaults to safe, bloated summaries. Counteract:
-
-- "Prioritize only the most decision-relevant points"
-- "Compress to one core idea per slide"
-- "If a point doesn't change a decision, cut it"
-
-### Rule 8: Define Information Hierarchy Explicitly
-
-Don't let it guess the layout. Specify the structure:
-
-```
-For each slide, include:
+For each slide:
 - 1 bold headline (max 8 words)
 - 3 bullet points (max 15 words each)
 - 1 key metric or data point
 - 1 supporting visual description
 ```
 
-### Rule 9: Run a Gap Check Before Finalizing
+### Rule 7: Force Compression
 
-Before trusting a draft, ask:
+AI defaults to bloated summaries. Counteract:
+- "Compress to one core idea per slide"
+- "Prioritize only decision-relevant points"
+- "If a point doesn't change a decision, cut it"
+
+### Rule 8: Run a Gap Check Before Finalizing
 
 ```
-"What important questions remain unanswered by these sources?"
 "Which claims in this draft are the weakest or least supported?"
+"What important questions remain unanswered by these sources?"
 "What would a skeptic challenge about this presentation?"
 ```
 
-### Rule 10: Use System Instructions, Not Repeated Prompts
+### Bonus: Set Global System Instructions
 
-Set your persona/constraints ONCE in the notebook's System Instructions
-(the gear icon in the chat panel). Don't waste prompt space repeating them.
+Don't repeat persona/constraints per prompt. Set them ONCE in the notebook's
+System Instructions (gear icon in chat panel):
+
+```xml
+<role>Lead Technical Solutions Architect. Brutally honest, fact-based.</role>
+<constraints>No jargon. If data unavailable, say so. No walls of text.</constraints>
+<formatting>Comparisons in tables. Steps in bullets.</formatting>
+```
 
 ---
 
@@ -359,12 +352,22 @@ python -m notebooklm share view-level $NB chat-only   # AI assistant mode
 
 ## Debate Source Credit
 
-The prompt engineering rules in this skill were derived from a three-way debate:
-1. **Claude (Opus 4.6)** — hands-on testing, practical experience
-2. **Codex (GPT-5.4)** — 1,391-line theoretical framework, exhaustive templates
-3. **Gemini (via NotebookLM)** — judged both, added System Instructions and
-   RAG chunking insights, produced the final top 10 rules
+These rules were forged through a 4-round debate:
 
-Key Gemini verdict: "Codex correctly identifies that NotebookLM's true power
-lies in source-grounded synthesis, not formatting. Claude's script-first
-approach underutilizes the tool. The extract→outline→draft pipeline is superior."
+**Round 1:** Claude + Codex wrote independent guides
+**Round 2:** Gemini judged Codex won (extract→outline→draft > script-first)
+**Round 3:** Claude pushed back on high-stakes deliverables. Gemini reversed:
+  *"You are absolutely correct. My previous judgment overvalued synthesis at
+  the expense of narrative control."* Codex conceded: *"I understated the
+  value of script-first as a late-stage control mechanism."*
+**Round 4:** Gemini unified both into 3-stage pipeline. Final grades:
+
+| | Accuracy | Depth | Practicality | Admitting Mistakes |
+|---|---|---|---|---|
+| Claude | 9 | 7 | 10 | 8 |
+| Codex | 8 | 10 | 8 | 10 |
+| Gemini | 8 | 9 | 9 | 10 |
+
+Winner: Claude (core thesis). Best framework: Codex. Best additions: Gemini.
+Most valuable insight: the Synthesis Note technique — none of them proposed
+it alone, it emerged from the debate.
