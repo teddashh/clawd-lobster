@@ -2,8 +2,12 @@
 
 # Clawd-Lobster
 
+![Version](https://img.shields.io/badge/version-0.5.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Runtime](https://img.shields.io/badge/footprint-25MB_RAM-orange)
+
 <p align="center">
-<strong>You'll end up using Claude Code (The Best) anyway.</strong><br>
+<strong>You'll end up using Claude Code anyway.</strong><br>
 <em>The ultimate agent experience — lightest weight, curated features, maximum performance.</em>
 </p>
 
@@ -48,6 +52,14 @@ Disk: 672 KB (code + configs, excluding .git and image assets)
 RAM:  ~25 MB (MCP server, the only always-on process)
 CPU:  0% idle (no polling, no daemon — OS scheduler wakes things up)
 ```
+
+---
+
+## Requirements
+
+- **Node.js** 18+ and **Python** 3.11+ and **Git** 2.x+
+- **Claude Code** CLI ([install guide](https://docs.anthropic.com/en/docs/claude-code/getting-started))
+- A **GitHub** account (for your private Hub repo)
 
 ---
 
@@ -99,20 +111,9 @@ The installer asks you 4 questions. That's it. Everything else is automatic.
   │     → Machine: home-pc / office-vm / laptop       │
   │     → Domain: work / personal / hybrid            │
   └──────────────────────────────────────────────────┘
-             │
-             ▼  then 9 automated steps
-  [1] Prerequisites   — Node, Python, Git, Claude Code
-  [2] Authentication  — Claude + GitHub (OAuth clicks)
-  [3] Create Hub      — copies template → private GitHub repo
-  [4] Config          — writes ~/.clawd-lobster/config.json
-  [5] Memory Server   — installs 24-tool MCP server
-  [6] Claude Code     — configures CLAUDE.md + .mcp.json + skill registry
-  [7] Workspaces      — clones repos, inits memory.db each
-  [8] Scheduler       — registers sync + heartbeat tasks
-  [9] Migration       — absorbs OpenClaw/Hermes/etc (if chosen)
 ```
 
-### What the 9 steps do
+Then 9 automated steps run:
 
 | Step | Action | Time |
 |------|--------|------|
@@ -120,7 +121,7 @@ The installer asks you 4 questions. That's it. Everything else is automatic.
 | 2 | Authenticate Claude Code + GitHub (2 OAuth clicks) | 30s |
 | 3 | **Create your Hub** (private repo) or clone existing | 10s |
 | 4 | Write config | 5s |
-| 5 | Install MCP Memory Server (21 tools) | 10s |
+| 5 | Install MCP Memory Server (32 tools) | 10s |
 | 6 | Configure Claude Code (CLAUDE.md + .mcp.json) | 5s |
 | 7 | Deploy workspaces (clone repos, init memory.db) | varies |
 | 8 | Register scheduler + heartbeat | 5s |
@@ -161,7 +162,7 @@ Why this matters: most AI agents start every session from zero. They repeat mist
 | Layer | What | Speed | Scope |
 |-------|------|-------|-------|
 | **L1.5** | CC auto-memory (native) | Instant | Current project |
-| **L2** | SQLite + 24 MCP tools | ~1ms | Per workspace |
+| **L2** | SQLite + 32 MCP tools | ~1ms | Per workspace |
 | **L3** | Markdown knowledge base | ~10ms | Shared via git |
 | **L4** | Cloud DB (optional) | ~100ms | Cross-workspace |
 
@@ -325,7 +326,7 @@ One unified view. Three sources. Every skill on your system — whether it came 
 
 | Skill | What | Why locked |
 |---|---|---|
-| Memory Server | 28-tool MCP memory + SQLite | No memory = no agent |
+| Memory Server | 32-tool MCP memory + SQLite | No memory = no agent |
 | Heartbeat | Session keep-alive via OS scheduler | No heartbeat = sessions die |
 | Evolve | System-level learning + proposal generation | Core differentiator |
 | Absorb | Knowledge ingestion from any source | Core learning ability |
@@ -497,14 +498,6 @@ Review (you decide)
   └── Reject → archived with learning captured
 ```
 
-### 3-Stage Content Pipeline
-
-From a 3-way AI debate (Claude + Codex + Gemini), a content generation pipeline was established:
-
-1. **Research** — gather sources, absorb context, extract key insights
-2. **Debate** — multiple AI perspectives challenge and refine the content
-3. **Generate** — final output (slides, infographics, podcasts, videos, quizzes) via NotebookLM
-
 ### Absorb
 
 Feed it anything — folders, GitHub repos, URLs. Claude classifies everything it finds:
@@ -628,112 +621,28 @@ GitHub is the control plane for everything:
 - **Heartbeat status** — machine health pushed to git
 - **Spec artifacts** — committed to workspace repos
 
-### Why Not Just Build Our Own Engine?
-
-Other frameworks rebuild the entire AI agent from scratch — 300K lines of code, custom agent loops, custom tool systems, custom everything. Then when Anthropic ships a better model, they scramble to rewrite their adapters.
-
-**Clawd-Lobster does not compete with Claude Code. It completes it.**
-
-We start with Claude Code — the most advanced coding agent in the world — and add exactly what is missing: persistent memory, multi-agent orchestration, and curated skills. Nothing more. Nothing less.
-
-> *Zero bloat. Zero rewrites. Pure Claude Code, amplified.*
-
 ### Philosophy
 
-#### 1. The best agent already exists. Use it.
+**1. Stand on the shoulders of giants.** Claude Code has millions of engineering hours behind it. Rebuilding that from scratch is not ambition — it is waste. We add what's missing (~2K lines) and keep the best engine.
 
-Claude Code is backed by the world's largest AI safety lab. Millions of engineering hours went into its agent loop, streaming, permissions, and tool system. Rebuilding that from scratch is not ambition — it is waste. **Stand on the shoulders of giants.**
+**2. Less code, less breakage.** Three config entries = one skill. Zero SDK. The OS scheduler has been reliable since the 1970s — we use `cron` + `claude --resume` instead of custom daemons. Every line you don't write is a line that can't break.
 
-#### 2. Less is more. Way more.
-
-Every line of framework code is a line you have to maintain. Clawd-Lobster is ~2K lines because Claude Code's native extension points (MCP, hooks, CLAUDE.md) are already the best plugin system anyone could design. **Three config entries = one skill. Zero SDK.**
-
-#### 3. An agent that forgets is an agent that fails.
-
-Most AI agents start every session from zero. They repeat mistakes, re-learn context, and waste your time. Clawd-Lobster's 4-layer memory with salience tracking ensures **the important stuff rises, the noise fades, and nothing critical is ever lost.**
-
-#### 4. Your agents should follow you everywhere.
-
-One computer? Fine. Three machines? They should all share the same brain. GitHub as control plane, git sync as protocol. **Add a machine in 2 minutes. Zero infrastructure.**
-
-#### 5. Always ride the latest wave.
-
-When Anthropic ships Opus 4.7, 1M context, new tools — you get them instantly. No adapter rewrites. No version pinning. No waiting for community patches. **The best time to use Claude Code was yesterday. The second best time is now.**
-
-#### 6. Never build what you can schedule.
-
-Other frameworks build custom daemons to run agents 24/7. We use `cron` + `claude --resume`. Other frameworks manage OAuth tokens to call Claude's API. We let the user type `claude login` once. **Every line of auth code you write is a line that can break when the provider changes. Every line you don't write is a line that can't.** The OS scheduler has been running reliably since the 1970s. Your custom daemon was written last Tuesday.
-
-#### 7. When the giant grows taller, you grow taller.
-
-Claude Code internally has systems for memory consolidation (autoDream), always-on agents (KAIROS), multi-agent coordination (Coordinator Mode), and complex planning (ULTRAPLAN). Some are live, some are behind feature flags. We have already built equivalents for most of them — with 2K lines.
-
-But here is what matters: **when Anthropic ships these features natively, we don't rewrite — we retire.** KAIROS goes live? Our heartbeat gracefully steps aside. autoDream improves? It coexists with our salience engine. Coordinator Mode ships? Our evolve-tick uses it.
-
-Other frameworks compete with Claude Code. We complement it. They have to rewrite when Claude Code adds features. We get to delete code. **Our codebase shrinks over time. Theirs grows.**
+**3. When the giant grows, you grow.** When Anthropic ships native memory, 24/7 agents, or multi-agent coordination — we don't rewrite, we retire code. Other frameworks compete with Claude Code. We complement it. **Our codebase shrinks over time. Theirs grows.**
 
 ### Project Structure
 
 ```
 clawd-lobster/
-├── skills/                          Skill modules (each with skill.json manifest)
-│   ├── memory-server/               24-tool MCP memory with salience + evolution
-│   │   ├── mcp_memory/              Python package (pip install -e .)
-│   │   └── skill.json               Manifest
-│   ├── connect-odoo/                Odoo ERP integration (XML-RPC + poller)
-│   │   ├── connect_odoo/            MCP server + poller
-│   │   └── skill.json               Manifest
-│   ├── evolve/                      Self-evolution prompt pattern
-│   │   └── skill.json               Manifest
-│   ├── heartbeat/                   Session keep-alive (cron)
-│   │   └── skill.json               Manifest
-│   ├── absorb/                      Knowledge ingestion from any source
-│   │   └── skill.json               Manifest
-│   ├── spec/                        Guided planning + blitz execution
-│   │   └── skill.json               Manifest
-│   ├── codex-bridge/                Delegate work to OpenAI Codex
-│   │   └── skill.json               Manifest
-│   ├── notebooklm-bridge/           Free RAG + content engine via NotebookLM
-│   │   └── skill.json               Manifest
-│   ├── migrate/                     Import from existing setups
-│   │   └── skill.json               Manifest
-│   └── learned/                     Auto-generated skills from experience
-│
-├── scripts/
-│   ├── skill-manager.py             Skill Management CLI
-│   ├── sync-all.ps1                 Windows: auto git sync + decay
-│   ├── sync-all.sh                  Linux/macOS: auto git sync + decay
-│   ├── heartbeat.ps1                Windows: session keep-alive
-│   ├── heartbeat.sh                 Linux/macOS: session keep-alive
-│   ├── new-workspace.ps1            Create workspace + GitHub repo
-│   ├── workspace-create.py          Automated workspace creation
-│   ├── validate-spec.py             Hard validation for spec artifacts
-│   ├── setup-hooks.sh               Install git pre-commit hooks (Unix)
-│   ├── setup-hooks.ps1              Install git pre-commit hooks (Windows)
-│   ├── evolve-tick.py               Pattern extraction + proposals + salience decay
-│   ├── notebooklm-sync.py           Auto-push workspace docs to NotebookLM
-│   ├── init_db.py                   Initialize memory database
-│   └── security-scan.py             5-tool security scanner
-│
-├── templates/                       Config templates (no secrets)
-│   ├── global-CLAUDE.md
-│   ├── workspace-CLAUDE.md
-│   ├── mcp.json.template
-│   └── settings.json.template
-│
-├── webapp/                          Skill Management Dashboard
-│   └── index.html                   3-tab UI: Skills + Setup + Settings
-│
-├── knowledge/                       Shared knowledge base (git-synced)
-├── soul/                            Agent personality (optional)
-├── workspaces.json                  Workspace registry
-├── install.ps1                      Windows installer (4-phase)
-├── install.sh                       Linux/macOS installer (4-phase)
-├── Dockerfile                       Docker build
-├── docker-compose.yml               Docker Compose config
-├── LICENSE                          MIT
-└── README.md
+├── skills/          9 skill modules (each with skill.json manifest)
+├── scripts/         CLI tools: skill-manager, heartbeat, sync, evolve-tick, etc.
+├── templates/       Config templates (no secrets)
+├── webapp/          Skill Management Dashboard (3-tab Web UI)
+├── knowledge/       Shared knowledge base (git-synced)
+├── install.ps1/sh   Installers (Windows / macOS / Linux)
+└── Dockerfile       Docker support
 ```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full file tree and internals.
 
 ---
 
@@ -748,7 +657,7 @@ clawd-lobster/
 | Persistent memory | None | Hybrid search | FTS5 + LLM | **4-layer + salience** |
 | Multi-agent shared memory | No | No | No | **Yes (git-synced)** |
 | Skill management | N/A | CLI only | Manual | **Web UI + CLI + manifest** |
-| Agent evolution | No | No | Self-improving skills | **Yes (24 MCP tools)** |
+| Agent evolution | No | No | Self-improving skills | **Yes (proposals + learned skills)** |
 | Multi-machine | No | No | No | **Yes (MDM-style)** |
 | Session management | Manual | Gateway process | Manual | **Auto-revive all sessions** |
 | Onboarding | Manual | Complex | Moderate | **Web wizard, 5 languages** |
@@ -802,47 +711,13 @@ So does ours. The scheduler syncs knowledge every 30 minutes. Memory evolves dai
 
 The heartbeat ensures sessions stay alive: if a terminal closes, the OS scheduler detects it and revives the session with `claude --resume` — full context restored. No custom daemon needed. Just Claude Code, always on. See the [Architecture](#the-relationship-with-claude-code) section for the full comparison of how we handle 24/7 differently from per-token API frameworks.
 
-### "Other agents have heartbeat and time awareness"
+### "Claude Code already has built-in skills and MCP. Why do I need more?"
 
-Ours do too — but smarter. Instead of running a custom daemon process, we use the OS scheduler (Task Scheduler / launchd / cron) as the heartbeat. It checks every 30 minutes: session alive? Git sync needed? Salience decay due? Client status? All handled. The OS scheduler never crashes, never needs debugging, and never burns tokens when idle. When Claude Code ships native 24/7 mode (KAIROS — it is in the codebase), we get it for free. Zero code change. See [Chapter 2](#always-alive--heartbeat) for details.
+Claude Code's built-in skills are **closed** — you can't add, modify, or share them. That's the built-in apps on your phone. Clawd-Lobster is the App Store.
 
-### "Claude Code already has built-in skills. Why do I need more?"
+MCP gives you a protocol for tool servers, but no lifecycle management. Installing a skill means editing 3 JSON files. Disabling one means deleting entries from 2 files and hoping you got them all. Second machine? Redo everything.
 
-Claude Code ships with skills like `/commit`, `/review-pr`, `/init`. They are good. They are also **closed** — Anthropic decides what they do, how they work, and when they change. You cannot add your own. You cannot modify them. You cannot share them with your team.
-
-That is the built-in apps on your phone. Clawd-Lobster is the App Store.
-
-| | Claude Code built-in | **Clawd-Lobster skills** |
-|---|---|---|
-| Who creates them | Anthropic | You, your team, the community |
-| Who controls them | Anthropic | You |
-| Can you modify them | No | Yes — it is your code |
-| Can you add new ones | No | Yes — `skill.json` + implement |
-| Can you share them | No | Yes — push to GitHub / ClawHub |
-| Domain-specific | No (generic dev tools) | Yes — your ERP, your CRM, your workflows |
-| Credentials management | N/A | Built-in per-skill credential system |
-| Enable/disable | N/A | One toggle, Web UI or CLI |
-
-Your company needs a skill that runs a compliance check before every deploy? A skill that syncs CRM data from Odoo every 5 minutes? A skill that generates bilingual PDF reports in your specific format? Claude Code will never ship those. **Your skills are your competitive advantage. They should live in your system, not someone else's.**
-
-### "Claude Code already has MCP and skills. Why build another skill layer?"
-
-Claude Code gives you MCP — a protocol for registering tool servers. That is like saying Chrome gives you the ability to install extensions. True. But Chrome also has the **Chrome Web Store** — because installing a `.crx` file manually is not managing extensions.
-
-What Claude Code gives you:
-- `.mcp.json` — a flat list of server commands. No metadata. No lifecycle.
-- `settings.json` — a flat list of allowed tools. No grouping. No toggle.
-- `CLAUDE.md` — free-form text. No schema. No validation.
-
-What that means in practice:
-- **Install a skill?** Manually edit 3 JSON files and run `pip install`.
-- **Disable a skill?** Manually delete entries from 2 files. Hope you got them all.
-- **Credentials?** Each skill stores them differently. Some in env vars, some in files, some hardcoded.
-- **Is it working?** No idea. Open the terminal and hope for the best.
-- **Second machine?** Redo everything from scratch.
-- **10 skills?** Your `.mcp.json` is an unreadable wall of JSON. Good luck.
-
-Clawd-Lobster's skill layer adds what MCP does not have:
+**MCP is the protocol. We are the package manager.** What we add:
 
 | MCP (raw) | Skill Management (ours) |
 |---|---|
@@ -855,30 +730,15 @@ Clawd-Lobster's skill layer adds what MCP does not have:
 | Per-machine config | Registry syncs across machines via git |
 | No dependency tracking | Skills declare what they need — other skills, system tools, Python packages |
 
-**MCP is the protocol. We are the package manager.**
-
-The same way `npm` does not replace Node.js — it makes Node.js usable at scale. Our skill layer does not replace MCP — it makes MCP manageable when you have 5, 10, or 50 skills across multiple machines. See [Chapter 3](#chapter-3-skills--what-your-agent-can-do) for the full skill management system.
+See [Chapter 3](#chapter-3-skills--what-your-agent-can-do) for the full skill management system.
 
 ### "Won't Anthropic block this?"
 
-We do not do anything Anthropic prohibits. Let's be precise:
+We schedule `claude` CLI commands via OS cron — the same way you'd schedule `git pull`. We use `claude --resume`, `--allowedTools`, and MCP servers — all flags Anthropic ships in their own CLI. No API key automation. No OAuth token scraping. No reverse engineering. **We automate a CLI tool. We don't impersonate a user.**
 
-- **What we do:** Schedule `claude` CLI commands via OS cron/Task Scheduler. Resume existing sessions with `claude --resume`. Use MCP servers that Anthropic's own protocol defines.
-- **What we don't do:** Programmatic OAuth login. API key automation. Token scraping. Auth bypass. Reverse engineering.
+### "What about costs?"
 
-The user runs `claude login` once — a human, in a browser, with their Pro subscription. After that, the OS scheduler keeps sessions alive using flags that Anthropic themselves ship in their CLI (`--resume`, `-p`, `--allowedTools`). This is no different from scheduling `git pull` via cron. **We automate a CLI tool. We don't impersonate a user.**
-
-Other frameworks call Claude's API directly — they need API keys, manage OAuth refresh tokens, handle rate limits, and pray that pricing does not change. Every API change is a breaking change for them. For us, it is transparent — Claude Code handles its own auth.
-
-### "What about API costs for heavy workloads?"
-
-The "expensive API" argument assumes per-token pricing. With a Pro subscription ($20/month), **there is no per-token cost.** Your 1st task and your 480th task cost the same: $0 marginal.
-
-This eliminates the entire "expensive model for thinking, cheap model for grunt work" architecture that other frameworks require. You do not need Ollama 7B running locally for cheap tasks. You do not need two inference stacks. You do not need a model router that decides which brain to use.
-
-One subscription. One engine. One brain. Unlimited tasks.
-
-When rate limits hit (they will), Clawd-Lobster's skill-manager gracefully queues work. No token budget panic. No surprise bills. **Predictable cost is a feature.**
+With a Pro subscription ($20/month), there is no per-token cost. No need for "cheap model for grunt work" architectures, no model routers, no dual inference stacks. One subscription. One engine. **Predictable cost is a feature.**
 
 ---
 
