@@ -44,15 +44,38 @@ When a workspace is created and this skill is enabled:
 
 1. **Create notebook:** `python -m notebooklm create "<workspace-name>"`
 2. **Save notebook ID** in workspace config
-3. **Push initial sources:** README.md, CLAUDE.md, design.md
+3. **Sync ALL valuable content automatically**
 
-After blitz completes, push updated docs:
+### Auto-sync: Push everything valuable
+
+Don't cherry-pick files. Use the sync script to scan the entire workspace
+and push all documentation, specs, knowledge, and configs:
+
 ```bash
-NB="<notebook-id>"
-python -m notebooklm source add "<workspace>/README.md" -n $NB --title "README"
-python -m notebooklm source add "<workspace>/openspec/changes/v1/design.md" -n $NB --title "Architecture"
-python -m notebooklm source add "<workspace>/CHANGELOG.md" -n $NB --title "Changelog"
+# Sync all docs (markdown, configs, specs, knowledge)
+python scripts/notebooklm-sync.py <workspace-path> <notebook-id>
+
+# Dry run first to see what would be pushed
+python scripts/notebooklm-sync.py <workspace-path> <notebook-id> --dry-run
+
+# Include source code files too (for code review / deep analysis)
+python scripts/notebooklm-sync.py <workspace-path> <notebook-id> --full
 ```
+
+The sync script automatically:
+- Scans for all .md, .txt, .json, .yaml, .toml files
+- Skips junk: .git, node_modules, __pycache__, .env, lock files
+- Titles sources intelligently: `[spec] changes/v1/design.md`, `[skill] evolve/SKILL.md`
+- Skips files already in the notebook (no duplicates)
+- Caps at 500KB per file (NotebookLM limit)
+- `--full` mode adds code files (.py, .js, .ts, etc.)
+
+### When to sync
+
+- **After workspace creation** — push initial structure
+- **After blitz completes** — push all new code and docs
+- **After major changes** — re-sync to keep notebook current
+- **Before generating deliverables** — ensure sources are up to date
 
 ---
 
