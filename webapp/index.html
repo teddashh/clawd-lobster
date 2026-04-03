@@ -988,6 +988,85 @@
             configValues: { poll_interval_seconds: 300, modules: ['crm'], sync_direction: 'bidirectional' },
             healthCheck: { type: 'command', intervalSeconds: 600 },
             dependencies: { skills: ['memory-server'], system: ['python>=3.11'], python: [] }
+        },
+        {
+            id: 'absorb',
+            name: 'Absorb',
+            icon: '\u{1F9FD}',
+            description: 'Knowledge absorption engine — feed it folders, repos, or URLs',
+            version: '0.1.0',
+            category: 'intelligence',
+            tags: ['knowledge', 'learning', 'import'],
+            kind: 'prompt-pattern',
+            alwaysOn: true,
+            defaultEnabled: true,
+            enabled: true,
+            status: { state: 'running' },
+            credentials: [],
+            configSchema: {
+                dry_run: { type: 'boolean', description: 'Preview without writing' },
+                depth: { type: 'string', description: 'Analysis depth', enum: ['shallow','normal','deep'] }
+            },
+            configDefaults: { dry_run: false, depth: 'normal' },
+            healthCheck: { type: 'none', intervalSeconds: 0 },
+            dependencies: { skills: ['memory-server'], system: [], python: [] }
+        },
+        {
+            id: 'spec',
+            name: 'Spec-Driven Development',
+            icon: '\u{1F4CB}',
+            description: 'Guided workspace creation + spec-driven planning + blitz execution',
+            version: '0.1.0',
+            category: 'core',
+            tags: ['spec', 'planning', 'workspace', 'blitz'],
+            kind: 'prompt-pattern',
+            alwaysOn: true,
+            defaultEnabled: true,
+            enabled: true,
+            status: { state: 'running' },
+            credentials: [],
+            configSchema: {
+                default_depth: { type: 'string', description: 'Spec depth', enum: ['mvp','standard','enterprise'] },
+                auto_create_github: { type: 'boolean', description: 'Auto-create GitHub repo' },
+                blitz_auto_approve: { type: 'boolean', description: 'Auto-approve during blitz' }
+            },
+            configDefaults: { default_depth: 'standard', auto_create_github: true, blitz_auto_approve: false },
+            healthCheck: { type: 'none', intervalSeconds: 0 },
+            dependencies: { skills: ['memory-server', 'absorb', 'evolve'], system: ['git', 'claude'], python: [] }
+        },
+        {
+            id: 'codex-bridge',
+            name: 'Codex Bridge',
+            icon: '\u{1F517}',
+            description: 'Delegate parallelizable work to OpenAI Codex — Claude decides when, what, and how much',
+            longDescription: 'Two roles: worker (parallel tasks, boilerplate, bulk refactoring) and critic (security audit, architecture debate, code review). Claude is the brain, Codex is the extra hands. $20/mo unlimited via ChatGPT Plus.',
+            version: '0.1.0',
+            category: 'integration',
+            tags: ['codex', 'openai', 'delegation', 'parallel'],
+            kind: 'prompt-pattern',
+            alwaysOn: false,
+            defaultEnabled: false,
+            enabled: false,
+            status: { state: 'stopped' },
+            credentials: [
+                {
+                    id: 'codex-auth',
+                    label: 'OpenAI Codex Authentication',
+                    required: true,
+                    fields: [
+                        {key: 'auth_method', label: 'Auth Method', type: 'string', placeholder: 'chatgpt-plus or api-key', sensitive: false},
+                        {key: 'status', label: 'Auth Status', type: 'string', placeholder: 'Run: codex login', sensitive: false}
+                    ]
+                }
+            ],
+            configSchema: {
+                auto_delegate: { type: 'boolean', description: 'Allow Claude to autonomously decide when to delegate', default: true },
+                preferred_model: { type: 'string', description: 'Codex model (e.g. gpt-5.3-codex, spark)' },
+                default_effort: { type: 'string', description: 'Default effort level', enum: ['none','minimal','low','medium','high','xhigh'] }
+            },
+            configDefaults: { auto_delegate: true, preferred_model: 'gpt-5.3-codex', default_effort: 'medium' },
+            healthCheck: { type: 'command', intervalSeconds: 3600 },
+            dependencies: { skills: [], system: ['node>=18'], python: [] }
         }
     ];
 

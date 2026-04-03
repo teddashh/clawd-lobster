@@ -1,5 +1,64 @@
 # Changelog
 
+## v0.5.0 — Evolution Loop + Spec-Driven Development (2026-04-03)
+
+### Architecture Changes
+
+#### Building vs Evolving — clear separation
+- **Building** (workspace scope): /spec → blitz → execute TODOs. One machine, full speed.
+- **Evolving** (system scope): review completed work → learn patterns → share. Every machine.
+- evolve-tick.py completely rewritten: no longer executes TODOs, now focuses on pattern extraction, proposal generation, salience decay, and knowledge sync.
+
+#### Proposals as git-synced files
+- Evolve generates improvement proposals as markdown files in openspec/proposals/
+- Proposals use 3W1H format (Why, What, Who, How) + effort estimate
+- Dual storage: git files (sync across machines) + memory.db knowledge_items (searchable, Oracle L4)
+- Any machine can review proposals; approved ones become TODOs for next blitz
+
+### New Skills
+
+| Skill | Type | Description |
+|-------|------|-------------|
+| **Spec** (core, locked) | prompt-pattern | Guided workspace + spec creation, 3W1H, blitz execution |
+| **Absorb** (core, locked) | prompt-pattern | Knowledge ingestion from folders, repos, URLs |
+| **Codex Bridge** (optional) | prompt-pattern | Delegate work to OpenAI Codex — worker + critic roles |
+
+### New Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `workspace-create.py` | Automated workspace creation (git, GitHub, memory.db, openspec/) |
+| `validate-spec.py` | Hard validation for spec artifacts (15+ checks) |
+| `setup-hooks.sh/.ps1` | Install git pre-commit hook for spec validation |
+| `evolve-tick.py` | Rewritten: pattern extraction + proposals + salience decay |
+
+### New MCP Tools (Memory Server v0.4.0, 28 tools)
+
+- `memory_todo_add` — Create TODO items
+- `memory_todo_list` — List/filter TODOs by status
+- `memory_todo_update` — Update TODO status, branch, notes
+- `memory_todo_search` — Search TODOs by title/description
+
+### Web UI Updates
+
+- **Workspaces tab** — 4th main tab, workspace cards, staged review panel
+- **3 source tabs** — Claude Native / Clawd-Lobster / Custom Hub
+- **Absorb + Spec + Codex Bridge** skills added to dashboard
+
+### README
+
+- Restructured into 5-chapter learning path (Memory → Workspaces → Skills → Spec → Evolution)
+- Added Philosophy #7: "When the giant grows taller, you grow taller"
+- Added runtime footprint breakdown (25 MB RAM, 672 KB disk)
+- Added architectural thesis on scheduling Claude Code vs rebuilding it
+
+### Boot Protocol
+
+- Now checks for active spec (openspec/changes/*/tasks.md progress)
+- Checks for .blitz-active marker → auto-resume blitz
+
+---
+
 ## v0.4.0 — Skill Management Platform (2026-04-02)
 
 ### Overview

@@ -21,7 +21,7 @@ This should take < 10 seconds. Skip only if user says "continue" (= resume previ
 ## Knowledge Base Index
 @{{DATA_DIR}}/knowledge/INDEX.md
 
-## MCP Memory Server (24 tools)
+## MCP Memory Server (28 tools)
 Clawd-Lobster Memory Server is installed. **Always use MCP tools for memory operations.**
 
 **Write:** memory_store, memory_record_decision, memory_record_resolved, memory_record_question, memory_record_knowledge
@@ -112,9 +112,16 @@ Skills are self-contained modules managed via `skill-manager.py`. Each skill has
 
 ### Skill Kinds
 - **mcp-server**: Provides MCP tools (e.g., memory-server, connect-odoo)
-- **prompt-pattern**: Instructions embedded in CLAUDE.md (e.g., evolve, migrate)
+- **prompt-pattern**: Instructions embedded in CLAUDE.md (e.g., evolve, migrate, absorb, spec, codex-bridge)
 - **cron**: Scheduled tasks (e.g., heartbeat)
 - **poller**: Long-running integration with external systems (e.g., connect-odoo)
+
+### Codex Bridge (optional integration)
+When enabled, Claude can delegate parallelizable work to OpenAI Codex:
+- **Worker role**: parallel tasks, boilerplate, bulk refactoring
+- **Critic role**: security audit, architecture debate, code review
+- Auth: `codex login` (ChatGPT Plus) or API key
+- Claude decides when, what, and how much to delegate — Codex never acts autonomously
 
 ### Adding a New Skill
 1. Create directory under `skills/<skill-id>/`
