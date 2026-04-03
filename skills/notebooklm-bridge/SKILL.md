@@ -4,194 +4,264 @@ Connect any workspace to Google NotebookLM. Push your docs as sources,
 query with Gemini, generate slides/infographics/podcasts — all from terminal.
 Zero token cost. Powered by notebooklm-py.
 
+**This guide was co-authored by Claude, Codex (GPT-5.4), and Gemini via a
+three-way debate on prompt engineering best practices.**
+
 ---
 
-## Setup (first time)
+## Setup
 
-### Step 1: Install notebooklm-py
+### Install
 ```bash
 pip install notebooklm-py
 python -m playwright install chromium   # needed for login only
 ```
 
-### Step 2: Login to Google
+### Login
 ```bash
 python -m notebooklm login
+# Browser opens → log into Google → wait for NotebookLM homepage → Enter
 ```
-A browser opens. Log into your Google account. Wait for the NotebookLM
-homepage to load. Press Enter. Done. Auth saved to `~/.notebooklm/`.
 
-### Step 3: Verify
+### Verify
 ```bash
-python -m notebooklm auth check
+PYTHONIOENCODING=utf-8 python -m notebooklm auth check
 ```
-All checks should be green. If not, re-run login.
 
-### Step 4: Set language (optional)
+### Set language
 ```bash
 python -m notebooklm language set zh_Hant   # or en, ja, etc.
 ```
+
+**Windows users:** Always prefix with `PYTHONIOENCODING=utf-8`.
 
 ---
 
 ## Workspace Integration
 
-### When a workspace is created (/spec new)
-If this skill is enabled, automatically:
-1. Create a NotebookLM notebook with the workspace name
-2. Store the notebook ID in workspace config
-3. Push initial sources (README.md, CLAUDE.md)
+When a workspace is created and this skill is enabled:
 
-```bash
-PYTHONIOENCODING=utf-8 python -m notebooklm create "<workspace-name>"
-# Returns notebook ID — save it
-```
+1. **Create notebook:** `python -m notebooklm create "<workspace-name>"`
+2. **Save notebook ID** in workspace config
+3. **Push initial sources:** README.md, CLAUDE.md, design.md
 
-### After blitz completes
-Push updated docs as sources:
+After blitz completes, push updated docs:
 ```bash
 NB="<notebook-id>"
-PYTHONIOENCODING=utf-8 python -m notebooklm source add "<workspace>/README.md" -n $NB --title "README"
-PYTHONIOENCODING=utf-8 python -m notebooklm source add "<workspace>/openspec/changes/v1/design.md" -n $NB --title "Architecture"
-PYTHONIOENCODING=utf-8 python -m notebooklm source add "<workspace>/CHANGELOG.md" -n $NB --title "Changelog"
-```
-
-### Push URLs as sources
-```bash
-python -m notebooklm source add "https://github.com/you/project" -n $NB
-python -m notebooklm source add "https://docs.example.com/api" -n $NB
-```
-
-### Push YouTube as research source
-```bash
-python -m notebooklm source add "https://youtube.com/watch?v=..." -n $NB
+python -m notebooklm source add "<workspace>/README.md" -n $NB --title "README"
+python -m notebooklm source add "<workspace>/openspec/changes/v1/design.md" -n $NB --title "Architecture"
+python -m notebooklm source add "<workspace>/CHANGELOG.md" -n $NB --title "Changelog"
 ```
 
 ---
 
-## Querying (Free RAG)
+## The 10 Rules of NotebookLM Prompting
 
-Ask questions grounded in your sources — no hallucination:
-```bash
-PYTHONIOENCODING=utf-8 python -m notebooklm ask "What are the core architecture decisions?" -n $NB
+*Consolidated from Claude, Codex, and Gemini's independent analyses.*
+
+### Rule 1: Source Engineering > Prompt Engineering
+
+Your sources define your output ceiling. Clean sources in, quality out.
+
+- Remove duplicate sections, broken OCR text, decorative junk
+- Prefer well-structured markdown over raw PDFs
+- Each source should have a clear purpose — don't dump everything
+
+### Rule 2: Add a Context Brief
+
+Upload a 1-page "briefing" document into your notebook that tells NotebookLM
+WHO you are, WHAT you're building, WHO the audience is, and what to EXCLUDE.
+NotebookLM uses this to contextualize everything else.
+
+```markdown
+# Project Brief: Clawd-Lobster
+
+## Objective
+Explain Clawd-Lobster's architecture to potential users and developers.
+
+## Audience
+Technical users who know Claude Code but haven't heard of Clawd-Lobster.
+
+## Tone
+Confident, concise, opinionated. Not academic.
+
+## Exclusions
+Do not mention internal development history or personal names.
 ```
 
-Follow-up in the same conversation:
-```bash
-PYTHONIOENCODING=utf-8 python -m notebooklm ask "How does the memory system work?" -n $NB
+### Rule 3: Five-Layer Prompt Framework
+
+Every prompt should define:
+
+1. **Role** — who is NotebookLM writing as?
+2. **Task** — exact deliverable (slides, infographic, podcast)
+3. **Audience** — who consumes it?
+4. **Constraints** — length, format, exclusions
+5. **Grounding** — what MUST come from sources only
+
+### Rule 4: Define Audience Before Tone
+
+Bad: "Make it compelling"
+Good: "Make it understandable to a non-technical executive using plain
+language and decision-oriented framing"
+
+The audience determines everything — vocabulary, depth, examples, structure.
+
+### Rule 5: Positive Instructions + Negative Constraints
+
+Tell it exactly what to do, AND what NOT to do:
+
+```
+Base every claim on the provided sources.
+Do NOT use vague words like "revolutionary" or "cutting-edge"
+unless directly supported by the source text.
+Do NOT repeat the same point in different words across slides.
 ```
 
-Answers include source citations. This is free Gemini RAG.
+### Rule 6: Extract → Outline → Draft (Never One Shot)
+
+Never ask for the final product in one prompt. Break it into steps:
+
+1. "Extract the top 10 insights from these sources"
+2. "Group those insights into 3-4 themes"
+3. "Create a slide outline with one theme per section"
+4. "Generate the final slide deck from this outline"
+
+This gives you control at each step and prevents generic outputs.
+
+### Rule 7: Force Compression
+
+NotebookLM defaults to safe, bloated summaries. Counteract:
+
+- "Prioritize only the most decision-relevant points"
+- "Compress to one core idea per slide"
+- "If a point doesn't change a decision, cut it"
+
+### Rule 8: Define Information Hierarchy Explicitly
+
+Don't let it guess the layout. Specify the structure:
+
+```
+For each slide, include:
+- 1 bold headline (max 8 words)
+- 3 bullet points (max 15 words each)
+- 1 key metric or data point
+- 1 supporting visual description
+```
+
+### Rule 9: Run a Gap Check Before Finalizing
+
+Before trusting a draft, ask:
+
+```
+"What important questions remain unanswered by these sources?"
+"Which claims in this draft are the weakest or least supported?"
+"What would a skeptic challenge about this presentation?"
+```
+
+### Rule 10: Use System Instructions, Not Repeated Prompts
+
+Set your persona/constraints ONCE in the notebook's System Instructions
+(the gear icon in the chat panel). Don't waste prompt space repeating them.
 
 ---
 
-## Content Generation — Prompt Engineering Guide
+## Prompt Templates by Content Type
 
-### Generating Slides (Slide Deck)
+### Slides — The Script-Extract Method
 
-**Basic (weak results):**
+**Step 1: Extract insights**
+```
+Review all sources. List the 10 most important insights about [topic].
+For each insight, cite which source it comes from.
+```
+
+**Step 2: Outline**
+```
+Group these 10 insights into 4 sections. For each section, write:
+- Section title (max 5 words)
+- 2-3 key points
+- 1 data point or quote from sources
+```
+
+**Step 3: Generate with style**
+```
+Create a detailed slide deck from this outline.
+Style: dark backgrounds (#0d1117), blue accents (#58a6ff),
+clean sans-serif typography, generous whitespace.
+Each slide: 1 headline, 3 bullets max, 1 visual element description.
+Language: Traditional Chinese (繁體中文).
+Do not include content not found in the sources.
+```
+
+### Slides — Style Templates (copy-paste ready)
+
+**Minimalist Business:**
+```
+White backgrounds, charcoal gray (#333) text, navy blue (#1a365d) as
+single accent color. Modern sans-serif typography. Each slide: one key
+message with generous whitespace. No decorative elements.
+```
+
+**Tech/Futuristic:**
+```
+Dark backgrounds (#0a0a0f). Electric blue (#00d4ff) and purple (#8b5cf6)
+accents with gradient effects. Geometric patterns: circuit lines,
+hexagonal grids. Neon glow data visualizations. Sleek modern typography.
+```
+
+**Infographic-heavy:**
+```
+Transform complex information into visual stories. 4-5 color palette.
+Abundant icons, pictograms. Diverse charts: pie, bar, timeline, flowchart.
+Bold scannable typography. Each slide tells a complete visual story.
+```
+
+### Infographics
+
+```
+Create an infographic summarizing [topic] from the provided sources.
+Structure: header with project name, 3-4 main sections arranged vertically,
+comparison table at the bottom.
+Visual metaphor: [brain/network/pipeline/timeline — pick one].
+Color scheme: [specify hex values].
+Include specific numbers and data points from sources.
+Language: Traditional Chinese.
+Orientation: standard (portrait).
+```
+
+### Podcasts (Audio Overview)
+
+```
+Create a deep-dive audio discussion about [topic].
+Focus on: [specific aspects to emphasize]
+Audience: [who will listen and their knowledge level]
+Style: deep_dive
+Language: zh_Hant (Traditional Chinese)
+The hosts should debate the trade-offs, not just list features.
+```
+
+### Research Mode
+
+Search the web for sources:
 ```bash
-python -m notebooklm generate slide-deck -n $NB
+python -m notebooklm source add-research "AI agent frameworks comparison 2026" \
+  --mode deep --import-all -n $NB
 ```
 
-**With custom prompt (much better):**
-```bash
-python -m notebooklm generate slide-deck -n $NB \
-  --custom-prompt "Create a detailed presentation about the system architecture.
-Focus on the 5-chapter structure. Use clean professional design with
-navy blue (#1a365d) accents on white backgrounds. Each slide should have
-one key concept with a supporting diagram or icon."
+Search a specific site:
+```
+site:{https://docs.example.com} before:{2026-04-01} after:{2025-01-01} "{keyword}"
 ```
 
-**Style-specific prompts (copy-paste ready):**
-
-Minimalist Business:
-```
-Create professional minimalist slides with generous whitespace and clean
-visual hierarchy. White backgrounds, charcoal gray text, navy blue as
-single accent color. Modern sans-serif typography, bold headlines, light
-body text. Each slide focuses on one key message.
-```
-
-Tech/Futuristic:
-```
-Create futuristic tech-style slides with dark backgrounds (#0a0a0f).
-Electric blue (#00d4ff) and purple (#8b5cf6) accents with gradient effects.
-Geometric patterns: circuit lines, hexagonal grids, glowing nodes.
-Data visualizations with neon glow. Sense of innovation and cutting-edge.
-```
-
-Playful/Creative:
-```
-Create vibrant slides with bold saturated colors: coral pink, electric
-yellow, turquoise. Hand-drawn elements: sketchy borders, doodle icons,
-brush strokes. Mix playful display fonts with clean sans-serif. Dynamic
-asymmetrical layouts. Optimistic, youthful, engaging mood.
-```
-
-Infographic-heavy:
-```
-Create infographic-style slides that transform complex information into
-visual stories. 4-5 color palette. Abundant custom icons, pictograms.
-Diverse charts: pie, bar, timeline, flowchart. Visual metaphors. Bold
-scannable typography. Each slide tells a complete visual story.
-```
-
-**Pro tip: Write a "script" first, then generate slides from the script.**
-Don't feed raw docs directly. Instead:
-1. Ask Claude to write a structured presentation script with clear sections
-2. Save the script as a text source in NotebookLM
-3. Generate slides FROM the script
-This gives you control over content. NotebookLM only handles visuals.
-
-### Generating Infographics
-
-```bash
-python -m notebooklm generate infographic -n $NB
-```
-
-With custom style:
-```bash
-python -m notebooklm generate infographic -n $NB \
-  --custom-prompt "Create a comprehensive architecture diagram showing the
-5-layer system. Use brain/neural network visual metaphor. Include
-comparison table at the bottom. Professional color scheme with blue
-and coral accents."
-```
-
-### Generating Podcasts (Audio Overview)
-
-```bash
-python -m notebooklm generate audio -n $NB
-```
-
-With customization:
-```bash
-python -m notebooklm generate audio -n $NB \
-  --style deep_dive \
-  --language zh_Hant \
-  --custom-prompt "Focus on the competitive advantages and the philosophy
-behind the architecture decisions. Make it accessible to non-technical
-listeners."
-```
-
-Styles: `default`, `concise`, `deep_dive`, `brief`
-
-### Generating Videos
+### Quizzes and Flashcards
 
 ```bash
-python -m notebooklm generate video -n $NB
-python -m notebooklm generate cinematic-video -n $NB   # premium style
-```
-
-### Generating Quizzes and Flashcards
-
-```bash
-python -m notebooklm generate quiz -n $NB --difficulty medium --num-questions 10
+python -m notebooklm generate quiz -n $NB --difficulty medium --num-questions 15
 python -m notebooklm generate flashcards -n $NB --num-cards 20
 ```
 
-### Generating Reports
+### Reports
 
 ```bash
 python -m notebooklm generate report -n $NB --style briefing_doc
@@ -199,148 +269,102 @@ python -m notebooklm generate report -n $NB --style briefing_doc
 
 Styles: `briefing_doc`, `study_guide`, `blog_post`, `custom`
 
-### Generating Mind Maps
+---
 
+## CLI Quick Reference
+
+### Create and manage
 ```bash
-python -m notebooklm generate mind-map -n $NB
+python -m notebooklm create "Project Name"          # create notebook
+python -m notebooklm list                            # list all notebooks
+python -m notebooklm use <notebook-id>               # set active notebook
 ```
 
-### Generating Data Tables
-
+### Add sources
 ```bash
+python -m notebooklm source add "https://..." -n $NB           # URL
+python -m notebooklm source add "./file.md" -n $NB --title "X" # local file
+python -m notebooklm source add "https://youtube.com/..." -n $NB  # YouTube
+python -m notebooklm source add-research "query" --mode deep -n $NB  # web search
+```
+
+### Query (free RAG)
+```bash
+python -m notebooklm ask "Your question here" -n $NB
+```
+
+### Generate content
+```bash
+python -m notebooklm generate slide-deck -n $NB [--custom-prompt "..."]
+python -m notebooklm generate infographic -n $NB [--custom-prompt "..."]
+python -m notebooklm generate audio -n $NB --style deep_dive --language zh_Hant
+python -m notebooklm generate video -n $NB
+python -m notebooklm generate quiz -n $NB --difficulty medium
+python -m notebooklm generate flashcards -n $NB
+python -m notebooklm generate report -n $NB --style briefing_doc
+python -m notebooklm generate mind-map -n $NB
 python -m notebooklm generate data-table -n $NB
 ```
 
----
-
-## Downloading Generated Content
-
-Wait for completion first:
+### Wait and download
 ```bash
 python -m notebooklm artifact wait <artifact-id> -n $NB --timeout 300
-```
-
-Then download:
-```bash
-python -m notebooklm download audio -n $NB --latest           # MP3
-python -m notebooklm download video -n $NB --latest           # MP4
-python -m notebooklm download slide-deck -n $NB --latest --format pptx  # Editable PPTX
-python -m notebooklm download slide-deck -n $NB --latest --format pdf   # PDF
-python -m notebooklm download infographic -n $NB --latest     # PNG
-python -m notebooklm download quiz -n $NB --latest --format json        # Structured
-python -m notebooklm download flashcards -n $NB --latest --format json
-python -m notebooklm download report -n $NB --latest          # Markdown
-python -m notebooklm download data-table -n $NB --latest      # CSV
-python -m notebooklm download mind-map -n $NB --latest        # JSON
-```
-
-Batch download all:
-```bash
-python -m notebooklm download audio -n $NB --all
-```
-
-Save to workspace deliverables:
-```bash
-mkdir -p <workspace>/deliverables
 python -m notebooklm download slide-deck -n $NB --latest --format pptx
-mv *.pptx <workspace>/deliverables/
+python -m notebooklm download infographic -n $NB --latest              # PNG
+python -m notebooklm download audio -n $NB --latest                    # MP3
+python -m notebooklm download video -n $NB --latest                    # MP4
+python -m notebooklm download quiz -n $NB --latest --format json
+python -m notebooklm download report -n $NB --latest                   # Markdown
 ```
 
----
-
-## Research Mode (Deep Research)
-
-Let NotebookLM search the web and add sources automatically:
-
+### Share
 ```bash
-python -m notebooklm source add-research $NB "AI agent frameworks 2026" --mode deep --import-all
-```
-
-Modes: `fast` (~30s, 3-5 sources) or `deep` (~2-3min, 10-20+ sources)
-
-Search a specific site:
-```
-site:{https://docs.example.com} before:{2026-04-01} after:{2025-01-01} "{keyword}"
-```
-
----
-
-## Sharing Notebooks
-
-Share as read-only (AI assistant for others):
-```bash
-python -m notebooklm share add $NB colleague@company.com --viewer
+python -m notebooklm share add $NB user@email.com --viewer
 python -m notebooklm share public $NB --enable
-```
-
-Chat-only mode (they can ask questions but can't see sources):
-```bash
-python -m notebooklm share view-level $NB chat-only
+python -m notebooklm share view-level $NB chat-only   # AI assistant mode
 ```
 
 ---
 
-## Workflow: Workspace → NotebookLM → Marketing Materials
-
-Complete flow for turning a project into marketing content:
+## Workspace → Marketing Pipeline
 
 ```
-1. /spec new → build the product
-     ↓
-2. After blitz complete:
-   Push README + design.md + CHANGELOG → NotebookLM
-     ↓
-3. Generate marketing materials:
-   → Infographic (for social media)
-   → Slides (for investor pitch)
-   → Podcast (for team briefing)
-   → Video (for product demo)
-   → Report (for documentation)
-     ↓
-4. Download all to workspace/deliverables/
-     ↓
-5. Share notebook as "AI product expert":
-   → Stakeholders can ask questions about the product
-   → Grounded in YOUR docs, not hallucination
+1. /spec new → build product
+2. After blitz → push docs to NotebookLM
+3. Generate deliverables:
+   → Infographic (social media)
+   → Slides (investor pitch)
+   → Podcast (team briefing)
+   → Video (product demo)
+   → Report (documentation)
+4. Download to workspace/deliverables/
+5. Share notebook as "AI product expert"
 ```
 
 ---
 
-## Important Notes
+## Known Limitations
 
-### Windows Users
-Always prefix commands with `PYTHONIOENCODING=utf-8` to avoid encoding errors:
-```bash
-PYTHONIOENCODING=utf-8 python -m notebooklm ...
-```
+- **Unofficial API** — notebooklm-py uses undocumented Google APIs. Can break.
+- **Auth expires** — Google cookies last days to weeks. Re-run `login` when needed.
+- **Rate limits** — Free: ~50 queries/day. Google AI Pro: higher limits.
+- **CJK text** — Chinese characters sometimes garble in slides. Re-generate
+  or use PDF→PPTX tools to fix. Adding `Language: Traditional Chinese` to
+  prompts helps but doesn't guarantee perfection.
+- **Deep research import** — can timeout. Use `--no-wait` and check manually.
+- **This is optional** — if NotebookLM breaks, your workspace still works.
+  When Google releases official API, swap backend, keep interface.
 
-### Authentication Expiry
-Google cookies expire after days to weeks. If commands start failing:
-```bash
-python -m notebooklm login   # re-authenticate
-```
+---
 
-### Rate Limits
-Free accounts: ~50 queries/day. Google AI Pro: higher limits.
-If you hit limits, wait or use a different Google account profile:
-```bash
-python -m notebooklm -p work login
-python -m notebooklm -p work ask "..." -n $NB
-```
+## Debate Source Credit
 
-### This is Unofficial
-notebooklm-py uses undocumented Google APIs. Google can break it anytime.
-Our skill is designed to gracefully degrade — if NotebookLM breaks,
-your workspace continues to work. This is optional, not a dependency.
+The prompt engineering rules in this skill were derived from a three-way debate:
+1. **Claude (Opus 4.6)** — hands-on testing, practical experience
+2. **Codex (GPT-5.4)** — 1,391-line theoretical framework, exhaustive templates
+3. **Gemini (via NotebookLM)** — judged both, added System Instructions and
+   RAG chunking insights, produced the final top 10 rules
 
-When Google releases an official API, we swap the backend. The skill
-interface stays the same. Wrapper pattern wins again.
-
-### Content Quality Tips
-1. **Feed clean sources** — well-structured markdown > raw dumps
-2. **Write a script first** for slides — don't let AI guess your structure
-3. **Use English prompts** for style — Google's model responds better
-4. **Specify hex colors** — vague words like "professional" are useless
-5. **Generate multiple times** — pick the best version, iterate
-6. **Fix text issues** — Chinese characters sometimes garble in slides;
-   re-generate or use PDF→PPTX conversion tools to fix
+Key Gemini verdict: "Codex correctly identifies that NotebookLM's true power
+lies in source-grounded synthesis, not formatting. Claude's script-first
+approach underutilizes the tool. The extract→outline→draft pipeline is superior."
