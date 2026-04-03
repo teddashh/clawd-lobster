@@ -7,9 +7,16 @@ Every new session, run these steps FIRST before doing anything else:
 2. Call `memory_list(limit=5)` — load recent context
 3. Call `memory_list_skills()` — check for relevant learned patterns
 4. If resuming work: call `memory_audit_search(limit=3)` — see last actions
-5. Report ready to user with a one-line summary of state
+5. Check for active spec: if `openspec/changes/*/tasks.md` exists, count `[x]` vs `[ ]` and report progress
+6. Check for `.blitz-active` marker — if present, resume blitz from last unchecked task
+7. Report ready to user with a one-line summary including spec state (if any)
 
 This should take < 10 seconds. Skip only if user says "continue" (= resume previous session).
+
+**Spec state shorthand:**
+- No openspec/ → "No active spec"
+- Has tasks, no blitz → "Spec active: X/Y tasks (Z%)"
+- Has .blitz-active → "BLITZ IN PROGRESS: X/Y tasks — resuming"
 
 ## Knowledge Base Index
 @{{DATA_DIR}}/knowledge/INDEX.md

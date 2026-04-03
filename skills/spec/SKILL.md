@@ -1,6 +1,24 @@
 # Spec — Guided Workspace Creation & Spec-Driven Development
 
-The most important skill in Clawd-Lobster. You LEAD the user through planning, spec generation, and blitz execution. The user answers questions; you do everything else.
+The most important skill in Clawd-Lobster. You LEAD the user through planning,
+spec generation, and blitz execution. The user answers questions; you do everything else.
+
+**Philosophy:** Every artifact follows 3W1H — Why (motivation), What (scope),
+Who (audience), How (approach). Specs use SHALL/MUST for testable requirements.
+Tasks reference file paths. The dependency DAG is strict. Blitz is autonomous.
+
+---
+
+## CRITICAL: Constraint ≠ Output
+
+The instructions in this SKILL.md are constraints for YOUR behavior.
+They are NOT content to copy into generated spec files.
+
+- Wrong: Copying "MUST have ## Why section" into proposal.md
+- Right: Writing a compelling ## Why section based on user's answers
+
+The spec files should read like professional documents written by a human
+architect, not like a checklist of meta-rules about how to write specs.
 
 ---
 
@@ -10,59 +28,53 @@ The most important skill in Clawd-Lobster. You LEAD the user through planning, s
 |-----------|------|-------------|
 | `/spec` or `/spec new` | **Create** | Full guided flow: discovery → workspace → spec → TODOs → blitz |
 | `/spec:status` | **Status** | Show current spec progress and blitz state |
-| `/spec:add "feature"` | **Add** | Add a new change to an existing spec |
-| `/spec:archive` | **Archive** | Archive a completed change |
-| `/spec:blitz` | **Blitz** | Start or resume blitz execution |
+| `/spec:add "feature"` | **Add** | Add a new change to an existing spec (with delta operations) |
+| `/spec:archive` | **Archive** | Archive a completed change + store as knowledge |
+| `/spec:blitz` | **Blitz** | Start or resume blitz execution (with branch isolation) |
 
 ---
 
 ## Mode 1: `/spec` or `/spec new` — Guided Workspace + Spec Creation
 
-This is the main flow. Five phases, executed sequentially.
+Five phases, executed sequentially.
 
 ### Phase 1: Discovery (YOU ask, user answers)
 
-Enter planning mode. Your job is to extract enough context to generate a complete spec. Ask these questions **conversationally** — not as a checklist. Adapt based on answers. Skip irrelevant ones. Ask follow-ups.
+Enter planning mode. Extract enough context to generate a complete spec.
+Ask conversationally — not as a checklist. Adapt based on answers.
 
-**Core questions to cover:**
+**3W1H discovery questions:**
 
-1. **Vision** — "What do you want to build?" Get the high-level picture. What problem does it solve?
-2. **Audience** — "Who will use this? End users? Internal team? API consumers?" Understand who benefits.
-3. **Tech stack** — "What tech stack are you thinking? Or should I recommend one?" If they defer, make a strong recommendation with reasoning.
-4. **Scope** — "Is this an MVP or a full product? What's the timeline pressure?" This determines task granularity.
-5. **Integrations** — "Any external systems to integrate? Databases, APIs, payment, auth?" Map the dependency surface.
-6. **References** — "Do you have reference projects or competitors I should look at?" Use `/absorb` on any provided repos or URLs.
-7. **Constraints** — "Any non-negotiable requirements? Performance, compliance, accessibility?" These become hard specs.
+1. **Why** — "What problem does this solve? What happens if we don't build it?"
+2. **What** — "What do you want to build? What's the high-level picture?"
+3. **Who** — "Who will use this? End users? Internal team? API consumers?"
+4. **How** — "What tech stack? Any preferences or should I recommend?"
+5. **Scope** — "MVP or full product? What's the timeline pressure?"
+6. **Integrations** — "External systems? Databases, APIs, payment, auth?"
+7. **References** — "Reference projects or competitors?" Use `/absorb` on any URLs.
+8. **Constraints** — "Non-negotiable requirements? Performance, compliance, a11y?"
 
-**Behavior rules for Phase 1:**
+**Behavior rules:**
 
-- YOU lead the conversation. Do not wait for the user to know what to ask.
-- Be opinionated. When the user says "whatever you think is best," make a strong recommendation with clear reasoning and trade-offs.
-- Ask one or two questions at a time, not all seven at once.
-- When you have enough context (typically 3-6 exchanges), announce: "I have enough to build your spec. Let me set up the workspace."
-- If the user provides a reference repo/URL, use `/absorb` to scan it before proceeding.
+- YOU lead. Do not wait for the user to know what to ask.
+- Be opinionated. "Whatever you think is best" = make a strong recommendation with trade-offs.
+- Ask one or two questions at a time, not all eight at once.
+- When you have enough context (typically 3-6 exchanges), announce:
+  "I have enough to build your spec. Let me set up the workspace."
+- If the user provides a reference repo/URL, use `/absorb` to scan it first.
 
 ### Phase 2: Workspace Creation (automatic)
 
-After gathering enough context, create the workspace automatically. Do not ask for confirmation.
-
-**Steps:**
+After gathering enough context, create the workspace. Do not ask for confirmation.
 
 1. Derive a workspace name from the project (kebab-case, e.g., `invoice-tracker`).
-2. Determine the workspace root directory. Use the platform-appropriate location:
+2. Determine the workspace root:
    - Check if `workspaces_root` is configured; if not, ask the user where they keep projects.
 3. Create the workspace directory at `<workspaces_root>/<workspace_name>/`.
-4. Create a private GitHub repo:
-   ```bash
-   gh repo create <workspace_name> --private --clone
-   ```
-   If `auto_create_github` config is `false`, skip this step and just `git init` instead.
-5. Initialize memory:
-   ```bash
-   python scripts/init_db.py
-   ```
-   This creates `memory.db` in the workspace.
-6. Create `CLAUDE.md` in the workspace root with project-specific instructions derived from Phase 1 answers.
+4. Create a private GitHub repo: `gh repo create <workspace_name> --private --clone`
+   (If `auto_create_github` is `false`, just `git init` instead.)
+5. Initialize memory: `python scripts/init_db.py`
+6. Create `CLAUDE.md` in workspace root with project-specific instructions from Phase 1.
 7. Create directory structure:
    ```
    <workspace>/
@@ -75,42 +87,62 @@ After gathering enough context, create the workspace automatically. Do not ask f
        └── specs/
    ```
 8. Register the workspace in `workspaces.json`.
-9. Make an initial git commit: `git commit -m "Initialize workspace"`.
+9. Initial commit: `git commit -m "Initialize workspace"`.
 
 ### Phase 3: Spec Generation (YOU produce, user reviews)
 
-Generate OpenSpec-style artifacts inside the workspace. Think deeply about architecture before writing.
+Generate OpenSpec-style artifacts inside the workspace. Use extended thinking
+to reason deeply about architecture before writing.
 
-**Output structure:**
+#### Artifact Dependency Order
+
+Artifacts MUST be generated in this strict order:
+
+```
+project.md → proposal.md → design.md → specs/ → tasks.md
+```
+
+Why this order is mandatory:
+- **project.md** captures raw context — everything downstream reads it
+- **proposal.md** defines scope boundaries — design needs to know what's in/out
+- **design.md** defines architecture — specs need to know component boundaries
+- **specs/** define testable requirements — tasks need requirements to implement
+- **tasks.md** references all of the above — it's the last thing generated
+
+Never generate tasks.md before design.md is complete. Never write specs
+before the architecture is decided. The DAG is strict.
+
+#### Output structure
 
 ```
 <workspace>/openspec/
-├── project.md                    ← Project context from Phase 1
+├── project.md
 ├── changes/v1/
-│   ├── proposal.md               ← Why + What Changes
-│   ├── design.md                 ← Architecture, data flows, tech stack
-│   ├── tasks.md                  ← Phased task list with file paths
+│   ├── proposal.md
+│   ├── design.md
+│   ├── tasks.md
 │   └── specs/
-│       ├── <capability-1>/spec.md  ← Gherkin scenarios
+│       ├── <capability-1>/spec.md
 │       ├── <capability-2>/spec.md
 │       └── ...
 ```
 
-#### project.md
-
-Capture the full project context from the discovery conversation:
+#### project.md (3W1H: context capture)
 
 ```markdown
 # <Project Name>
 
-## Vision
-[What this project is and why it exists]
+## Why
+[Problem statement. What pain exists today?]
 
-## Audience
-[Who uses it and how]
+## What
+[What this project is. High-level description.]
 
-## Tech Stack
-[Chosen technologies and why]
+## Who
+[Target audience and their relationship to the system]
+
+## How
+[Tech stack choices and rationale]
 
 ## Scope
 [MVP / Standard / Enterprise — what's in, what's out]
@@ -125,15 +157,13 @@ Capture the full project context from the discovery conversation:
 [Competitor projects, inspiration, absorbed repos]
 ```
 
-#### proposal.md
-
-Every proposal MUST have these two sections:
+#### proposal.md (3W1H: scope definition)
 
 ```markdown
 # V1 Proposal: <Project Name>
 
 ## Why
-[Problem statement, background, motivation. Why does this need to exist?]
+[Problem statement, background, motivation. Min 2-3 sentences.]
 
 ## What Changes
 [New capabilities being introduced. Be specific.]
@@ -141,20 +171,26 @@ Every proposal MUST have these two sections:
 ### In Scope
 - [Capability 1]
 - [Capability 2]
-- ...
 
 ### Out of Scope
 - [Explicitly excluded items]
 - [Things deferred to later versions]
+
+## Who
+[Who benefits from this change and how they'll interact with it]
+
+## How
+[High-level approach — not architecture details, just the strategy]
 ```
 
-#### design.md
+#### design.md (3W1H: architecture blueprint)
 
 ```markdown
 # V1 Design: <Project Name>
 
 ## Architecture
-[High-level architecture diagram in text/mermaid. Component responsibilities.]
+[High-level diagram in text/mermaid. Component responsibilities.
+Include WHY this architecture was chosen over alternatives.]
 
 ## Data Model
 [Core entities, relationships, storage strategy]
@@ -175,60 +211,17 @@ Every proposal MUST have these two sections:
 [How this runs — local, cloud, containerized, etc.]
 ```
 
-#### tasks.md
+#### specs/\<capability\>/spec.md (testable requirements)
 
-The heartbeat of the spec. Every task must be:
-- **Small enough** to complete in one focused session (5-30 minutes of work)
-- **Specific enough** to include the target file path
-- **Ordered** so dependencies come first
-- **Phased** for logical grouping
-
-Format:
-
-```markdown
-# V1 Tasks: <Project Name>
-
-## Phase 1: Foundation
-- [ ] Initialize project structure — `src/`, `tests/`, configs
-- [ ] Set up dependency management — `package.json` / `pyproject.toml`
-- [ ] Configure linter and formatter — `.eslintrc`, `.prettierrc`
-- [ ] Set up test framework — `jest.config.ts` / `pytest.ini`
-- [ ] Create CI pipeline — `.github/workflows/ci.yml`
-
-## Phase 2: Core Domain
-- [ ] Define data models (`src/domain/models.ts`)
-- [ ] Implement core business logic (`src/services/core.ts`)
-- [ ] Add unit tests for core logic (`tests/unit/core.test.ts`)
-...
-
-## Phase 3: API Layer
-- [ ] Set up API framework (`src/api/server.ts`)
-- [ ] Implement endpoints (`src/api/routes/`)
-- [ ] Add API validation middleware (`src/api/middleware/`)
-- [ ] Write API integration tests (`tests/integration/api.test.ts`)
-...
-
-## Phase 4: Frontend (if applicable)
-...
-
-## Phase 5: Integration & Polish
-- [ ] End-to-end tests (`tests/e2e/`)
-- [ ] Documentation (`README.md`)
-- [ ] Environment configuration (`.env.example`)
-- [ ] Final review and cleanup
-```
-
-Target: **100-300 tasks** for a standard project. Fewer for MVP, more for enterprise.
-
-#### specs/<capability>/spec.md
-
-Gherkin-style behavioral specs for each major capability:
+Requirements MUST use SHALL or MUST — never "should", "could", or "might".
+Each requirement MUST have at least one Gherkin scenario.
 
 ```markdown
 # Spec: <Capability Name>
 
-## Overview
-[What this capability does]
+## Requirements
+- The system SHALL [requirement 1]
+- The system MUST [requirement 2]
 
 ## Scenarios
 
@@ -248,23 +241,75 @@ When [action]
 Then [expected result]
 ```
 
-**After generating all spec files:**
-- Present a summary to the user: number of capabilities, number of tasks, phases.
+#### tasks.md (phased execution plan)
+
+Every task must be:
+- **Completable** in 5-30 minutes of focused work
+- **File-referenced** — include the target file path in backticks or parentheses
+- **Phased** — grouped by logical phase
+- **Sequentially dependent** — Phase N depends on Phase N-1
+
+```markdown
+# V1 Tasks: <Project Name>
+
+## Phase 1: Foundation
+- [ ] Initialize project structure (`src/`, `tests/`, configs)
+- [ ] Set up dependency management (`package.json`)
+- [ ] Configure linter and formatter (`.eslintrc`, `.prettierrc`)
+- [ ] Set up test framework (`jest.config.ts`)
+- [ ] Create CI pipeline (`.github/workflows/ci.yml`)
+
+## Phase 2: Core Domain
+- [ ] Define data models (`src/domain/models.ts`)
+- [ ] Implement core business logic (`src/services/core.ts`)
+- [ ] Add unit tests for core logic (`tests/unit/core.test.ts`)
+...
+
+## Phase 3: API Layer
+...
+
+## Phase N: Integration & Polish
+- [ ] End-to-end tests (`tests/e2e/`)
+- [ ] Documentation (`README.md`)
+- [ ] Environment configuration (`.env.example`)
+- [ ] Final review and cleanup
+```
+
+Target: **100-300 tasks** for a standard project. Fewer for MVP, more for enterprise.
+
+#### Task Delegation Markers
+
+Tasks can be marked for external execution engine delegation:
+
+- `- [ ] [codex] Task description` — Delegatable to external engine (Codex, etc.)
+- `- [ ] Task description` — Claude handles directly
+
+The /spec skill does not implement delegation — it recognizes the marker and
+skips those tasks during blitz. A separate skill handles delegated execution.
+
+#### Self-Validation (run after EACH artifact)
+
+After generating each artifact, run the matching checks from the
+**Self-Validation Checklist** (bottom of this file). Fix failures BEFORE
+generating the next artifact in the DAG.
+
+**After generating all artifacts:**
+- Present summary: number of capabilities, number of tasks, phases.
 - Ask: "Want to review or adjust anything before I load the TODOs?"
-- If the user says it looks good, proceed to Phase 4.
+- If approved, proceed to Phase 4.
 
 ### Phase 4: Load TODOs
 
-Automatically parse `tasks.md` and load everything into memory:
+Parse `tasks.md` and load into memory:
 
-1. **Parse tasks.md** — extract every `- [ ]` line with its phase context.
+1. **Parse tasks.md** — extract every `- [ ]` line with phase context.
 2. **Create TODOs** — call `memory_todo_add()` for each task:
    - `title`: the task text
-   - `description`: include the phase name and any file paths mentioned
+   - `description`: phase name + file paths + 3W1H tag (which artifact it traces to)
    - `priority`: Phase 1 = priority 1, Phase 2 = priority 2, etc. (cap at 3)
-3. **Record decisions** — call `memory_record_decision()` for each major decision from Phase 1 (tech stack, architecture choices, scope decisions).
-4. **Store project context** — call `memory_record_knowledge()` with the project.md content.
-5. **Report summary:**
+3. **Record decisions** — call `memory_record_decision()` for major Phase 1 decisions.
+4. **Store project context** — call `memory_record_knowledge()` with project.md content.
+5. **Report:**
    ```
    Spec loaded:
    |- 47 tasks across 5 phases
@@ -276,60 +321,42 @@ Automatically parse `tasks.md` and load everything into memory:
 ### Phase 5: Blitz (optional, user confirms)
 
 Only start if the user confirms. This is the execution phase.
+All work happens on a `blitz/<change>` branch — main stays clean until verified.
 
-**Blitz protocol:**
+**Blitz execution:**
 
-1. **Activate blitz** — create a `.blitz-active` marker file in the workspace root:
+1. **Create blitz branch:** `git checkout -b blitz/v1`
+2. **Create `.blitz-active` marker** in workspace root:
    ```json
    { "started": "<ISO timestamp>", "change": "v1", "phase": 1 }
    ```
-2. **Execute tasks sequentially** from `tasks.md`, phase by phase:
-   - Read the next `- [ ]` task
+3. **Execute tasks sequentially**, phase by phase:
+   - Read the next `- [ ]` task (skip `[codex]`-prefixed tasks)
    - Complete it (create files, write code, configure tools)
-   - Mark it done: change `- [ ]` to `- [x]` in `tasks.md`
-   - Update TODO status via `memory_todo_update()` to `approved`
-   - Continue to the next task
-3. **Commit after each phase:**
-   ```bash
-   git add -A
-   git commit -m "Phase N: <phase title> complete"
-   ```
-4. **Report progress** after each phase:
-   ```
-   Phase 2 complete: 12/47 tasks done (25%)
-   Moving to Phase 3: API Layer...
-   ```
-5. **On completion:**
-   - Remove `.blitz-active` marker file
-   - Final commit:
-     ```bash
-     git commit -m "V1 blitz complete"
-     ```
-   - Report:
-     ```
-     Blitz complete. V1 is ready.
-     |- 47/47 tasks completed
-     |- 5 phases across N commits
-     \- Evolve mode is now active for this workspace.
-     ```
+   - Mark done: `- [ ]` → `- [x]` in `tasks.md`
+   - Update TODO via `memory_todo_update()` to `approved`
+4. **Commit after each phase:** `git add -A && git commit -m "Phase N: <phase title> complete"`
+5. **Report after each phase:** `Phase 2 complete: 12/47 tasks done (25%)`
+6. **On completion — post-blitz hook:**
+   - Remove `.blitz-active` marker
+   - Merge: `git checkout main && git merge blitz/v1`
+   - Store entire spec as knowledge via `memory_record_knowledge()`
+   - Suggest next steps: run tests, `/spec:add` for new features, `/spec:archive` when satisfied
 
-**Blitz behavior rules:**
-
-- **Do not ask questions during blitz.** The spec is the plan. Execute it.
-- If something is ambiguous, make a reasonable decision and document it in a code comment.
-- If a task fails (e.g., dependency issue), log the error, mark the TODO with a note, and continue to the next task. Do not block.
-- Check for `.blitz-active` marker before any evolve-tick. If present, skip evolve entirely.
+**Blitz rules:** No questions — the spec is the plan. If ambiguous, decide and
+comment. If a task fails, log it, note the TODO, continue. Never block.
+Check `.blitz-active` before evolve-tick — if present, skip evolve.
 
 ---
 
 ## Mode 2: `/spec:status` — Show Current Spec Status
 
-Read the workspace state and display:
+Read workspace state and display:
 
 ```
 Workspace: <name>
 Active Change: v1
-Blitz: active / inactive
+Blitz: active / inactive (branch: blitz/v1)
 
 Phase Progress:
   Phase 1: Foundation        ████████████ 8/8  (100%)
@@ -339,54 +366,60 @@ Phase Progress:
   Phase 5: Integration       ░░░░░░░░░░░░ 0/8  (0%)
 
 Overall: 15/47 tasks (32%)
+Delegated: 3 tasks marked [codex] (not counted in blitz progress)
 ```
 
-**How to determine status:**
-1. Find the active workspace (current directory or ask).
-2. Read `openspec/changes/*/tasks.md` — count `[x]` vs `[ ]` per phase.
-3. Check for `.blitz-active` marker file.
-4. Display the progress table.
+Determine status by reading `openspec/changes/*/tasks.md` (count `[x]` vs `[ ]`
+per phase) and checking for `.blitz-active` marker.
 
 ---
 
-## Mode 3: `/spec:add "feature description"` — Add to Existing Spec
+## Mode 3: `/spec:add "feature"` — Add to Existing Spec (Delta Operations)
 
-Create a new change for an existing workspace.
+Create a new change for an existing workspace using delta operations.
 
-1. **Validate** — confirm the workspace exists and has an `openspec/` directory.
-2. **Discover** — ask 2-3 clarifying questions about the new feature (lighter than full Phase 1).
-3. **Name the change** — derive a kebab-case name (e.g., `add-notifications`).
-4. **Generate artifacts** under `openspec/changes/<change-name>/`:
-   - `proposal.md` — why + what changes
-   - `design.md` — how it fits into the existing architecture
-   - `tasks.md` — new tasks only, referencing existing code structure
-   - `specs/<capability>/spec.md` — behavioral specs for new capabilities
-5. **Load TODOs** — parse and add new tasks to memory.
-6. **Report** — "Added N tasks for '<feature>'. Run `/spec:blitz` to execute."
-7. **Do NOT auto-start blitz.** Let the user review first.
+1. **Validate** — confirm workspace exists and has `openspec/` directory.
+2. **Discover** — ask 2-3 clarifying questions (lighter than full Phase 1).
+3. **Name the change** — derive kebab-case name (e.g., `add-notifications`).
+4. **Generate delta artifacts** under `openspec/changes/<change-name>/`:
+
+   proposal.md, design.md, tasks.md, and specs/ — same format as Mode 1,
+   but design.md MUST reference the existing architecture and explain how
+   the new feature integrates.
+
+   **Delta classification in proposal.md:**
+
+   ```markdown
+   ## Delta Summary
+   ### ADDED — New capabilities
+   - [New capability 1]
+
+   ### MODIFIED — Changes to existing behavior
+   - [Modified capability 1]: was X, now Y
+
+   ### REMOVED — Deprecated features
+   - [Removed capability 1]: reason
+   ```
+
+   Apply order when implementing: **RENAME → REMOVE → MODIFY → ADD**
+
+5. **Run self-validation** on all generated artifacts (same checks as Mode 1).
+6. **Load TODOs** — parse and add new tasks to memory.
+7. **Report** — "Added N tasks for '\<feature\>'. Run `/spec:blitz` to execute."
+8. **Do NOT auto-start blitz.** Let the user review first.
 
 ---
 
 ## Mode 4: `/spec:archive` — Archive Completed Change
 
-Archive a change after all its tasks are complete.
+Archive a change after all tasks are complete.
 
-1. **Verify completion** — read `tasks.md` and confirm all items are `[x]`. If not, report remaining tasks and abort.
-2. **Move specs** — copy capability specs from `openspec/changes/<change>/specs/` to `openspec/specs/` (the permanent truth source).
-3. **Store knowledge** — record proposal.md and design.md content via `memory_record_knowledge()` with appropriate tags.
-4. **Record decisions** — extract key decisions from the change and store via `memory_record_decision()`.
-5. **Git commit:**
-   ```bash
-   git add -A
-   git commit -m "Archive change: <change-name>"
-   ```
-6. **Report:**
-   ```
-   Archived: <change-name>
-   |- Specs merged to openspec/specs/
-   |- N knowledge items stored
-   |- N decisions recorded
-   ```
+1. **Verify completion** — read `tasks.md`, confirm all items are `[x]`. If not, report remaining and abort.
+2. **Move specs** — copy capability specs from `openspec/changes/<change>/specs/` to `openspec/specs/` (permanent truth source).
+3. **Store knowledge** — record proposal.md and design.md via `memory_record_knowledge()`.
+4. **Record decisions** — extract key decisions and store via `memory_record_decision()`.
+5. **Git commit:** `git add -A && git commit -m "Archive change: <change-name>"`
+6. **Report:** specs merged count, knowledge items stored, decisions recorded.
 
 ---
 
@@ -395,14 +428,52 @@ Archive a change after all its tasks are complete.
 If there are pending tasks in any change:
 
 1. **Find pending work** — scan `openspec/changes/*/tasks.md` for unchecked items.
-2. If `.blitz-active` exists, resume from where it left off (read the marker to find current phase).
-3. If no marker, create one and start from the first unchecked task.
-4. Follow the same blitz protocol as Phase 5 above.
+2. If `.blitz-active` exists, resume from where it left off (read marker for current phase).
+3. If no marker, create blitz branch and marker, start from first unchecked task.
+4. Follow the same blitz protocol as Phase 5 above (branch isolation, phase commits, post-blitz hook).
 
 If no pending tasks exist:
 ```
 No pending tasks found. Use /spec:add to add new features, or /spec new to start a new project.
 ```
+
+---
+
+## Self-Validation Checklist
+
+Run this after generating ANY spec artifact. This is YOUR internal checklist —
+do not expose it to the user or copy it into generated files.
+
+### proposal.md
+- [ ] Has `## Why` (50-1000 chars of real motivation, not filler)
+- [ ] Has `## What Changes` with specific capabilities listed
+- [ ] Has `## Who` defining the audience
+- [ ] Has `### In Scope` and `### Out of Scope` subsections
+- [ ] 3W1H coverage: Why, What, Who, How all addressed
+
+### design.md
+- [ ] Has `## Architecture` with component diagram or description
+- [ ] Has `## Data Model` with entities and relationships
+- [ ] Has `## Deployment` with runtime strategy
+- [ ] Architecture rationale explains WHY, not just WHAT
+
+### specs/
+- [ ] Requirements use SHALL or MUST (grep for "should", "could", "might" — zero matches)
+- [ ] Every requirement has >= 1 Gherkin scenario
+- [ ] All scenarios follow Given/When/Then
+- [ ] Each spec lives in `specs/<capability>/spec.md`
+
+### tasks.md
+- [ ] Every task has a file path in backticks
+- [ ] Tasks are grouped by named phases
+- [ ] No task exceeds 30 minutes of work (split if needed)
+- [ ] Phase N only depends on Phase N-1 (no circular or skip dependencies)
+- [ ] `[codex]` markers are used where appropriate for delegatable tasks
+
+### Cross-artifact
+- [ ] Artifact generation followed the DAG: project → proposal → design → specs → tasks
+- [ ] No artifact references content from a later artifact in the DAG
+- [ ] All file paths in tasks.md align with the directory structure in design.md
 
 ---
 
@@ -412,17 +483,21 @@ No pending tasks found. Use /spec:add to add new features, or /spec new to start
 
 2. **Use extended thinking** for Phase 1 and Phase 3. Think deeply about architecture before generating specs. Consider edge cases, scalability, and maintainability.
 
-3. **Be opinionated.** When the user says "whatever you think is best," make a strong recommendation with reasoning. Do not present five options and ask them to choose.
+3. **Be opinionated.** "Whatever you think is best" = make a strong recommendation with reasoning. Do not present five options and ask them to choose.
 
-4. **tasks.md is the heartbeat.** Every task should be small enough to complete in one focused session (5-30 minutes of work). If a task would take longer, split it into subtasks.
+4. **3W1H consistency.** Every artifact must address Why, What, Who, and How at its appropriate level. project.md is broad context. proposal.md is scope. design.md is architecture. specs are requirements. tasks are execution.
 
-5. **During blitz, do not ask questions.** The spec is the plan. Execute it. If something is ambiguous, make a reasonable decision and document it in a code comment or the task's TODO note.
+5. **tasks.md is the heartbeat.** Every task: 5-30 minutes, file path included, phased. If a task would take longer, split it.
 
-6. **Never run evolve during blitz.** Check for `.blitz-active` marker. If present, skip evolve-tick entirely.
+6. **During blitz, do not ask questions.** The spec is the plan. Execute it.
 
-7. **After blitz, set up for evolution.** Remove the marker, ensure evolve-tick can find any remaining or new TODOs.
+7. **Never run evolve during blitz.** Check `.blitz-active` marker first.
 
-8. **Commit early, commit often.** During blitz, commit after each completed phase. Outside blitz, commit after spec generation and after archiving.
+8. **Branch isolation during blitz.** Work on `blitz/<change>` branch. Merge to main only after all phases complete.
+
+9. **Constraint ≠ Output.** These rules constrain YOUR generation behavior. The generated documents should read like professional engineering documents, not like rule-echo.
+
+10. **Delegation markers are passive.** Recognize `[codex]` tasks, skip them during blitz, but do not implement the delegation mechanism.
 
 ---
 
@@ -431,5 +506,5 @@ No pending tasks found. Use /spec:add to add new features, or /spec new to start
 - All spec files go inside the workspace directory, NEVER in the clawd-lobster repo itself.
 - Commit `openspec/` to the workspace's git repo.
 - Never commit credentials, secrets, API keys, or tokens to spec files.
-- Never include personal names, hardcoded user paths, or machine-specific information in spec files.
+- Never include personal names, hardcoded user paths, or machine-specific information.
 - If the user provides sensitive information during discovery, store it in environment variables or a `.env` file (gitignored), not in the spec.
