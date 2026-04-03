@@ -186,6 +186,31 @@ The real question isn't "remote control vs autopilot." It's: **why build either 
 
 **A skill is just 3 config entries.** No SDK. No plugin API. No framework lock-in.
 
+### What's actually running?
+
+The repo is ~13K lines total, but most of that is setup files, docs, and instructions for Claude to read. Here's what's actually in memory when your agent is working:
+
+| Layer | What | Lines | RAM | When |
+|-------|------|-------|-----|------|
+| **Runtime** | MCP Memory Server (28 tools + SQLite) | ~1,400 | ~25 MB | Always on |
+| **Runtime** | Odoo Connector (if enabled) | ~280 | ~22 MB | When enabled |
+| **Cron** | evolve-tick (TODO processor) | ~465 | ~20 MB peak | Every 2h, then exits |
+| **Cron** | heartbeat + sync | ~300 | ~5 MB peak | Every 30min, then exits |
+| **Static** | Web UI (browser renders it) | ~1,900 | 0 on server | On demand |
+| **Setup** | Installers, workspace-create, skill-manager | ~2,800 | 0 | Run once |
+| **Docs** | SKILL.md files, README, CHANGELOG | ~3,500 | 0 | Claude reads on demand |
+| **Config** | skill.json manifests, templates | ~900 | 0 | Read at startup |
+
+**Resident footprint: one Python process (~25 MB) + SQLite.**
+
+Everything else either runs-and-exits (cron scripts), lives in the browser (Web UI), or is just files that Claude reads when it needs context (SKILL.md, CLAUDE.md). The "wrapper" is as thin as it sounds.
+
+```
+Disk: 672 KB (code + configs, excluding .git and image assets)
+RAM:  ~25 MB (MCP server, the only always-on process)
+CPU:  0% idle (no polling, no daemon — OS scheduler wakes things up)
+```
+
 ---
 
 ## Features
