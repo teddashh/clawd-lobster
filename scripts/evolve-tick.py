@@ -283,6 +283,123 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
 
 
 # ---------------------------------------------------------------------------
+# Phase 2.5: Generate improvement proposals (files, not DB — syncs via git)
+# ---------------------------------------------------------------------------
+
+def generate_proposals(completed_tasks: list, recent_actions: list,
+                       db_list: list, dry_run: bool = False) -> int:
+    """
+    Ask Claude to suggest improvements based on completed work.
+    Proposals are written as markdown files in openspec/proposals/ —
+    they sync via git and can be reviewed on any machine.
+    Returns number of proposals generated.
+    """
+    if not completed_tasks and not recent_actions:
+        return 0
+
+    task_summary = "\n".join(
+        f"- [{t.get('_ws_name')}] {t.get('title', '?')}"
+        for t in completed_tasks[:10]
+    )
+
+    prompt = (
+        "You just reviewed completed work. Now suggest IMPROVEMENTS.\n\n"
+        "## Recently Completed Tasks\n"
+        f"{task_summary or '(none)'}\n\n"
+        "## Instructions\n"
+        "Based on the completed work, suggest 1-3 concrete improvements.\n"
+        "For each suggestion, output a JSON block like this:\n"
+        "```json\n"
+        '{"title": "Short title", "workspace": "workspace-name", '
+        '"why": "Why this improvement matters", '
+        '"what": "What specifically to change", '
+        '"effort": "small|medium|large"}\n'
+        "```\n"
+        "Only suggest things that are genuinely valuable. If nothing worth "
+        "improving, output: NO_PROPOSALS\n"
+    )
+
+    if dry_run:
+        print(f"[evolve] Would ask Claude for improvement proposals")
+        return 0
+
+    cwd = None
+    if completed_tasks:
+        cwd = completed_tasks[0].get("_ws_path")
+    elif db_list:
+        cwd = str(db_list[0][2])
+    if not cwd:
+        return 0
+
+    try:
+        result = subprocess.run(
+            ["claude", "-p", prompt],
+            capture_output=True, text=True,
+            timeout=CLAUDE_TIMEOUT,
+            cwd=cwd,
+        )
+        output = result.stdout.strip() if result.stdout else ""
+
+        if result.returncode != 0 or "NO_PROPOSALS" in output:
+            return 0
+
+        # Parse JSON blocks from output
+        import re as _re
+        json_blocks = _re.findall(r'```json\s*\n(.*?)\n```', output, _re.DOTALL)
+        proposals_written = 0
+
+        for block in json_blocks:
+            try:
+                proposal = json.loads(block)
+                title = proposal.get("title", "untitled")
+                workspace = proposal.get("workspace", "")
+
+                # Find the workspace path
+                ws_path = None
+                for ws_name, db_path, w_path in db_list:
+                    if ws_name == workspace or workspace in str(w_path):
+                        ws_path = w_path
+                        break
+                if not ws_path and db_list:
+                    ws_path = db_list[0][2]
+
+                # Write proposal file
+                proposals_dir = Path(ws_path) / "openspec" / "proposals"
+                proposals_dir.mkdir(parents=True, exist_ok=True)
+
+                slug = _re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-")[:40]
+                timestamp = _now()[:10]
+                filename = f"{timestamp}-{slug}.md"
+                filepath = proposals_dir / filename
+
+                if filepath.exists():
+                    continue  # don't overwrite
+
+                content = (
+                    f"# Proposal: {title}\n\n"
+                    f"**Source:** evolve-tick on {_get_machine_id()}\n"
+                    f"**Date:** {timestamp}\n"
+                    f"**Workspace:** {workspace}\n"
+                    f"**Effort:** {proposal.get('effort', 'medium')}\n"
+                    f"**Status:** pending\n\n"
+                    f"## Why\n{proposal.get('why', '')}\n\n"
+                    f"## What\n{proposal.get('what', '')}\n"
+                )
+
+                filepath.write_text(content, encoding="utf-8")
+                proposals_written += 1
+                print(f"[evolve] Proposal written: {filename}")
+
+            except (json.JSONDecodeError, KeyError):
+                continue
+
+        return proposals_written
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return 0
+
+
+# ---------------------------------------------------------------------------
 # Phase 3: Consolidate knowledge (salience decay)
 # ---------------------------------------------------------------------------
 
@@ -334,54 +451,68 @@ def run_salience_decay(db_list: list, dry_run: bool = False) -> int:
 # Phase 4: Sync learnings to Hub
 # ---------------------------------------------------------------------------
 
-def sync_to_hub(dry_run: bool = False):
-    """Push knowledge changes to Hub via git."""
+def sync_to_hub(db_list: list, dry_run: bool = False):
+    """Push knowledge + proposals to Hub and workspace repos via git."""
+
+    # Sync Hub repo (knowledge/)
     repo = _repo_root()
     knowledge_dir = repo / "knowledge"
+    if knowledge_dir.exists():
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(repo), "status", "--porcelain", "knowledge/"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.stdout.strip():
+                if dry_run:
+                    print(f"[evolve] Would sync knowledge changes to Hub")
+                else:
+                    subprocess.run(["git", "-C", str(repo), "add", "knowledge/"],
+                                   capture_output=True, timeout=30)
+                    subprocess.run(["git", "-C", str(repo), "commit", "-m",
+                                    f"evolve: knowledge sync from {_get_machine_id()}"],
+                                   capture_output=True, timeout=30)
+                    subprocess.run(["git", "-C", str(repo), "push"],
+                                   capture_output=True, timeout=60)
+                    print("[evolve] Knowledge synced to Hub.")
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
 
-    if not knowledge_dir.exists():
-        return
+    # Sync workspace repos (proposals in openspec/proposals/)
+    for ws_name, db_path, ws_path in db_list:
+        proposals_dir = Path(ws_path) / "openspec" / "proposals"
+        if not proposals_dir.exists():
+            continue
+        proposals = list(proposals_dir.glob("*.md"))
+        if not proposals:
+            continue
 
-    try:
-        # Check for changes in knowledge/
-        result = subprocess.run(
-            ["git", "-C", str(repo), "status", "--porcelain", "knowledge/"],
-            capture_output=True, text=True, timeout=10,
-        )
-        if not result.stdout.strip():
-            return  # nothing to push
-
-        if dry_run:
-            print(f"[evolve] Would sync {len(result.stdout.strip().splitlines())} knowledge changes to Hub")
-            return
-
-        subprocess.run(
-            ["git", "-C", str(repo), "add", "knowledge/"],
-            capture_output=True, timeout=30,
-        )
-        subprocess.run(
-            ["git", "-C", str(repo), "commit", "-m",
-             f"evolve: knowledge sync from {_get_machine_id()} ({_now()[:10]})"],
-            capture_output=True, timeout=30,
-        )
-        result = subprocess.run(
-            ["git", "-C", str(repo), "push"],
-            capture_output=True, text=True, timeout=60,
-        )
-        if result.returncode == 0:
-            print("[evolve] Knowledge synced to Hub.")
-        else:
-            print(f"[evolve] Push failed (non-fatal): {result.stderr[:100]}")
-
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass  # non-fatal
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(ws_path), "status", "--porcelain", "openspec/proposals/"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.stdout.strip():
+                if dry_run:
+                    print(f"[evolve] Would push {len(proposals)} proposal(s) in {ws_name}")
+                else:
+                    subprocess.run(["git", "-C", str(ws_path), "add", "openspec/proposals/"],
+                                   capture_output=True, timeout=30)
+                    subprocess.run(["git", "-C", str(ws_path), "commit", "-m",
+                                    f"evolve: {len(proposals)} proposal(s) from {_get_machine_id()}"],
+                                   capture_output=True, timeout=30)
+                    subprocess.run(["git", "-C", str(ws_path), "push"],
+                                   capture_output=True, timeout=60)
+                    print(f"[evolve] Proposals synced for {ws_name}.")
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
 
 
 # ---------------------------------------------------------------------------
 # Phase 5: Log evolve cycle
 # ---------------------------------------------------------------------------
 
-def log_evolve_cycle(db_list: list, patterns_learned: int, items_decayed: int):
+def log_evolve_cycle(db_list: list, patterns_learned: int, proposals: int, items_decayed: int):
     """Record this evolve cycle in action_log."""
     for ws_name, db_path, ws_path in db_list[:1]:  # log to first workspace
         try:
@@ -390,7 +521,7 @@ def log_evolve_cycle(db_list: list, patterns_learned: int, items_decayed: int):
                 "INSERT INTO action_log (id, timestamp, machine_id, action, target, note, tokens, workspace) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (_new_id(), _now(), _get_machine_id(), "EVOLVE_CYCLE",
-                 "system", f"learned={patterns_learned}, decayed={items_decayed}",
+                 "system", f"learned={patterns_learned}, proposals={proposals}, decayed={items_decayed}",
                  0, ws_name),
             )
             conn.commit()
@@ -447,17 +578,20 @@ def main():
     # 5. Extract patterns (Claude reviews completed work)
     patterns = extract_patterns(completed, actions, existing, db_list, dry_run)
 
-    # 6. Salience decay
+    # 6. Generate improvement proposals (files in openspec/proposals/)
+    proposals = generate_proposals(completed, actions, db_list, dry_run)
+
+    # 7. Salience decay
     decayed = run_salience_decay(db_list, dry_run)
 
-    # 7. Sync to Hub
-    sync_to_hub(dry_run)
+    # 8. Sync to Hub (knowledge + proposals)
+    sync_to_hub(db_list, dry_run)
 
-    # 8. Log the cycle
+    # 9. Log the cycle
     if not dry_run:
-        log_evolve_cycle(db_list, patterns, decayed)
+        log_evolve_cycle(db_list, patterns, proposals, decayed)
 
-    print(f"[evolve] Cycle complete: {patterns} patterns learned, {decayed} items decayed")
+    print(f"[evolve] Cycle complete: {patterns} learned, {proposals} proposals, {decayed} decayed")
 
 
 if __name__ == "__main__":
