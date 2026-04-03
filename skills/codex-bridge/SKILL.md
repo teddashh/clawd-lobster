@@ -65,13 +65,52 @@ Here are patterns to inform your decisions, not rules to follow blindly:
 - **Bulk refactoring** — Rename across 50 files, update import paths, migrate
   API versions. Tedious but straightforward.
 
-### Keep for yourself
+### Use Codex as a second brain (critic, not worker)
+
+Not every delegation is about getting work done. Sometimes you need a
+**different perspective** — a second opinion from a brain that hasn't
+been marinating in the same codebase as you.
+
+- **Security audit** — You wrote the auth code. Ask Codex to *attack* it:
+  ```
+  /codex:adversarial-review
+  ```
+  Codex reviews as an adversary — looking for vulnerabilities, edge cases,
+  and design flaws you're too close to see. Read-only. No auto-fix.
+
+- **Architecture debate** — You're choosing between two approaches. Ask Codex
+  to argue against your preferred option:
+  ```
+  /codex:rescue "I'm choosing approach A over B for [reason]. Play devil's
+  advocate — argue why B is better. Don't implement anything, just debate."
+  ```
+
+- **Code review** — You finished a feature. Get a cold-eye review before merge:
+  ```
+  /codex:review
+  ```
+  Fresh perspective, no emotional attachment to the code.
+
+- **Spec challenge** — Before blitz, ask Codex to poke holes in your spec:
+  ```
+  /codex:rescue "Read openspec/changes/v1/proposal.md and design.md.
+  Find 3 things that will break in production. Don't fix them, just list them."
+  ```
+
+**The key: Codex critiques, YOU decide.** Codex never auto-applies changes
+in review mode. It gives opinions. You evaluate them with your full context.
+
+This is actually MORE valuable for security than doing it yourself — you
+can't objectively audit code you just wrote. A different brain can.
+
+### Keep for yourself (write the code)
 
 - **Architecture decisions** — System design, data model choices, trade-offs.
-  These need your full context and judgment.
+  These need your full context and judgment. (But ask Codex to *challenge*
+  your decision afterward.)
 
-- **Security-critical code** — Auth, encryption, input validation, secrets
-  management. Too important to delegate.
+- **Security-critical implementation** — Write auth, encryption, and validation
+  yourself. Then ask Codex to *review* it adversarially.
 
 - **Code that depends on recent context** — If you just made a decision that
   affects this code, do it yourself. Codex won't have that context.
