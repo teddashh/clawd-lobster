@@ -12,6 +12,7 @@ No external dependencies — stdlib only, cross-platform (Windows + Unix).
 """
 
 import argparse
+import copy
 import json
 import os
 import platform
@@ -85,13 +86,13 @@ def safe_read_json(path: Path, default=None):
     if default is None:
         default = {}
     if not path.exists():
-        return default.copy() if isinstance(default, dict) else default[:]
+        return copy.deepcopy(default)
     try:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError) as exc:
         print(yellow(f"  Warning: could not parse {path}: {exc}"))
-        return default.copy() if isinstance(default, dict) else default[:]
+        return copy.deepcopy(default)
 
 
 def safe_write_json(path: Path, data, restricted: bool = False) -> None:
@@ -110,6 +111,12 @@ def safe_write_json(path: Path, data, restricted: bool = False) -> None:
         if tmp.exists():
             tmp.unlink()
         raise SystemExit(red(f"Error writing {path}: {exc}"))
+
+    if restricted and not IS_WINDOWS:
+        try:
+            os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+        except OSError:
+            pass
 
 
 def now_iso() -> str:
