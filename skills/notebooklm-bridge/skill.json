@@ -1,0 +1,64 @@
+{
+  "id": "notebooklm-bridge",
+  "name": "NotebookLM Bridge",
+  "description": "Auto-connect workspaces to Google NotebookLM — free RAG, slides, infographics, podcasts, and research",
+  "version": "0.1.0",
+  "category": "integration",
+  "tags": ["notebooklm", "google", "slides", "podcast", "infographic", "research", "rag"],
+  "kind": "prompt-pattern",
+  "icon": "📓",
+  "alwaysOn": false,
+  "defaultEnabled": false,
+
+  "permissions": {
+    "allow": []
+  },
+
+  "credentials": [
+    {
+      "id": "google-notebooklm",
+      "label": "Google NotebookLM Authentication",
+      "required": true,
+      "fields": [
+        {"key": "auth_status", "label": "Auth Status", "type": "string", "placeholder": "Run: python -m notebooklm login", "sensitive": false},
+        {"key": "account", "label": "Google Account", "type": "email", "placeholder": "your@gmail.com", "sensitive": false}
+      ]
+    }
+  ],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "auto_sync_sources": {
+        "type": "boolean",
+        "description": "Auto-push workspace markdown files to NotebookLM after blitz"
+      },
+      "default_language": {
+        "type": "string",
+        "description": "Default language for generated content (e.g. zh_Hant, en, ja)"
+      },
+      "auto_create_notebook": {
+        "type": "boolean",
+        "description": "Auto-create a NotebookLM notebook when workspace is created"
+      }
+    }
+  },
+  "configDefaults": {
+    "auto_sync_sources": true,
+    "default_language": "zh_Hant",
+    "auto_create_notebook": true
+  },
+
+  "healthCheck": {
+    "type": "command",
+    "target": "python -m notebooklm auth check",
+    "intervalSeconds": 3600,
+    "timeoutSeconds": 10
+  },
+
+  "dependencies": {
+    "skills": ["memory-server"],
+    "system": ["python>=3.10"],
+    "python": ["notebooklm-py"]
+  }
+}
