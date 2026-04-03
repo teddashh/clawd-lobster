@@ -103,6 +103,50 @@ We start with Claude Code — the most advanced coding agent in the world — an
 
 > *Zero bloat. Zero rewrites. Pure Claude Code, amplified.*
 
+### The fatal flaw of other agent frameworks
+
+Other frameworks rebuild Claude from scratch — then call Claude's API to do the actual thinking. Think about what that means:
+
+```
+Heavyweight framework approach:
+  Custom Engine (300K LOC) ──API call──→ Claude Model
+                                ↑
+                    Anthropic can change pricing,
+                    revoke OAuth, rate-limit,
+                    or deprecate endpoints — at any time.
+                    Your 300K lines are at their mercy.
+
+Clawd-Lobster approach:
+  User runs: claude login          ← human authenticates once
+  OS scheduler runs: claude --resume  ← Anthropic's own CLI, their own flag
+  Claw-Lobster just keeps the session alive and manages skills.
+```
+
+We don't call Claude's API. We don't manage OAuth tokens. We don't handle rate limits. We schedule **Claude Code itself** — a tool Anthropic built, ships, and maintains. When they improve Claude Code, we get faster. When they change their API, we don't care.
+
+Other frameworks are building a **remote control for someone else's car.** We're sitting **in the car.**
+
+### "But you still need autonomous agents for 24/7 tasks!"
+
+Yes — and we have them. The difference is **how**.
+
+Other frameworks run a custom daemon process 24/7 that calls Claude's API per-token. A simple Discord greeting bot at 480 calls/day = $144/month in API costs. They solve this by falling back to local models (Ollama 7B) for cheap tasks — which means maintaining **two inference stacks**.
+
+We solve it differently:
+
+| | Other frameworks | **Clawd-Lobster** |
+|---|---|---|
+| **24/7 engine** | Custom daemon + API | OS scheduler + `claude --resume` |
+| **Cost model** | Per-token API ($$$) | Pro subscription ($20/mo flat) |
+| **Cheap tasks** | Ollama fallback (separate stack) | Same Claude Code session |
+| **Auth model** | OAuth/API key (fragile) | Human login once (robust) |
+| **Maintenance** | Two engines, two stacks | One CLI tool, zero custom code |
+| **Anthropic updates** | Rewrite adapters | Auto-upgrade |
+
+**Economics don't require two inference engines.** A flat subscription means the 480th call costs the same as the 1st — $0 marginal. The entire "expensive API vs cheap local model" tradeoff **disappears** when you're on a subscription.
+
+The real question isn't "remote control vs autopilot." It's: **why build either when you can schedule the car itself?**
+
 ---
 
 ## The Difference
@@ -476,23 +520,30 @@ One computer? Fine. Three machines? They should all share the same brain. GitHub
 
 When Anthropic ships Opus 4.7, 1M context, new tools — you get them instantly. No adapter rewrites. No version pinning. No waiting for community patches. **The best time to use Claude Code was yesterday. The second best time is now.**
 
+### 6. Never build what you can schedule.
+
+Other frameworks build custom daemons to run agents 24/7. We use `cron` + `claude --resume`. Other frameworks manage OAuth tokens to call Claude's API. We let the user type `claude login` once. **Every line of auth code you write is a line that can break when the provider changes. Every line you don't write is a line that can't.** The OS scheduler has been running reliably since the 1970s. Your custom daemon was written last Tuesday.
+
 ---
 
 ## Comparison
 
 | | Claude Code (raw) | OpenClaw | Hermes Agent | **Clawd-Lobster** |
 |---|---|---|---|---|
-| Agent engine | Anthropic | Custom (Pi Agent) | Custom (Python) | **Anthropic (native)** |
+| Agent engine | Anthropic | Custom (300K LOC) | Custom (50K LOC) | **Anthropic (native)** |
+| Auth model | Human login | OAuth/API key | API key | **Human login once** |
+| Cost model | Subscription | Per-token API | Per-token API | **Subscription (flat)** |
 | Always alive | No | Custom daemon | Custom daemon | **OS heartbeat + auto-revive** |
 | Persistent memory | None | Hybrid search | FTS5 + LLM | **4-layer + salience** |
 | Multi-agent shared memory | No | No | No | **Yes (git-synced)** |
-| Skill management | Custom SDK | CLI only | Manual | **Web UI + CLI + manifest** |
+| Skill management | N/A | CLI only | Manual | **Web UI + CLI + manifest** |
 | Agent evolution | No | No | Self-improving skills | **Yes (24 MCP tools)** |
 | Multi-machine | No | No | No | **Yes (MDM-style)** |
 | Session management | Manual | Gateway process | Manual | **Auto-revive all sessions** |
 | Onboarding | Manual | Complex | Moderate | **Web wizard, 5 languages** |
 | Auto-upgrades | Yes | No | No | **Yes** |
-| Codebase size | N/A | ~300K LOC | ~50K LOC | **~2K LOC** |
+| Codebase to maintain | 0 | ~300K LOC | ~50K LOC | **~2K LOC** |
+| Anthropic API change | Transparent | Breaking | Breaking | **Transparent** |
 | Audit trail | No | Security audit | No | **Full (every action)** |
 | Skill install | — | Plugin SDK | 3-file change | **1 manifest + reconcile** |
 
@@ -547,6 +598,27 @@ Ours do too — but smarter. Instead of running a custom daemon process, we use 
 - Client status? Updated and pushed.
 
 The OS scheduler never crashes, never needs debugging, and never burns tokens when idle. When Claude Code ships native 24/7 mode (KAIROS — it's in the codebase), we get it for free. Zero code change.
+
+### "Won't Anthropic block this?"
+
+We don't do anything Anthropic prohibits. Let's be precise:
+
+- **What we do:** Schedule `claude` CLI commands via OS cron/Task Scheduler. Resume existing sessions with `claude --resume`. Use MCP servers that Anthropic's own protocol defines.
+- **What we don't do:** Programmatic OAuth login. API key automation. Token scraping. Auth bypass. Reverse engineering.
+
+The user runs `claude login` once — a human, in a browser, with their Pro subscription. After that, the OS scheduler keeps sessions alive using flags that Anthropic themselves ship in their CLI (`--resume`, `-p`, `--allowedTools`). This is no different from scheduling `git pull` via cron. **We automate a CLI tool. We don't impersonate a user.**
+
+Other frameworks call Claude's API directly — they need API keys, manage OAuth refresh tokens, handle rate limits, and pray that pricing doesn't change. Every API change is a breaking change for them. For us, it's transparent — Claude Code handles its own auth.
+
+### "What about API costs for heavy workloads?"
+
+The "expensive API" argument assumes per-token pricing. With a Pro subscription ($20/month), **there is no per-token cost.** Your 1st task and your 480th task cost the same: $0 marginal.
+
+This eliminates the entire "expensive model for thinking, cheap model for grunt work" architecture that other frameworks require. You don't need Ollama 7B running locally for cheap tasks. You don't need two inference stacks. You don't need a model router that decides which brain to use.
+
+One subscription. One engine. One brain. Unlimited tasks.
+
+When rate limits hit (they will), Clawd-Lobster's skill-manager gracefully queues work. No token budget panic. No surprise bills. **Predictable cost is a feature.**
 
 ---
 
