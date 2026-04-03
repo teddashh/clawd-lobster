@@ -599,6 +599,25 @@ Ours do too — but smarter. Instead of running a custom daemon process, we use 
 
 The OS scheduler never crashes, never needs debugging, and never burns tokens when idle. When Claude Code ships native 24/7 mode (KAIROS — it's in the codebase), we get it for free. Zero code change.
 
+### "Claude Code already has built-in skills. Why do I need more?"
+
+Claude Code ships with skills like `/commit`, `/review-pr`, `/init`. They're good. They're also **closed** — Anthropic decides what they do, how they work, and when they change. You can't add your own. You can't modify them. You can't share them with your team.
+
+That's the built-in apps on your phone. Clawd-Lobster is the App Store.
+
+| | Claude Code built-in | **Clawd-Lobster skills** |
+|---|---|---|
+| Who creates them | Anthropic | You, your team, the community |
+| Who controls them | Anthropic | You |
+| Can you modify them | No | Yes — it's your code |
+| Can you add new ones | No | Yes — `skill.json` + implement |
+| Can you share them | No | Yes — push to GitHub / ClawHub |
+| Domain-specific | No (generic dev tools) | Yes — your ERP, your CRM, your workflows |
+| Credentials management | N/A | Built-in per-skill credential system |
+| Enable/disable | N/A | One toggle, Web UI or CLI |
+
+Your company needs a skill that runs a compliance check before every deploy? A skill that syncs CRM data from Odoo every 5 minutes? A skill that generates bilingual PDF reports in your specific format? Claude Code will never ship those. **Your skills are your competitive advantage. They should live in your system, not someone else's.**
+
 ### "Claude Code already has MCP and skills. Why build another skill layer?"
 
 Claude Code gives you MCP — a protocol for registering tool servers. That's like saying Chrome gives you the ability to install extensions. True. But Chrome also has the **Chrome Web Store** — because installing a `.crx` file manually is not managing extensions.
