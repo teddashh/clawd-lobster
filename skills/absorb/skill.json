@@ -1,0 +1,33 @@
+{
+  "id": "absorb",
+  "name": "Absorb",
+  "description": "Knowledge absorption engine — feed it folders, repos, or URLs and it extracts knowledge, skills, and TODOs",
+  "version": "0.1.0",
+  "category": "intelligence",
+  "tags": ["knowledge", "learning", "import", "migration", "absorb"],
+  "kind": "prompt-pattern",
+  "icon": "🧽",
+  "alwaysOn": true,
+  "defaultEnabled": true,
+  "permissions": { "allow": [] },
+  "credentials": [],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "dry_run": { "type": "boolean", "description": "Preview what would be absorbed without writing anything" },
+      "depth": { "type": "string", "enum": ["shallow", "normal", "deep"], "description": "How deeply to analyze sources: shallow=README only, normal=key files, deep=full codebase" },
+      "auto_create_todos": { "type": "boolean", "description": "Automatically create TODO items from discovered tasks" }
+    }
+  },
+  "configDefaults": {
+    "dry_run": false,
+    "depth": "normal",
+    "auto_create_todos": true
+  },
+  "healthCheck": { "type": "none", "intervalSeconds": 0 },
+  "dependencies": {
+    "skills": ["memory-server"],
+    "system": [],
+    "python": []
+  }
+}

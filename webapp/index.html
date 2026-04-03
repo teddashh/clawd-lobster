@@ -452,6 +452,104 @@
             .mode-select { flex-direction: column; }
             .setup-skills-grid { grid-template-columns: 1fr; }
         }
+
+        /* ── Workspaces Tab ──────────────────────────────────── */
+        .ws-toolbar {
+            display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
+        }
+
+        .ws-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1rem;
+        }
+
+        .ws-card {
+            background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+            padding: 1.25rem; transition: all 0.25s;
+        }
+        .ws-card:hover { border-color: #484f58; }
+        .ws-card.expanded { border-color: #58a6ff; }
+
+        .ws-top { display: flex; align-items: flex-start; gap: 0.75rem; }
+        .ws-icon { font-size: 1.4rem; flex-shrink: 0; }
+        .ws-info { flex: 1; min-width: 0; }
+        .ws-name { font-size: 1rem; font-weight: 600; color: #e6edf3; }
+        .ws-path { font-size: 0.78rem; color: #484f58; font-family: monospace; margin-top: 0.2rem; overflow: hidden; text-overflow: ellipsis; }
+
+        .ws-meta {
+            display: flex; align-items: center; gap: 1rem; margin-top: 0.85rem;
+            font-size: 0.75rem; color: #484f58; flex-wrap: wrap;
+        }
+
+        .ws-staged-badge {
+            background: #1f6feb; color: #fff; border-radius: 12px;
+            padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 4px rgba(31,111,235,0.3); }
+            50% { box-shadow: 0 0 12px rgba(31,111,235,0.6); }
+        }
+
+        /* Review Panel (expanded) */
+        .ws-review-panel {
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease, opacity 0.3s;
+            opacity: 0;
+        }
+        .ws-card.expanded .ws-review-panel {
+            max-height: 1200px; opacity: 1; margin-top: 1rem;
+            border-top: 1px solid #30363d; padding-top: 1rem;
+        }
+
+        .review-branch {
+            background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+            padding: 1rem; margin-bottom: 0.75rem;
+        }
+        .review-branch-name {
+            font-family: monospace; font-size: 0.85rem; color: #58a6ff; margin-bottom: 0.5rem;
+        }
+        .review-stats {
+            font-size: 0.78rem; color: #8b949e; margin-bottom: 0.75rem;
+        }
+        .review-stats .add { color: #3fb950; }
+        .review-stats .del { color: #f85149; }
+
+        .review-claude-says {
+            background: #1c2333; border-left: 3px solid #58a6ff; border-radius: 0 6px 6px 0;
+            padding: 0.85rem 1rem; margin-bottom: 0.75rem; font-size: 0.85rem; line-height: 1.5;
+        }
+        .review-claude-icon { font-size: 0.9rem; margin-right: 0.3rem; }
+
+        .review-files { margin-bottom: 0.75rem; }
+        .review-file {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.3rem 0; font-size: 0.8rem; color: #c9d1d9;
+        }
+        .review-file-icon { color: #484f58; }
+        .review-file-stats { color: #8b949e; font-size: 0.72rem; }
+
+        .review-comment {
+            width: 100%; padding: 0.55rem 0.75rem;
+            background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+            color: #c9d1d9; font-size: 0.85rem; resize: vertical; min-height: 60px;
+            margin-bottom: 0.75rem;
+        }
+        .review-comment:focus { outline: none; border-color: #58a6ff; }
+
+        .review-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .review-actions .btn { font-size: 0.85rem; padding: 0.45rem 1rem; }
+        .btn-approve { background: #238636; }
+        .btn-approve:hover { background: #2ea043; }
+        .btn-ask { background: #1f6feb; }
+        .btn-ask:hover { background: #388bfd; }
+        .btn-reject { background: #da3633; }
+        .btn-reject:hover { background: #f85149; }
+
+        @media (max-width: 768px) {
+            .ws-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -466,6 +564,10 @@
             <button class="tab-btn active" onclick="switchTab('skills')" data-tab="skills">
                 <span class="tab-icon">&#9881;</span>
                 <span class="tab-label">Skills</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('workspaces')" data-tab="workspaces">
+                <span class="tab-icon">&#128193;</span>
+                <span class="tab-label">Workspaces</span>
             </button>
             <button class="tab-btn" onclick="switchTab('setup')" data-tab="setup">
                 <span class="tab-icon">&#9889;</span>
@@ -501,6 +603,24 @@
         <div id="skillContent">
             <div class="card-grid" id="cardGrid"></div>
         </div>
+
+        <div class="footer">
+            <p>Clawd-Lobster &mdash; Claude Code Skills Wrapper</p>
+            <p>Not affiliated with Anthropic. MIT License.</p>
+        </div>
+    </div>
+
+    <!-- ════════ Workspaces ════════ -->
+    <div id="page-workspaces" class="page">
+        <div class="ws-toolbar">
+            <h2 style="font-size:1.25rem;font-weight:600;color:#e6edf3;">Workspaces</h2>
+            <div style="flex:1;"></div>
+            <button class="btn btn-secondary" onclick="showToast('Coming soon: create workspace wizard', 'info')">
+                + New Workspace
+            </button>
+        </div>
+
+        <div id="wsGrid" class="ws-grid"></div>
 
         <div class="footer">
             <p>Clawd-Lobster &mdash; Claude Code Skills Wrapper</p>
@@ -957,6 +1077,60 @@
     let expandedCard = null;
     let dialogCallback = null;
 
+    /* ═══════════════════════════════════════════════════════
+       WORKSPACE DATA — will be replaced by API later
+       ═══════════════════════════════════════════════════════ */
+    const WORKSPACES = [
+        {
+            id: 'clawd-lobster',
+            name: 'clawd-lobster',
+            path: '~/Documents/clawd-lobster',
+            repo: 'github.com/you/clawd-lobster',
+            domain: 'work',
+            active: true,
+            lastSync: '3 minutes ago',
+            staged: [
+                {
+                    branch: 'evolve/42-add-retry-logic',
+                    title: 'Add retry logic to Odoo poller',
+                    todoId: 42,
+                    filesChanged: 3,
+                    additions: 47,
+                    deletions: 12,
+                    files: [
+                        { path: 'connect_odoo/poller.py', additions: 32, deletions: 8 },
+                        { path: 'skill.json', additions: 2, deletions: 1 },
+                        { path: 'SKILL.md', additions: 13, deletions: 3 }
+                    ],
+                    claudeSays: "I added retry logic to the Odoo poller. When a connection times out, it now retries 3 times with exponential backoff (1s, 2s, 4s) before giving up. This was TODO #42 from your absorb of the reliability patterns doc. The retry count and backoff multiplier are configurable via skill.json configSchema.",
+                    completedAt: '2 hours ago'
+                }
+            ]
+        },
+        {
+            id: 'my-api',
+            name: 'my-api',
+            path: '~/Documents/Workspace/my-api',
+            repo: 'github.com/you/my-api',
+            domain: 'work',
+            active: true,
+            lastSync: '1 minute ago',
+            staged: []
+        },
+        {
+            id: 'data-pipeline',
+            name: 'data-pipeline',
+            path: '~/Documents/Workspace/data-pipeline',
+            repo: 'github.com/you/data-pipeline',
+            domain: 'work',
+            active: false,
+            lastSync: 'never',
+            staged: []
+        }
+    ];
+
+    let expandedWorkspace = null;
+
     // Setup wizard state
     let currentStep = 1;
     let selectedMode = null;
@@ -975,6 +1149,7 @@
         renderCategoryFilters();
         renderSkillContent();
         renderCredentialTable();
+        renderWorkspaces();
     }
 
     function generateMachineId() {
@@ -1511,6 +1686,147 @@
         toast.innerHTML = `<span class="toast-icon">${icons[type] || ''}</span>${message}`;
         container.appendChild(toast);
         setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3200);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       WORKSPACES
+       ═══════════════════════════════════════════════════════ */
+    function renderWorkspaces() {
+        const grid = document.getElementById('wsGrid');
+        grid.innerHTML = WORKSPACES.map(ws => {
+            const isExpanded = expandedWorkspace === ws.id;
+            const stagedCount = ws.staged.length;
+
+            return `
+            <div class="ws-card${isExpanded ? ' expanded' : ''}">
+                <div class="ws-top" onclick="toggleWorkspace('${ws.id}')" style="cursor:pointer;">
+                    <div class="ws-icon">${ws.active ? '\u{1F4C2}' : '\u{1F4C1}'}</div>
+                    <div class="ws-info">
+                        <div class="ws-name">${ws.name}</div>
+                        <div class="ws-path">${ws.path}</div>
+                    </div>
+                    <div class="toggle-wrap" onclick="event.stopPropagation()">
+                        <button class="toggle${ws.active ? ' on' : ''}"
+                                onclick="toggleWorkspaceActive('${ws.id}')"
+                                title="${ws.active ? 'Deactivate' : 'Activate'} workspace"></button>
+                    </div>
+                </div>
+
+                <div class="ws-meta">
+                    <span>${ws.domain}</span>
+                    <span>Last sync: ${ws.lastSync}</span>
+                    ${stagedCount > 0
+                        ? `<span class="ws-staged-badge">\u26A1 ${stagedCount} staged change${stagedCount > 1 ? 's' : ''}</span>`
+                        : `<span style="color:#3fb950;">\u2713 All clean</span>`
+                    }
+                </div>
+
+                ${stagedCount > 0 ? `
+                    <div style="margin-top:0.85rem;">
+                        <button class="btn btn-secondary" style="font-size:0.82rem;padding:0.4rem 0.8rem;"
+                                onclick="event.stopPropagation(); toggleWorkspace('${ws.id}')">
+                            Review with Claude
+                        </button>
+                    </div>
+                ` : ''}
+
+                <div class="ws-review-panel">
+                    ${ws.staged.map(s => renderStagedReview(ws.id, s)).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderStagedReview(wsId, staged) {
+        return `
+        <div class="review-branch">
+            <div class="review-branch-name">\u{1F33F} ${staged.branch}</div>
+            <div class="review-stats">
+                ${staged.filesChanged} files changed
+                (<span class="add">+${staged.additions}</span> / <span class="del">-${staged.deletions}</span>)
+                \u00B7 completed ${staged.completedAt}
+            </div>
+
+            <div class="review-claude-says">
+                <span class="review-claude-icon">\u{1F4AC}</span>
+                ${staged.claudeSays}
+            </div>
+
+            <div class="review-files">
+                ${staged.files.map(f => `
+                    <div class="review-file">
+                        <span class="review-file-icon">\u{1F4C4}</span>
+                        <span>${f.path}</span>
+                        <span class="review-file-stats">
+                            (<span class="add">+${f.additions}</span>/<span class="del">-${f.deletions}</span>)
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+
+            <textarea class="review-comment" placeholder="Your comment (optional)..."
+                      id="comment-${wsId}-${staged.todoId}"></textarea>
+
+            <div class="review-actions">
+                <button class="btn btn-approve"
+                        onclick="reviewAction('${wsId}', ${staged.todoId}, 'approve')">
+                    \u2705 Approve &amp; Merge
+                </button>
+                <button class="btn btn-ask"
+                        onclick="reviewAction('${wsId}', ${staged.todoId}, 'ask')">
+                    \u{1F4AC} Ask Claude
+                </button>
+                <button class="btn btn-reject"
+                        onclick="reviewAction('${wsId}', ${staged.todoId}, 'reject')">
+                    \u274C Reject
+                </button>
+            </div>
+        </div>`;
+    }
+
+    function toggleWorkspace(id) {
+        expandedWorkspace = expandedWorkspace === id ? null : id;
+        renderWorkspaces();
+    }
+
+    function toggleWorkspaceActive(id) {
+        const ws = WORKSPACES.find(w => w.id === id);
+        if (ws) {
+            ws.active = !ws.active;
+            ws.lastSync = ws.active ? 'syncing...' : 'paused';
+            renderWorkspaces();
+            showToast(`${ws.name} ${ws.active ? 'activated' : 'deactivated'}`, 'success');
+        }
+    }
+
+    function reviewAction(wsId, todoId, action) {
+        const ws = WORKSPACES.find(w => w.id === wsId);
+        const staged = ws?.staged.find(s => s.todoId === todoId);
+        if (!ws || !staged) return;
+
+        const comment = document.getElementById(`comment-${wsId}-${todoId}`)?.value || '';
+
+        if (action === 'approve') {
+            ws.staged = ws.staged.filter(s => s.todoId !== todoId);
+            showToast(`Approved: ${staged.title} \u2014 merged to main`, 'success');
+        } else if (action === 'reject') {
+            showDialog(
+                `Reject "${staged.title}"?`,
+                'The branch will be archived and a learning will be recorded.',
+                'Reject',
+                () => {
+                    ws.staged = ws.staged.filter(s => s.todoId !== todoId);
+                    showToast(`Rejected: ${staged.title} \u2014 branch archived`, 'info');
+                    renderWorkspaces();
+                }
+            );
+            return;
+        } else if (action === 'ask') {
+            showToast('Opening Claude review session... (coming soon)', 'info');
+            return;
+        }
+
+        renderWorkspaces();
     }
 
     /* ═══════════════════════════════════════════════════════

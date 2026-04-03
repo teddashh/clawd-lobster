@@ -1,14 +1,24 @@
 {
   "id": "evolve",
   "name": "Evolve",
-  "description": "Self-evolution prompt pattern — agents learn reusable skills from completed tasks",
-  "version": "0.3.0",
+  "description": "Hybrid self-evolution system — cron auto-processes pending TODOs + interactive skill learning from completed tasks",
+  "version": "0.4.0",
   "category": "intelligence",
-  "tags": ["self-improvement", "learning", "skills", "patterns"],
-  "kind": "prompt-pattern",
+  "tags": ["evolution", "automation", "todo", "staging", "self-improvement", "learning"],
+  "kind": "cron",
   "alwaysOn": true,
   "defaultEnabled": true,
   "icon": "🧬",
+
+  "runtime": {
+    "entrypoint": "scripts/evolve-tick.py",
+    "schedule": "0 */2 * * *",
+    "timeoutSeconds": 600,
+    "retryPolicy": {
+      "maxRetries": 1,
+      "backoffMs": 60000
+    }
+  },
 
   "permissions": {
     "allow": []
@@ -26,12 +36,22 @@
       "retirement_days": {
         "type": "integer",
         "description": "Days of inactivity before suggesting skill retirement"
+      },
+      "cron_enabled": {
+        "type": "boolean",
+        "description": "Enable automatic TODO processing every 2 hours"
+      },
+      "max_todo_timeout": {
+        "type": "integer",
+        "description": "Max seconds Claude gets per TODO item"
       }
     }
   },
   "configDefaults": {
     "auto_detect": true,
-    "retirement_days": 90
+    "retirement_days": 90,
+    "cron_enabled": true,
+    "max_todo_timeout": 300
   },
 
   "healthCheck": {
@@ -41,7 +61,7 @@
 
   "dependencies": {
     "skills": ["memory-server"],
-    "system": [],
+    "system": ["git", "claude"],
     "python": []
   }
 }

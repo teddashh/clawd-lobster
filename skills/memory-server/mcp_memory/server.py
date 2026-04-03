@@ -1,7 +1,7 @@
 """
 Clawd-Lobster MCP Memory Server — unified memory interface for AI agents.
 
-Tools (24):
+Tools (28):
   Write:    memory_store, memory_record_decision, memory_record_resolved,
             memory_record_question, memory_record_knowledge
   Read:     memory_list, memory_get, memory_get_summary
@@ -9,6 +9,7 @@ Tools (24):
   Search:   memory_search (vector + text, salience-weighted, ALL tables)
   Salience: memory_reinforce (boost important memories)
   Evolve:   memory_learn_skill, memory_list_skills, memory_improve_skill
+  TODO:     memory_todo_add, memory_todo_list, memory_todo_update, memory_todo_search
   Trail:    memory_log_action, memory_audit_search, memory_audit_stats,
             memory_daily_report, memory_activity_log
   Admin:    memory_compact, memory_status, memory_oracle_summary
@@ -299,6 +300,174 @@ def memory_delete(id: str, workspace: str = "current") -> str:
             except Exception:
                 continue
         return f"Memory '{id}' not found in [{ws}]"
+    finally:
+        conn.close()
+
+
+# ============================================================
+# TODO TOOLS
+# ============================================================
+
+def _ensure_todo_table(conn):
+    """Create todo_items table if it doesn't exist (safe to call multiple times)."""
+    conn.execute("""CREATE TABLE IF NOT EXISTS todo_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        source TEXT DEFAULT 'manual',
+        priority INTEGER DEFAULT 2,
+        status TEXT DEFAULT 'pending',
+        branch TEXT,
+        workspace TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        machine_id TEXT)""")
+
+
+@mcp.tool()
+def memory_todo_add(title: str, description: str = "", priority: int = 2, source: str = "manual") -> str:
+    """Create a TODO item. Priority: 1=high, 2=medium, 3=low.
+    Source: 'manual', 'absorb', 'evolve-discovered'."""
+    if len(title) > _MAX_CONTENT_LEN:
+        return f"Title too large (max {_MAX_CONTENT_LEN} chars)"
+    priority = max(1, min(priority, 3))
+    valid_sources = ("manual", "absorb", "evolve-discovered")
+    if source not in valid_sources:
+        source = "manual"
+    conn = get_sqlite()
+    ws = detect_workspace()
+    mid = _get_machine_id()
+    try:
+        _ensure_todo_table(conn)
+        cur = conn.execute(
+            "INSERT INTO todo_items (title, description, source, priority, status, workspace, machine_id) VALUES (?, ?, ?, ?, 'pending', ?, ?)",
+            (title, description, source, priority, ws, mid),
+        )
+        conn.commit()
+        todo_id = cur.lastrowid
+        return json.dumps({
+            "status": "created",
+            "id": todo_id,
+            "title": title[:60],
+            "priority": priority,
+            "source": source,
+            "workspace": ws,
+            "machine_id": mid,
+        })
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def memory_todo_list(status: str = "pending", limit: int = 20) -> str:
+    """List TODO items. Status: 'pending', 'in_progress', 'staged', 'approved', 'rejected', 'archived', or 'all'."""
+    limit = max(1, min(limit, _MAX_LIMIT))
+    valid_statuses = ("pending", "in_progress", "staged", "approved", "rejected", "archived", "all")
+    if status not in valid_statuses:
+        return f"Invalid status: {status}. Use one of: {', '.join(valid_statuses)}"
+    conn = get_sqlite()
+    try:
+        _ensure_todo_table(conn)
+        if status == "all":
+            rows = conn.execute(
+                "SELECT id, title, description, source, priority, status, branch, workspace, created_at, updated_at, machine_id FROM todo_items ORDER BY priority ASC, created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT id, title, description, source, priority, status, branch, workspace, created_at, updated_at, machine_id FROM todo_items WHERE status = ? ORDER BY priority ASC, created_at DESC LIMIT ?",
+                (status, limit),
+            ).fetchall()
+        items = []
+        for r in rows:
+            items.append({
+                "id": r["id"],
+                "title": r["title"],
+                "description": (r["description"] or "")[:200],
+                "source": r["source"],
+                "priority": r["priority"],
+                "status": r["status"],
+                "branch": r["branch"],
+                "workspace": r["workspace"],
+                "created_at": r["created_at"],
+                "machine_id": r["machine_id"],
+            })
+        return json.dumps({"count": len(items), "status_filter": status, "items": items}, ensure_ascii=False)
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def memory_todo_update(todo_id: int, status: str = "", branch: str = "", note: str = "") -> str:
+    """Update a TODO item. Set status, branch, or add a note (appended to description).
+    Status: 'pending', 'in_progress', 'staged', 'approved', 'rejected', 'archived'."""
+    valid_statuses = ("pending", "in_progress", "staged", "approved", "rejected", "archived")
+    if status and status not in valid_statuses:
+        return f"Invalid status: {status}. Use one of: {', '.join(valid_statuses)}"
+    conn = get_sqlite()
+    try:
+        _ensure_todo_table(conn)
+        row = conn.execute("SELECT * FROM todo_items WHERE id = ?", (todo_id,)).fetchone()
+        if not row:
+            return json.dumps({"error": f"TODO #{todo_id} not found"})
+
+        updates, params = [], []
+        if status:
+            updates.append("status = ?")
+            params.append(status)
+        if branch:
+            updates.append("branch = ?")
+            params.append(branch)
+        if note:
+            existing_desc = row["description"] or ""
+            new_desc = f"{existing_desc}\n[{datetime.now().strftime('%Y-%m-%d %H:%M')}] {note}" if existing_desc else f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] {note}"
+            updates.append("description = ?")
+            params.append(new_desc)
+        if not updates:
+            return json.dumps({"error": "Nothing to update. Provide status, branch, or note."})
+
+        updates.append("updated_at = datetime('now')")
+        params.append(todo_id)
+        conn.execute(f"UPDATE todo_items SET {', '.join(updates)} WHERE id = ?", params)
+        conn.commit()
+        return json.dumps({
+            "status": "updated",
+            "id": todo_id,
+            "title": row["title"][:60],
+            "changes": {"status": status or None, "branch": branch or None, "note_added": bool(note)},
+        })
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def memory_todo_search(query: str) -> str:
+    """Search TODOs by title or description."""
+    if not query:
+        return json.dumps({"error": "Query cannot be empty"})
+    conn = get_sqlite()
+    q = f"%{query.lower()}%"
+    try:
+        _ensure_todo_table(conn)
+        rows = conn.execute(
+            "SELECT id, title, description, source, priority, status, branch, workspace, created_at, machine_id FROM todo_items WHERE LOWER(title) LIKE ? OR LOWER(description) LIKE ? ORDER BY priority ASC, created_at DESC LIMIT ?",
+            (q, q, _MAX_LIMIT),
+        ).fetchall()
+        items = []
+        for r in rows:
+            items.append({
+                "id": r["id"],
+                "title": r["title"],
+                "description": (r["description"] or "")[:200],
+                "source": r["source"],
+                "priority": r["priority"],
+                "status": r["status"],
+                "branch": r["branch"],
+                "workspace": r["workspace"],
+                "created_at": r["created_at"],
+                "machine_id": r["machine_id"],
+            })
+        return json.dumps({"query": query, "count": len(items), "items": items}, ensure_ascii=False)
     finally:
         conn.close()
 
@@ -1063,7 +1232,7 @@ def memory_status() -> str:
     from .config import load_config
     config = load_config()
     mid = _get_machine_id()
-    lines = [f"Clawd-Lobster Memory Server v0.3.0",
+    lines = [f"Clawd-Lobster Memory Server v0.4.0",
              f"Workspace: {detect_workspace()}",
              f"Machine: {mid}"]
     try:

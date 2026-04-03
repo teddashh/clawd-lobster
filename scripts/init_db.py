@@ -51,6 +51,19 @@ def init_db(db_path):
         last_used TEXT,
         created_at TEXT DEFAULT (datetime('now')))""")
 
+    # TODOs (evolve system — auto-processed by cron)
+    c.execute("""CREATE TABLE IF NOT EXISTS todos (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        priority INTEGER DEFAULT 2,
+        status TEXT DEFAULT 'pending',
+        branch TEXT DEFAULT '',
+        note TEXT DEFAULT '',
+        workspace TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')))""")
+
     # Action log (local audit trail — no Oracle required)
     c.execute("""CREATE TABLE IF NOT EXISTS action_log (
         id TEXT PRIMARY KEY,
