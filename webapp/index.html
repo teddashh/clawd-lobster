@@ -66,6 +66,20 @@
             transform: translateY(-50%); font-size: 0.85rem; pointer-events: none;
         }
 
+        /* ── Source Tabs ──────────────────────────────────────── */
+        .source-tabs {
+            display: flex; gap: 0.5rem; margin-bottom: 1rem;
+            border-bottom: 1px solid #30363d; padding-bottom: 0;
+        }
+        .source-tab {
+            background: none; border: none; border-bottom: 2px solid transparent;
+            color: #8b949e; font-size: 0.88rem; font-weight: 500;
+            padding: 0.6rem 1.1rem; cursor: pointer; transition: all 0.2s;
+            position: relative; bottom: -1px;
+        }
+        .source-tab:hover { color: #c9d1d9; }
+        .source-tab.active { color: #e6edf3; border-bottom-color: #f78166; }
+
         .cat-filters { display: flex; gap: 0.35rem; flex-wrap: wrap; }
         .cat-pill {
             background: #21262d; border: 1px solid #30363d; border-radius: 20px;
@@ -76,6 +90,55 @@
         .cat-pill.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
 
         .skill-count { font-size: 0.8rem; color: #484f58; margin-bottom: 1rem; }
+
+        /* ── Claude Native Commands List ──────────────────────── */
+        .cmd-section { margin-bottom: 1.25rem; }
+        .cmd-section-header {
+            font-size: 0.72rem; font-weight: 600; color: #8b949e;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 0.5rem; padding-bottom: 0.35rem;
+            border-bottom: 1px solid #21262d;
+        }
+        .cmd-list { list-style: none; }
+        .cmd-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.45rem 0.5rem; border-radius: 6px;
+            transition: background 0.15s;
+        }
+        .cmd-item:hover { background: #161b22; }
+        .cmd-name {
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.85rem; color: #79c0ff; min-width: 150px;
+        }
+        .cmd-desc { font-size: 0.82rem; color: #8b949e; }
+
+        /* ── Custom/Hub Empty State ───────────────────────────── */
+        .empty-state {
+            text-align: center; padding: 3rem 1.5rem;
+            background: #161b22; border: 1px dashed #30363d; border-radius: 10px;
+        }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+        .empty-state-title {
+            font-size: 1.1rem; font-weight: 600; color: #e6edf3; margin-bottom: 0.5rem;
+        }
+        .empty-state-desc {
+            font-size: 0.85rem; color: #8b949e; margin-bottom: 1.5rem; line-height: 1.5;
+        }
+        .empty-state-btns { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+        .empty-state-btns button {
+            background: #21262d; border: 1px solid #30363d; border-radius: 6px;
+            color: #c9d1d9; font-size: 0.88rem; padding: 0.55rem 1.25rem;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .empty-state-btns button:hover { border-color: #58a6ff; }
+
+        /* ── Native Skill Sections ───────────────────────────── */
+        .native-section-header {
+            font-size: 0.95rem; font-weight: 600; color: #e6edf3;
+            margin: 1.5rem 0 0.75rem 0; padding-bottom: 0.5rem;
+            border-bottom: 1px solid #30363d;
+        }
+        .native-section-header:first-child { margin-top: 0; }
 
         /* ── Skill Card Grid ──────────────────────────────────── */
         .card-grid {
@@ -424,11 +487,20 @@
             <div class="search-box">
                 <input type="text" id="skillSearch" placeholder="Search skills..." oninput="filterSkills()">
             </div>
-            <div class="cat-filters" id="catFilters"></div>
         </div>
 
+        <div class="source-tabs" id="sourceTabs">
+            <button class="source-tab" data-source="claude-native" onclick="switchSource('claude-native')">Claude Native</button>
+            <button class="source-tab active" data-source="clawd-lobster" onclick="switchSource('clawd-lobster')">Clawd-Lobster</button>
+            <button class="source-tab" data-source="custom" onclick="switchSource('custom')">Custom / Hub</button>
+        </div>
+
+        <div class="cat-filters" id="catFilters" style="margin-bottom: 1rem;"></div>
+
         <div class="skill-count" id="skillCount"></div>
-        <div class="card-grid" id="cardGrid"></div>
+        <div id="skillContent">
+            <div class="card-grid" id="cardGrid"></div>
+        </div>
 
         <div class="footer">
             <p>Clawd-Lobster &mdash; Claude Code Skills Wrapper</p>
@@ -799,6 +871,62 @@
         }
     ];
 
+    /* ═══════════════════════════════════════════════════════
+       CLAUDE NATIVE DATA
+       ═══════════════════════════════════════════════════════ */
+    const CLAUDE_NATIVE_SKILLS = [
+        {
+            id: 'claude-batch', name: 'Batch', icon: '\u26A1',
+            description: 'Orchestrate large-scale codebase changes in parallel with git worktrees',
+            kind: 'bundled-skill', category: 'automation',
+            toggleable: true, enabled: true
+        },
+        {
+            id: 'claude-api-ref', name: 'Claude API Reference', icon: '\u{1F4D6}',
+            description: 'Load Claude API reference material for Python, TypeScript, Java, Go, Ruby, C#, PHP, cURL',
+            kind: 'bundled-skill', category: 'utility',
+            toggleable: true, enabled: true
+        },
+        {
+            id: 'claude-debug', name: 'Debug', icon: '\u{1F41B}',
+            description: 'Enable debug logging for session troubleshooting',
+            kind: 'bundled-skill', category: 'utility',
+            toggleable: true, enabled: true
+        },
+        {
+            id: 'claude-loop', name: 'Loop', icon: '\u{1F504}',
+            description: 'Run prompts repeatedly on a configurable interval schedule',
+            kind: 'bundled-skill', category: 'automation',
+            toggleable: true, enabled: true
+        },
+        {
+            id: 'claude-simplify', name: 'Simplify', icon: '\u2728',
+            description: 'Review changed files for code quality, reuse opportunities, and efficiency',
+            kind: 'bundled-skill', category: 'intelligence',
+            toggleable: true, enabled: true
+        }
+    ];
+
+    const CLAUDE_NATIVE_COMMANDS = [
+        { id: 'cmd-clear', name: '/clear', description: 'Clear conversation history', category: 'session' },
+        { id: 'cmd-compact', name: '/compact', description: 'Compress conversation to save context', category: 'session' },
+        { id: 'cmd-resume', name: '/resume', description: 'Resume a previous conversation', category: 'session' },
+        { id: 'cmd-context', name: '/context', description: 'Show current context window usage', category: 'session' },
+        { id: 'cmd-branch', name: '/branch', description: 'Create a new conversation branch', category: 'session' },
+        { id: 'cmd-rewind', name: '/rewind', description: 'Rewind to a previous point in conversation', category: 'session' },
+        { id: 'cmd-diff', name: '/diff', description: 'Show file changes made in this session', category: 'development' },
+        { id: 'cmd-init', name: '/init', description: 'Initialize CLAUDE.md for a project', category: 'development' },
+        { id: 'cmd-pr-comments', name: '/pr-comments', description: 'Load PR review comments for context', category: 'development' },
+        { id: 'cmd-security-review', name: '/security-review', description: 'Review code for security vulnerabilities', category: 'development' },
+        { id: 'cmd-model', name: '/model', description: 'Switch the active model', category: 'settings' },
+        { id: 'cmd-effort', name: '/effort', description: 'Set reasoning effort level', category: 'settings' },
+        { id: 'cmd-cost', name: '/cost', description: 'Show token usage and costs', category: 'settings' },
+        { id: 'cmd-config', name: '/config', description: 'View or edit configuration', category: 'settings' },
+        { id: 'cmd-help', name: '/help', description: 'Show available commands and skills', category: 'info' },
+        { id: 'cmd-status', name: '/status', description: 'Show system status', category: 'info' },
+        { id: 'cmd-skills', name: '/skills', description: 'List all available skills', category: 'info' },
+    ];
+
     const CATEGORIES = [
         { id: 'all', label: 'All' },
         { id: 'core', label: 'Core' },
@@ -808,10 +936,22 @@
         { id: 'utility', label: 'Utility' }
     ];
 
+    const NATIVE_CATEGORIES = [
+        { id: 'all', label: 'All' },
+        { id: 'automation', label: 'Automation' },
+        { id: 'intelligence', label: 'Intelligence' },
+        { id: 'utility', label: 'Utility' },
+        { id: 'session', label: 'Session' },
+        { id: 'development', label: 'Development' },
+        { id: 'settings', label: 'Settings' },
+        { id: 'info', label: 'Info' }
+    ];
+
     /* ═══════════════════════════════════════════════════════
        STATE
        ═══════════════════════════════════════════════════════ */
     let activeTab = 'skills';
+    let skillSource = 'clawd-lobster';
     let activeCategory = 'all';
     let searchQuery = '';
     let expandedCard = null;
@@ -831,8 +971,9 @@
         document.getElementById('settingsPlatform').textContent = detectPlatform();
         document.getElementById('settingsSkillCount').textContent = SKILLS.length;
 
+        renderSourceTabs();
         renderCategoryFilters();
-        renderSkillCards();
+        renderSkillContent();
         renderCredentialTable();
     }
 
@@ -869,14 +1010,58 @@
     }
 
     /* ═══════════════════════════════════════════════════════
+       SOURCE TABS
+       ═══════════════════════════════════════════════════════ */
+    function renderSourceTabs() {
+        document.querySelectorAll('.source-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.source === skillSource);
+        });
+    }
+
+    function switchSource(source) {
+        skillSource = source;
+        activeCategory = 'all';
+        expandedCard = null;
+        renderSourceTabs();
+        renderCategoryFilters();
+        renderSkillContent();
+    }
+
+    /* ═══════════════════════════════════════════════════════
        CATEGORY FILTERS
        ═══════════════════════════════════════════════════════ */
+    function getCategoriesForSource() {
+        if (skillSource === 'claude-native') return NATIVE_CATEGORIES;
+        if (skillSource === 'clawd-lobster') return CATEGORIES;
+        return [];
+    }
+
+    function getSkillsForSource() {
+        if (skillSource === 'claude-native') return CLAUDE_NATIVE_SKILLS;
+        if (skillSource === 'clawd-lobster') return SKILLS;
+        return [];
+    }
+
     function renderCategoryFilters() {
         const container = document.getElementById('catFilters');
-        container.innerHTML = CATEGORIES.map(c => {
+        if (skillSource === 'custom') {
+            container.innerHTML = '';
+            return;
+        }
+
+        const cats = getCategoriesForSource();
+        const skills = getSkillsForSource();
+        let allItems;
+        if (skillSource === 'claude-native') {
+            allItems = [...CLAUDE_NATIVE_SKILLS, ...CLAUDE_NATIVE_COMMANDS];
+        } else {
+            allItems = skills;
+        }
+
+        container.innerHTML = cats.map(c => {
             const count = c.id === 'all'
-                ? SKILLS.length
-                : SKILLS.filter(s => s.category === c.id).length;
+                ? allItems.length
+                : allItems.filter(s => s.category === c.id).length;
             if (c.id !== 'all' && count === 0) return '';
             return `<button class="cat-pill${c.id === activeCategory ? ' active' : ''}"
                             onclick="setCategory('${c.id}')">${c.label} (${count})</button>`;
@@ -886,7 +1071,7 @@
     function setCategory(cat) {
         activeCategory = cat;
         renderCategoryFilters();
-        renderSkillCards();
+        renderSkillContent();
     }
 
     /* ═══════════════════════════════════════════════════════
@@ -894,11 +1079,149 @@
        ═══════════════════════════════════════════════════════ */
     function filterSkills() {
         searchQuery = document.getElementById('skillSearch').value.toLowerCase().trim();
-        renderSkillCards();
+        renderSkillContent();
     }
 
     /* ═══════════════════════════════════════════════════════
-       SKILL CARDS
+       SKILL CONTENT DISPATCHER
+       ═══════════════════════════════════════════════════════ */
+    function renderSkillContent() {
+        if (skillSource === 'claude-native') {
+            renderClaudeNative();
+        } else if (skillSource === 'custom') {
+            renderCustomHub();
+        } else {
+            renderSkillCards();
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CLAUDE NATIVE RENDERER
+       ═══════════════════════════════════════════════════════ */
+    function renderClaudeNative() {
+        const content = document.getElementById('skillContent');
+        const countEl = document.getElementById('skillCount');
+
+        // Filter skills
+        const filteredSkills = CLAUDE_NATIVE_SKILLS.filter(s => {
+            if (activeCategory !== 'all' && s.category !== activeCategory) return false;
+            if (searchQuery) {
+                return (s.name + ' ' + s.description).toLowerCase().includes(searchQuery);
+            }
+            return true;
+        });
+
+        // Filter commands
+        const filteredCmds = CLAUDE_NATIVE_COMMANDS.filter(c => {
+            if (activeCategory !== 'all' && c.category !== activeCategory) return false;
+            if (searchQuery) {
+                return (c.name + ' ' + c.description).toLowerCase().includes(searchQuery);
+            }
+            return true;
+        });
+
+        const totalAll = CLAUDE_NATIVE_SKILLS.length + CLAUDE_NATIVE_COMMANDS.length;
+        const totalFiltered = filteredSkills.length + filteredCmds.length;
+        countEl.textContent = `Showing ${totalFiltered} of ${totalAll} items`;
+
+        let html = '';
+
+        // Skills section
+        if (filteredSkills.length > 0) {
+            html += '<div class="native-section-header">Skills (toggleable via settings.json)</div>';
+            html += '<div class="card-grid">';
+            html += filteredSkills.map(s => `
+                <div class="skill-card">
+                    <div class="card-top">
+                        <div class="card-icon">${s.icon}</div>
+                        <div class="card-info">
+                            <div class="card-name">${s.name}</div>
+                            <div class="card-desc">${s.description}</div>
+                        </div>
+                        <div class="toggle-wrap">
+                            <button class="toggle${s.enabled ? ' on' : ''}"
+                                    onclick="toggleNativeSkill('${s.id}')"
+                                    title="${s.enabled ? 'Disable' : 'Enable'} ${s.name}"></button>
+                        </div>
+                    </div>
+                    <div class="card-meta">
+                        <span class="card-cat">${s.category}</span>
+                        <span style="color:#484f58;">${s.kind}</span>
+                    </div>
+                </div>
+            `).join('');
+            html += '</div>';
+        }
+
+        // Commands section
+        if (filteredCmds.length > 0) {
+            html += '<div class="native-section-header" style="margin-top:1.5rem;">Commands (built-in)</div>';
+
+            // Group by category
+            const groups = {};
+            filteredCmds.forEach(c => {
+                if (!groups[c.category]) groups[c.category] = [];
+                groups[c.category].push(c);
+            });
+
+            const groupOrder = ['session', 'development', 'settings', 'info'];
+            groupOrder.forEach(g => {
+                if (!groups[g]) return;
+                html += `<div class="cmd-section">
+                    <div class="cmd-section-header">${g}</div>
+                    <ul class="cmd-list">
+                        ${groups[g].map(c => `
+                            <li class="cmd-item">
+                                <span class="cmd-name">${c.name}</span>
+                                <span class="cmd-desc">${c.description}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>`;
+            });
+        }
+
+        if (totalFiltered === 0) {
+            html = '<div style="text-align:center;color:#484f58;padding:2rem;">No matching items found.</div>';
+        }
+
+        content.innerHTML = html;
+    }
+
+    function toggleNativeSkill(id) {
+        const skill = CLAUDE_NATIVE_SKILLS.find(s => s.id === id);
+        if (!skill) return;
+        skill.enabled = !skill.enabled;
+        renderClaudeNative();
+        showToast(`${skill.name} ${skill.enabled ? 'enabled' : 'disabled'} (update settings.json to persist)`, 'info');
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CUSTOM / HUB RENDERER
+       ═══════════════════════════════════════════════════════ */
+    function renderCustomHub() {
+        const content = document.getElementById('skillContent');
+        document.getElementById('skillCount').textContent = '0 custom skills';
+
+        content.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">\u{1F9E9}</div>
+                <div class="empty-state-title">Your custom skills will appear here</div>
+                <div class="empty-state-desc">
+                    Skills from <code style="display:inline;padding:0.1rem 0.4rem;margin:0;border:none;background:#21262d;">~/.claude/skills/</code>,
+                    project <code style="display:inline;padding:0.1rem 0.4rem;margin:0;border:none;background:#21262d;">.claude/skills/</code>,
+                    or downloaded from ClawHub
+                </div>
+                <div class="empty-state-btns">
+                    <button onclick="showToast('Coming soon: skill creation wizard', 'info')">+ Add Skill</button>
+                    <button onclick="showToast('Coming soon: ClawHub marketplace', 'info')">Browse ClawHub</button>
+                </div>
+            </div>
+        `;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SKILL CARDS (Clawd-Lobster)
        ═══════════════════════════════════════════════════════ */
     function getFilteredSkills() {
         return SKILLS.filter(s => {
@@ -913,11 +1236,11 @@
 
     function renderSkillCards() {
         const filtered = getFilteredSkills();
-        const grid = document.getElementById('cardGrid');
+        const content = document.getElementById('skillContent');
         document.getElementById('skillCount').textContent =
             `Showing ${filtered.length} of ${SKILLS.length} skills`;
 
-        grid.innerHTML = filtered.map(s => {
+        content.innerHTML = '<div class="card-grid" id="cardGrid">' + filtered.map(s => {
             const isExpanded = expandedCard === s.id;
             const statusClass = s.status.state;
             const statusLabel = s.status.state;
@@ -962,7 +1285,7 @@
                     ${renderDetail(s)}
                 </div>
             </div>`;
-        }).join('');
+        }).join('') + '</div>';
     }
 
     function renderDetail(s) {

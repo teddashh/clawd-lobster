@@ -45,6 +45,34 @@ SKILLS_DIR = REPO_DIR / "skills"
 
 IS_WINDOWS = platform.system() == "Windows"
 
+# ── Claude Code Native Skills & Commands ────────────────────────────────────
+
+# Claude Code native skills (toggleable via settings.json permissions)
+CLAUDE_NATIVE_SKILLS = [
+    {"id": "batch", "name": "Batch", "description": "Parallel codebase changes with git worktrees", "kind": "bundled-skill", "category": "automation", "toggleable": True},
+    {"id": "claude-api", "name": "Claude API Ref", "description": "Claude API reference for all SDKs", "kind": "bundled-skill", "category": "utility", "toggleable": True},
+    {"id": "debug", "name": "Debug", "description": "Debug logging for sessions", "kind": "bundled-skill", "category": "utility", "toggleable": True},
+    {"id": "loop", "name": "Loop", "description": "Run prompts on recurring interval", "kind": "bundled-skill", "category": "automation", "toggleable": True},
+    {"id": "simplify", "name": "Simplify", "description": "Review code for quality and efficiency", "kind": "bundled-skill", "category": "intelligence", "toggleable": True},
+]
+
+# Claude Code native commands (not toggleable - hardcoded in CLI)
+CLAUDE_NATIVE_COMMANDS = [
+    {"id": "/clear", "name": "/clear", "description": "Clear conversation history", "category": "session"},
+    {"id": "/compact", "name": "/compact", "description": "Compress conversation context", "category": "session"},
+    {"id": "/resume", "name": "/resume", "description": "Resume previous conversation", "category": "session"},
+    {"id": "/diff", "name": "/diff", "description": "Show file changes in session", "category": "development"},
+    {"id": "/init", "name": "/init", "description": "Initialize CLAUDE.md", "category": "development"},
+    {"id": "/model", "name": "/model", "description": "Switch active model", "category": "settings"},
+    {"id": "/cost", "name": "/cost", "description": "Show token usage and costs", "category": "settings"},
+    {"id": "/help", "name": "/help", "description": "Show available commands", "category": "info"},
+    {"id": "/status", "name": "/status", "description": "Show system status", "category": "info"},
+]
+
+# Build a lookup dict for quick access by ID
+_NATIVE_SKILL_MAP = {s["id"]: s for s in CLAUDE_NATIVE_SKILLS}
+_NATIVE_COMMAND_MAP = {c["id"]: c for c in CLAUDE_NATIVE_COMMANDS}
+
 # ── ANSI Colors (graceful fallback) ──────────────────────────────────────────
 
 _USE_COLOR = sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
@@ -402,13 +430,31 @@ def get_managed_permissions(reg: dict) -> set[str]:
 
 # ── Commands ─────────────────────────────────────────────────────────────────
 
-def cmd_list(args):
-    """List all skills in a table."""
-    reg = load_registry()
-    sync_registry_with_manifests(reg)
-    save_registry(reg)
+def _print_native_skills_section():
+    """Print the Claude Code Native Skills table."""
+    rows = []
+    for s in CLAUDE_NATIVE_SKILLS:
+        rows.append([
+            s["id"],
+            s["name"],
+            s["category"],
+            green("yes") if s["toggleable"] else dim("no"),
+        ])
+    print(bold("\nClaude Code Native Skills"))
+    print_table(["ID", "Name", "Category", "Toggleable"], rows)
 
-    manifests = discover_manifests()
+
+def _print_native_commands_section():
+    """Print the Claude Code Native Commands table."""
+    rows = []
+    for c in CLAUDE_NATIVE_COMMANDS:
+        rows.append([c["id"], c["description"], c["category"]])
+    print(bold("\nClaude Code Native Commands"))
+    print_table(["ID", "Description", "Category"], rows)
+
+
+def _print_lobster_skills_section(reg, manifests):
+    """Print the Clawd-Lobster Skills table."""
     rows = []
     for sid in sorted(reg["skills"]):
         entry = reg["skills"][sid]
@@ -418,10 +464,61 @@ def cmd_list(args):
         enabled = enabled_color(entry.get("enabled", False))
         state = state_color(entry.get("status", {}).get("state", "unknown"))
         rows.append([sid, name, category, enabled, state])
-
-    print(bold("\nRegistered Skills"))
+    print(bold("\nClawd-Lobster Skills"))
     print_table(["ID", "Name", "Category", "Enabled", "Status"], rows)
+
+
+def cmd_list(args):
+    """List skills, filtered by source."""
+    source = getattr(args, "source", "all")
+
+    reg = load_registry()
+    sync_registry_with_manifests(reg)
+    save_registry(reg)
+    manifests = discover_manifests()
+
+    if source in ("all", "native"):
+        _print_native_skills_section()
+        _print_native_commands_section()
+
+    if source in ("all", "lobster"):
+        _print_lobster_skills_section(reg, manifests)
+
+    if source == "custom":
+        print(bold("\nCustom Skills"))
+        print(dim("  Custom skills: scan ~/.claude/skills/ and project .claude/skills/ (coming soon)"))
+
     print()
+
+
+def _status_native_skill(skill_id: str) -> bool:
+    """Show status for a native skill or command. Returns True if found."""
+    native = _NATIVE_SKILL_MAP.get(skill_id)
+    if native:
+        print(bold(f"\n{'=' * 50}"))
+        print(bold(f"  Native Skill: {skill_id}"))
+        print(f"{'=' * 50}")
+        print(f"  Name:          {native['name']}")
+        print(f"  Category:      {native['category']}")
+        print(f"  Kind:          {native['kind']}")
+        print(f"  Toggleable:    {green('yes') if native['toggleable'] else dim('no')}")
+        print(f"  Source:        Claude Code (bundled)")
+        print(f"  Description:   {native['description']}")
+        print(dim("  Toggle via: ~/.claude/settings.json permissions"))
+        print()
+        return True
+    cmd = _NATIVE_COMMAND_MAP.get(skill_id)
+    if cmd:
+        print(bold(f"\n{'=' * 50}"))
+        print(bold(f"  Native Command: {skill_id}"))
+        print(f"{'=' * 50}")
+        print(f"  Category:      {cmd['category']}")
+        print(f"  Source:        Claude Code CLI (hardcoded)")
+        print(f"  Description:   {cmd['description']}")
+        print(dim("  This command is built into Claude Code and cannot be toggled."))
+        print()
+        return True
+    return False
 
 
 def cmd_status(args):
@@ -429,6 +526,11 @@ def cmd_status(args):
     reg = load_registry()
     sync_registry_with_manifests(reg)
     save_registry(reg)
+
+    # If a specific ID is given, check native skills/commands first
+    if args.skill_id:
+        if _status_native_skill(args.skill_id):
+            return
 
     skill_ids = [args.skill_id] if args.skill_id else sorted(reg["skills"])
     if args.skill_id:
@@ -788,7 +890,9 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
 
     # list
-    sub.add_parser("list", help="List all skills")
+    p_list = sub.add_parser("list", help="List all skills")
+    p_list.add_argument("--source", choices=["all", "native", "lobster", "custom"],
+                        default="all", help="Filter by skill source (default: all)")
 
     # status
     p_status = sub.add_parser("status", help="Detailed status for a skill")

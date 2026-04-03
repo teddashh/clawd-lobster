@@ -618,6 +618,16 @@ That's the built-in apps on your phone. Clawd-Lobster is the App Store.
 
 Your company needs a skill that runs a compliance check before every deploy? A skill that syncs CRM data from Odoo every 5 minutes? A skill that generates bilingual PDF reports in your specific format? Claude Code will never ship those. **Your skills are your competitive advantage. They should live in your system, not someone else's.**
 
+But we don't ignore Claude's built-in skills — we **surface them in the same dashboard.** The Skill Management UI has three source tabs:
+
+| Tab | What's in it | Toggle? |
+|---|---|---|
+| **Claude Native** | Built-in skills (`/batch`, `/loop`, `/simplify`) + commands (`/compact`, `/diff`, `/model`) | Skills: yes (via permissions). Commands: read-only. |
+| **Clawd-Lobster** | Our managed skills (memory-server, connect-odoo, heartbeat, evolve, migrate) | Yes — full lifecycle |
+| **Custom / Hub** | Your own skills + community downloads from ClawHub | Yes — full lifecycle |
+
+One unified view. Three sources. Every skill on your system — whether it came from Anthropic, from us, or from you — visible and manageable in one place.
+
 ### "Claude Code already has MCP and skills. Why build another skill layer?"
 
 Claude Code gives you MCP — a protocol for registering tool servers. That's like saying Chrome gives you the ability to install extensions. True. But Chrome also has the **Chrome Web Store** — because installing a `.crx` file manually is not managing extensions.
