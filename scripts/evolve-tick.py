@@ -1,82 +1,64 @@
 """
-Evolve Tick — cron entrypoint for auto-processing TODO items.
+Evolve Tick — cron entrypoint for system-level learning and knowledge consolidation.
 
-Runs periodically (default: every 2 hours). Each tick:
-  1. Scans workspace memory.db files for pending TODOs
-  2. Picks the highest-priority pending TODO (priority ASC, oldest first)
-  3. Opens a git worktree for isolated work
-  4. Runs Claude Code in print mode to complete the TODO
-  5. Updates TODO status based on result
+NOT for building features (that's /spec:blitz). Evolve is about getting SMARTER:
+  1. Reviews recently completed work across all workspaces
+  2. Extracts reusable patterns → learned skills
+  3. Consolidates knowledge (salience decay, pruning)
+  4. Syncs learnings to Hub via git push
 
 Usage:
   python scripts/evolve-tick.py                  # normal run
-  python scripts/evolve-tick.py --dry-run        # scan only, don't execute
+  python scripts/evolve-tick.py --dry-run        # scan only, don't write
   python scripts/evolve-tick.py --force          # ignore blitz gate
 """
 import json
 import os
 import platform
 import re
-import shutil
 import sqlite3
 import subprocess
 import sys
-import tempfile
-import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Architecture Note:
+#
+# Building (workspace scope) = /spec → blitz → execute TODOs → push code
+#   One machine does it. Spec coordinates.
+#
+# Evolving (system scope) = review completed work → learn patterns → share
+#   Every machine does it. Knowledge syncs via git.
+#
+# Blitz Gate: If a workspace is mid-blitz, skip it entirely.
 # ---------------------------------------------------------------------------
-TIMEOUT_SECONDS = 300  # 5 minutes per TODO
-WORKTREE_PREFIX = "evolve-"
 
-# ---------------------------------------------------------------------------
-# Blitz Gate: When /spec is running a blitz (full-speed task execution),
-# evolve-tick must not interfere. The .blitz-active marker file is created
-# by /spec:blitz and removed when blitz completes. This prevents style
-# inconsistency from evolve modifying code mid-build.
-# ---------------------------------------------------------------------------
-
-
-def is_blitzing(workspace_path: str) -> bool:
-    """Check if workspace is in blitz mode (spec is executing tasks)."""
-    marker = Path(workspace_path) / ".blitz-active"
-    return marker.exists()
+CLAUDE_TIMEOUT = 120  # seconds for pattern extraction (shorter than blitz)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-
 def _repo_root() -> Path:
-    """Find the clawd-lobster repo root (where this script lives under scripts/)."""
     return Path(__file__).resolve().parent.parent
 
 
 def _load_workspaces() -> list:
-    """Load workspace list from workspaces.json at repo root."""
     ws_file = _repo_root() / "workspaces.json"
     if not ws_file.exists():
-        print(f"[WARN] workspaces.json not found at {ws_file}")
         return []
     try:
         data = json.loads(ws_file.read_text(encoding="utf-8"))
         return data.get("workspaces", [])
-    except (json.JSONDecodeError, KeyError) as e:
-        print(f"[WARN] Failed to parse workspaces.json: {e}")
+    except (json.JSONDecodeError, KeyError):
         return []
 
 
 def _find_memory_dbs(workspaces: list) -> list:
-    """
-    Find all memory.db files across workspaces.
-    Each workspace entry may have a 'path' key pointing to the workspace root.
-    Returns list of (workspace_name, db_path, workspace_path) tuples.
-    """
+    """Returns list of (workspace_name, db_path, workspace_path) tuples."""
     results = []
     for ws in workspaces:
         if isinstance(ws, str):
@@ -84,381 +66,398 @@ def _find_memory_dbs(workspaces: list) -> list:
             ws_name = ws_path.name
         elif isinstance(ws, dict):
             ws_path = Path(ws.get("path", ""))
-            ws_name = ws.get("name", ws_path.name)
+            ws_name = ws.get("id", ws.get("name", ws_path.name))
         else:
             continue
-
         if not ws_path.is_absolute():
             continue
-
         db_path = ws_path / ".claude-memory" / "memory.db"
         if db_path.exists():
             results.append((ws_name, db_path, ws_path))
-        else:
-            print(f"[SKIP] No memory.db for workspace '{ws_name}' at {db_path}")
-
     return results
 
 
-def _slugify(text: str, max_len: int = 40) -> str:
-    """Convert text to a URL/branch-safe slug."""
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", text.lower()).strip("-")
-    return slug[:max_len].rstrip("-")
+def _get_machine_id() -> str:
+    return platform.node() or "unknown"
 
 
 def _new_id() -> str:
     return uuid.uuid4().hex[:12]
 
 
-def _get_machine_id() -> str:
-    """Get a stable machine identifier."""
-    return platform.node() or "unknown"
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-def _worktree_dir(todo_id: str) -> Path:
-    """
-    Return the worktree directory path.
-    Uses temp directory for cross-platform compatibility.
-    """
-    return Path(tempfile.gettempdir()) / f"{WORKTREE_PREFIX}{todo_id}"
+def is_blitzing(workspace_path: str) -> bool:
+    """Check if workspace is in blitz mode (/spec is executing tasks)."""
+    return (Path(workspace_path) / ".blitz-active").exists()
 
 
 # ---------------------------------------------------------------------------
-# Core logic
+# Phase 1: Scan recently completed work
 # ---------------------------------------------------------------------------
 
-
-def scan_pending_todos(db_list: list) -> list:
-    """
-    Scan all memory.db files for pending TODOs.
-    Returns list of dicts sorted by priority ASC, created_at ASC.
-    """
-    todos = []
+def scan_completed_tasks(db_list: list) -> list:
+    """Find tasks completed since last evolve run, across all workspaces."""
+    completed = []
     for ws_name, db_path, ws_path in db_list:
         try:
             conn = sqlite3.connect(str(db_path))
             conn.row_factory = sqlite3.Row
-            # Check if todos table exists
-            tables = [
-                r[0]
-                for r in conn.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table' AND name='todos'"
+
+            # Check for todo_items table
+            tables = [r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()]
+
+            if "todo_items" in tables:
+                rows = conn.execute(
+                    "SELECT * FROM todo_items WHERE status = 'approved' "
+                    "ORDER BY updated_at DESC LIMIT 20"
                 ).fetchall()
-            ]
-            if "todos" not in tables:
-                conn.close()
-                continue
+                for row in rows:
+                    item = dict(row)
+                    item["_ws_name"] = ws_name
+                    item["_ws_path"] = str(ws_path)
+                    item["_db_path"] = str(db_path)
+                    completed.append(item)
 
-            rows = conn.execute(
-                "SELECT * FROM todos WHERE status = 'pending' "
-                "ORDER BY priority ASC, created_at ASC"
-            ).fetchall()
-            for row in rows:
-                item = dict(row)
-                item["_ws_name"] = ws_name
-                item["_ws_path"] = str(ws_path)
-                item["_db_path"] = str(db_path)
-                todos.append(item)
             conn.close()
-        except sqlite3.Error as e:
-            print(f"[WARN] Error reading {db_path}: {e}")
+        except sqlite3.Error:
             continue
-
-    # Global sort: priority ASC, created_at ASC
-    todos.sort(key=lambda t: (t.get("priority", 2), t.get("created_at", "")))
-    return todos
+    return completed
 
 
-def create_worktree(ws_path: str, todo_id: str, slug: str) -> tuple:
-    """
-    Create a git worktree for the TODO.
-    Returns (worktree_path, branch_name) or (None, error_msg).
-    """
-    branch_name = f"evolve/{todo_id}-{slug}"
-    wt_path = _worktree_dir(todo_id)
-
-    # Clean up stale worktree if it exists
-    if wt_path.exists():
+def scan_recent_actions(db_list: list) -> list:
+    """Find recent significant actions (commits, reviews, task completions)."""
+    actions = []
+    for ws_name, db_path, ws_path in db_list:
         try:
-            subprocess.run(
-                ["git", "-C", ws_path, "worktree", "remove", str(wt_path), "--force"],
-                capture_output=True,
-                timeout=30,
-            )
-        except Exception:
-            # Try manual cleanup
-            try:
-                shutil.rmtree(str(wt_path), ignore_errors=True)
-            except Exception:
-                pass
+            conn = sqlite3.connect(str(db_path))
+            conn.row_factory = sqlite3.Row
 
-    # Check if branch already exists
-    result = subprocess.run(
-        ["git", "-C", ws_path, "branch", "--list", branch_name],
-        capture_output=True,
-        text=True,
-        timeout=30,
+            tables = [r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()]
+
+            if "action_log" in tables:
+                rows = conn.execute(
+                    "SELECT * FROM action_log "
+                    "WHERE action IN ('TASK_DONE', 'COMMIT', 'REVIEW_OK', 'BLITZ_COMPLETE') "
+                    "ORDER BY timestamp DESC LIMIT 20"
+                ).fetchall()
+                for row in rows:
+                    item = dict(row)
+                    item["_ws_name"] = ws_name
+                    actions.append(item)
+
+            conn.close()
+        except sqlite3.Error:
+            continue
+    return actions
+
+
+def scan_existing_skills(db_list: list) -> list:
+    """Get current learned skills to avoid duplicates."""
+    skills = []
+    for ws_name, db_path, ws_path in db_list:
+        try:
+            conn = sqlite3.connect(str(db_path))
+            conn.row_factory = sqlite3.Row
+
+            tables = [r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()]
+
+            if "learned_skills" in tables:
+                rows = conn.execute(
+                    "SELECT name, trigger_condition, category FROM learned_skills"
+                ).fetchall()
+                for row in rows:
+                    skills.append(dict(row))
+
+            conn.close()
+        except sqlite3.Error:
+            continue
+    return skills
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: Extract learnable patterns via Claude
+# ---------------------------------------------------------------------------
+
+def extract_patterns(completed_tasks: list, recent_actions: list,
+                     existing_skills: list, db_list: list, dry_run: bool = False) -> int:
+    """
+    Use Claude to review completed work and extract reusable patterns.
+    Returns number of patterns learned.
+    """
+    if not completed_tasks and not recent_actions:
+        print("[evolve] No recent completed work to learn from.")
+        return 0
+
+    # Build context for Claude
+    task_summary = "\n".join(
+        f"- [{t.get('_ws_name')}] {t.get('title', '?')}: {t.get('description', '')[:100]}"
+        for t in completed_tasks[:10]
     )
-    branch_exists = bool(result.stdout.strip())
 
-    try:
-        if branch_exists:
-            # Use existing branch
-            subprocess.run(
-                [
-                    "git",
-                    "-C",
-                    ws_path,
-                    "worktree",
-                    "add",
-                    str(wt_path),
-                    branch_name,
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=60,
-            )
-        else:
-            # Create new branch
-            subprocess.run(
-                [
-                    "git",
-                    "-C",
-                    ws_path,
-                    "worktree",
-                    "add",
-                    str(wt_path),
-                    "-b",
-                    branch_name,
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=60,
-            )
-        return (str(wt_path), branch_name)
-    except subprocess.CalledProcessError as e:
-        return (None, f"git worktree failed: {e.stderr.strip()}")
-    except subprocess.TimeoutExpired:
-        return (None, "git worktree timed out")
+    action_summary = "\n".join(
+        f"- [{a.get('_ws_name', '?')}] {a.get('action')}: {a.get('target', '')} — {a.get('note', '')[:80]}"
+        for a in recent_actions[:10]
+    )
 
-
-def run_claude(worktree_path: str, todo: dict) -> tuple:
-    """
-    Run Claude Code in print mode to complete the TODO.
-    Returns (made_commits: bool, output: str).
-    """
-    title = todo.get("title", "")
-    description = todo.get("description", "")
+    existing_names = ", ".join(s.get("name", "?") for s in existing_skills[:20]) or "(none)"
 
     prompt = (
-        "Complete this TODO item. Read the codebase first, understand the context, "
-        "then implement.\n\n"
-        f"TODO: {title}\n"
-        f"Description: {description}\n\n"
-        "Rules:\n"
-        "- Make minimal, focused changes\n"
-        "- Write tests if applicable\n"
-        "- Commit your changes with a clear message"
+        "You are reviewing recently completed work to extract reusable patterns.\n\n"
+        "## Recently Completed Tasks\n"
+        f"{task_summary or '(none)'}\n\n"
+        "## Recent Actions\n"
+        f"{action_summary or '(none)'}\n\n"
+        "## Already Known Skills\n"
+        f"{existing_names}\n\n"
+        "## Instructions\n"
+        "1. Review the completed tasks and actions above.\n"
+        "2. Identify any REUSABLE patterns that could help in future work.\n"
+        "3. For each pattern found, call memory_learn_skill() with:\n"
+        "   - name: short descriptive name\n"
+        "   - trigger_condition: when to use this pattern\n"
+        "   - approach: step-by-step how to apply it\n"
+        "   - tools_used: which tools are involved\n"
+        "   - category: general category\n"
+        "4. Skip patterns that duplicate already known skills.\n"
+        "5. Also call memory_record_knowledge() for any non-obvious insights.\n"
+        "6. If nothing worth learning, just say 'No new patterns found.'\n\n"
+        "Be selective — only extract patterns that are genuinely reusable, not one-off fixes."
     )
 
-    # Get commit count before
-    try:
-        before = subprocess.run(
-            ["git", "-C", worktree_path, "rev-list", "--count", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        count_before = int(before.stdout.strip()) if before.returncode == 0 else 0
-    except Exception:
-        count_before = 0
+    if dry_run:
+        print(f"[evolve] Would ask Claude to review {len(completed_tasks)} tasks "
+              f"and {len(recent_actions)} actions")
+        print(f"[evolve] Prompt preview:\n{prompt[:300]}...")
+        return 0
 
-    # Run Claude Code
+    # Find a workspace to run Claude in (prefer one with completed tasks)
+    cwd = None
+    if completed_tasks:
+        cwd = completed_tasks[0].get("_ws_path")
+    elif db_list:
+        cwd = str(db_list[0][2])
+
+    if not cwd:
+        print("[evolve] No workspace available to run Claude in.")
+        return 0
+
     try:
         result = subprocess.run(
-            ["claude", "-p", prompt, "--cwd", worktree_path],
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT_SECONDS,
+            ["claude", "-p", prompt],
+            capture_output=True, text=True,
+            timeout=CLAUDE_TIMEOUT,
+            cwd=cwd,
         )
-        output = result.stdout[:2000] if result.stdout else ""
+        output = result.stdout.strip() if result.stdout else ""
+
         if result.returncode != 0:
-            error = result.stderr[:500] if result.stderr else "unknown error"
-            return (False, f"Claude exited with code {result.returncode}: {error}")
+            print(f"[evolve] Claude returned error: {result.stderr[:200]}")
+            return 0
+
+        # Count how many skills were learned (heuristic: count memory_learn_skill mentions)
+        learned = output.lower().count("memory_learn_skill")
+        knowledge = output.lower().count("memory_record_knowledge")
+
+        if learned > 0 or knowledge > 0:
+            print(f"[evolve] Learned {learned} skill(s), recorded {knowledge} knowledge item(s)")
+        else:
+            print("[evolve] No new patterns found this cycle.")
+
+        return learned
+
     except subprocess.TimeoutExpired:
-        return (False, "Claude Code timed out after 5 minutes")
+        print("[evolve] Claude timed out during pattern extraction.")
+        return 0
     except FileNotFoundError:
-        return (False, "claude CLI not found in PATH")
-
-    # Get commit count after
-    try:
-        after = subprocess.run(
-            ["git", "-C", worktree_path, "rev-list", "--count", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        count_after = int(after.stdout.strip()) if after.returncode == 0 else 0
-    except Exception:
-        count_after = 0
-
-    made_commits = count_after > count_before
-    return (made_commits, output)
+        print("[evolve] claude CLI not found in PATH.")
+        return 0
 
 
-def update_todo_status(db_path: str, todo_id: str, status: str, branch: str = "", note: str = ""):
-    """Update a TODO's status in the database."""
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.execute(
-            "UPDATE todos SET status = ?, branch = ?, note = ?, updated_at = ? WHERE id = ?",
-            (status, branch, note[:1000], datetime.utcnow().isoformat(), todo_id),
-        )
-        conn.commit()
-        conn.close()
-    except sqlite3.Error as e:
-        print(f"[ERROR] Failed to update todo {todo_id}: {e}")
+# ---------------------------------------------------------------------------
+# Phase 3: Consolidate knowledge (salience decay)
+# ---------------------------------------------------------------------------
+
+def run_salience_decay(db_list: list, dry_run: bool = False) -> int:
+    """
+    Apply salience decay to old, untouched memories.
+    -5% per day for items not accessed in 30+ days.
+    Returns number of items decayed.
+    """
+    decayed_total = 0
+    for ws_name, db_path, ws_path in db_list:
+        try:
+            conn = sqlite3.connect(str(db_path))
+
+            # Check which tables have salience column
+            for table in ["decisions", "resolved", "open_questions", "knowledge_items"]:
+                try:
+                    cursor = conn.execute(
+                        f"SELECT COUNT(*) FROM {table} WHERE salience > 0.01 "
+                        f"AND access_count = 0 "
+                        f"AND date(created_at) < date('now', '-30 days')"
+                    )
+                    count = cursor.fetchone()[0]
+                    if count > 0:
+                        if not dry_run:
+                            conn.execute(
+                                f"UPDATE {table} SET salience = MAX(0.01, salience * 0.95) "
+                                f"WHERE salience > 0.01 "
+                                f"AND access_count = 0 "
+                                f"AND date(created_at) < date('now', '-30 days')"
+                            )
+                        decayed_total += count
+                except sqlite3.OperationalError:
+                    continue  # table or column doesn't exist
+
+            if not dry_run:
+                conn.commit()
+            conn.close()
+        except sqlite3.Error:
+            continue
+
+    if decayed_total > 0:
+        action = "Would decay" if dry_run else "Decayed"
+        print(f"[evolve] {action} salience on {decayed_total} stale item(s)")
+    return decayed_total
 
 
-def log_action(db_path: str, action: str, target: str = "", note: str = "", workspace: str = ""):
-    """Log an action to the action_log table."""
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.execute(
-            "INSERT INTO action_log (id, machine_id, action, target, note, tokens, workspace) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (_new_id(), _get_machine_id(), action, target, note[:1000], 0, workspace),
-        )
-        conn.commit()
-        conn.close()
-    except sqlite3.Error as e:
-        print(f"[WARN] Failed to log action: {e}")
+# ---------------------------------------------------------------------------
+# Phase 4: Sync learnings to Hub
+# ---------------------------------------------------------------------------
 
+def sync_to_hub(dry_run: bool = False):
+    """Push knowledge changes to Hub via git."""
+    repo = _repo_root()
+    knowledge_dir = repo / "knowledge"
 
-def cleanup_worktree(ws_path: str, todo_id: str):
-    """Remove worktree (best-effort, non-fatal)."""
-    wt_path = _worktree_dir(todo_id)
-    if not wt_path.exists():
+    if not knowledge_dir.exists():
         return
+
     try:
-        subprocess.run(
-            ["git", "-C", ws_path, "worktree", "remove", str(wt_path), "--force"],
-            capture_output=True,
-            timeout=30,
+        # Check for changes in knowledge/
+        result = subprocess.run(
+            ["git", "-C", str(repo), "status", "--porcelain", "knowledge/"],
+            capture_output=True, text=True, timeout=10,
         )
-    except Exception:
-        pass
+        if not result.stdout.strip():
+            return  # nothing to push
+
+        if dry_run:
+            print(f"[evolve] Would sync {len(result.stdout.strip().splitlines())} knowledge changes to Hub")
+            return
+
+        subprocess.run(
+            ["git", "-C", str(repo), "add", "knowledge/"],
+            capture_output=True, timeout=30,
+        )
+        subprocess.run(
+            ["git", "-C", str(repo), "commit", "-m",
+             f"evolve: knowledge sync from {_get_machine_id()} ({_now()[:10]})"],
+            capture_output=True, timeout=30,
+        )
+        result = subprocess.run(
+            ["git", "-C", str(repo), "push"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode == 0:
+            print("[evolve] Knowledge synced to Hub.")
+        else:
+            print(f"[evolve] Push failed (non-fatal): {result.stderr[:100]}")
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass  # non-fatal
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: Log evolve cycle
+# ---------------------------------------------------------------------------
+
+def log_evolve_cycle(db_list: list, patterns_learned: int, items_decayed: int):
+    """Record this evolve cycle in action_log."""
+    for ws_name, db_path, ws_path in db_list[:1]:  # log to first workspace
+        try:
+            conn = sqlite3.connect(str(db_path))
+            conn.execute(
+                "INSERT INTO action_log (id, timestamp, machine_id, action, target, note, tokens, workspace) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (_new_id(), _now(), _get_machine_id(), "EVOLVE_CYCLE",
+                 "system", f"learned={patterns_learned}, decayed={items_decayed}",
+                 0, ws_name),
+            )
+            conn.commit()
+            conn.close()
+        except sqlite3.Error:
+            pass
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-
 def main():
     dry_run = "--dry-run" in sys.argv
     force = "--force" in sys.argv
 
-    print(f"[evolve-tick] {datetime.utcnow().isoformat()} — scanning for pending TODOs")
+    print(f"[evolve] {_now()} — starting evolution cycle")
 
     # 1. Load workspaces
     workspaces = _load_workspaces()
     if not workspaces:
-        print("[evolve-tick] No workspaces configured. Nothing to do.")
+        print("[evolve] No workspaces configured.")
         return
 
-    # 2. Find memory.db files
+    # 2. Find memory databases
     db_list = _find_memory_dbs(workspaces)
     if not db_list:
-        print("[evolve-tick] No memory.db files found. Nothing to do.")
+        print("[evolve] No memory.db files found.")
         return
 
-    # 3. Scan for pending TODOs
-    todos = scan_pending_todos(db_list)
-    if not todos:
-        print("[evolve-tick] No pending TODOs found. All clear.")
-        return
-
-    # 3.5. Blitz gate — skip workspaces where /spec:blitz is active
+    # 3. Blitz gate — skip workspaces in blitz mode
     if not force:
         filtered = []
-        skipped_ws = set()
-        for t in todos:
-            ws_p = t["_ws_path"]
-            if is_blitzing(ws_p):
-                if ws_p not in skipped_ws:
-                    print(f"\u23ed Skipping {t['_ws_name']}: blitz mode active")
-                    skipped_ws.add(ws_p)
+        for ws_name, db_path, ws_path in db_list:
+            if is_blitzing(str(ws_path)):
+                print(f"  [skip] {ws_name}: blitz mode active")
             else:
-                filtered.append(t)
-        todos = filtered
-        if not todos:
-            print("[evolve-tick] All workspaces in blitz mode. Nothing to do.")
+                filtered.append((ws_name, db_path, ws_path))
+        db_list = filtered
+        if not db_list:
+            print("[evolve] All workspaces in blitz mode. Skipping.")
             return
 
-    print(f"[evolve-tick] Found {len(todos)} pending TODO(s)")
-    for i, t in enumerate(todos[:5]):
-        print(f"  [{i+1}] P{t.get('priority', '?')} — {t.get('title', '?')} ({t['_ws_name']})")
+    print(f"[evolve] Scanning {len(db_list)} workspace(s)...")
 
-    if dry_run:
-        print("[evolve-tick] Dry run — not processing.")
-        return
+    # 4. Scan completed work
+    completed = scan_completed_tasks(db_list)
+    actions = scan_recent_actions(db_list)
+    existing = scan_existing_skills(db_list)
 
-    # 4. Pick the top one
-    todo = todos[0]
-    todo_id = todo["id"]
-    title = todo.get("title", "untitled")
-    ws_path = todo["_ws_path"]
-    ws_name = todo["_ws_name"]
-    db_path = todo["_db_path"]
+    print(f"[evolve] Found: {len(completed)} completed tasks, "
+          f"{len(actions)} recent actions, {len(existing)} existing skills")
 
-    print(f"\n[evolve-tick] Processing: {title} (id={todo_id}, workspace={ws_name})")
+    # 5. Extract patterns (Claude reviews completed work)
+    patterns = extract_patterns(completed, actions, existing, db_list, dry_run)
 
-    # 5. Create worktree
-    slug = _slugify(title)
-    wt_result = create_worktree(ws_path, todo_id, slug)
-    worktree_path, branch_or_error = wt_result
+    # 6. Salience decay
+    decayed = run_salience_decay(db_list, dry_run)
 
-    if worktree_path is None:
-        print(f"[evolve-tick] Worktree failed: {branch_or_error}")
-        update_todo_status(db_path, todo_id, "in_progress", note=f"worktree error: {branch_or_error}")
-        log_action(db_path, "EVOLVE_FAIL", target=todo_id, note=branch_or_error, workspace=ws_name)
-        return
+    # 7. Sync to Hub
+    sync_to_hub(dry_run)
 
-    branch_name = branch_or_error
-    print(f"[evolve-tick] Worktree ready: {worktree_path} (branch: {branch_name})")
+    # 8. Log the cycle
+    if not dry_run:
+        log_evolve_cycle(db_list, patterns, decayed)
 
-    # 6. Run Claude
-    log_action(db_path, "EVOLVE_START", target=todo_id, note=title, workspace=ws_name)
-    made_commits, output = run_claude(worktree_path, todo)
-
-    # 7. Update status
-    if made_commits:
-        print(f"[evolve-tick] Claude made commits. Staging TODO as complete.")
-        update_todo_status(db_path, todo_id, "staged", branch=branch_name, note=output[:500])
-        log_action(
-            db_path,
-            "EVOLVE_STAGED",
-            target=todo_id,
-            note=f"branch={branch_name}",
-            workspace=ws_name,
-        )
-    else:
-        print(f"[evolve-tick] No commits made. Marking as in_progress.")
-        update_todo_status(db_path, todo_id, "in_progress", note=output[:500])
-        log_action(
-            db_path,
-            "EVOLVE_NOCOMMIT",
-            target=todo_id,
-            note=output[:200],
-            workspace=ws_name,
-        )
-        # Clean up worktree on failure (no commits to keep)
-        cleanup_worktree(ws_path, todo_id)
-
-    print(f"[evolve-tick] Done.")
+    print(f"[evolve] Cycle complete: {patterns} patterns learned, {decayed} items decayed")
 
 
 if __name__ == "__main__":

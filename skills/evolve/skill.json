@@ -1,10 +1,10 @@
 {
   "id": "evolve",
   "name": "Evolve",
-  "description": "Hybrid self-evolution system — cron auto-processes pending TODOs + interactive skill learning from completed tasks",
+  "description": "System-level learning — reviews completed work, extracts reusable patterns, consolidates knowledge, syncs across machines",
   "version": "0.4.0",
   "category": "intelligence",
-  "tags": ["evolution", "automation", "todo", "staging", "self-improvement", "learning"],
+  "tags": ["evolution", "learning", "knowledge", "consolidation", "salience", "patterns"],
   "kind": "cron",
   "alwaysOn": true,
   "defaultEnabled": true,
