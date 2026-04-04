@@ -14,7 +14,7 @@ and a unified methodology that none of them would have reached alone.**
 
 ### Install
 ```bash
-pip install notebooklm-py
+pip install notebooklm-py PyMuPDF Pillow scikit-image numpy python-pptx
 python -m playwright install chromium   # needed for login only
 ```
 
@@ -394,3 +394,53 @@ These rules were forged through a 4-round debate:
 Winner: Claude (core thesis). Best framework: Codex. Best additions: Gemini.
 Most valuable insight: the Synthesis Note technique — none of them proposed
 it alone, it emerged from the debate.
+
+---
+
+## Watermark Removal
+
+NotebookLM adds a logo watermark to the bottom-right corner of all generated
+slides and infographics. This skill includes an automatic watermark remover.
+
+### How It Works
+- **Not AI** — uses biharmonic inpainting (classical image processing)
+- **No GPU needed** — runs on CPU, ~2-5 seconds per page
+- Fixed-position detection at NotebookLM's standard resolution (2867×1600)
+- Outputs: clean PDF, PNG ZIP, or PowerPoint
+
+### Automatic Mode
+When `auto_remove_watermark` is enabled (default: true), any PDF downloaded
+from NotebookLM (slides, infographics) is automatically cleaned before saving.
+
+### Manual Usage
+```bash
+# Single PDF → clean PDF
+python skills/notebooklm-bridge/remove_watermark.py slides.pdf
+
+# Custom output path
+python skills/notebooklm-bridge/remove_watermark.py slides.pdf -o clean.pdf
+
+# Output as PowerPoint
+python skills/notebooklm-bridge/remove_watermark.py slides.pdf --pptx
+
+# Output as PNG ZIP
+python skills/notebooklm-bridge/remove_watermark.py slides.pdf --png
+
+# Batch mode
+python skills/notebooklm-bridge/remove_watermark.py *.pdf
+
+# Higher quality (default 150 DPI)
+python skills/notebooklm-bridge/remove_watermark.py slides.pdf --dpi 300
+```
+
+### When Claude Should Use This
+- After generating slides or infographics via NotebookLM, **always** run
+  watermark removal before delivering the final files to the user
+- Use `--pptx` when the user wants editable slides
+- Use `--png` when the user wants individual images
+- Use default (PDF) for archival or sharing
+
+### Limitations
+- Only works on NotebookLM-generated PDFs (fixed watermark position)
+- If NotebookLM changes their watermark position/size, the coordinates
+  in `remove_watermark.py` need updating (constants at top of file)

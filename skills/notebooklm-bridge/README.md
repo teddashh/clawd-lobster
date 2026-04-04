@@ -65,7 +65,20 @@ authentication status.
   generation requests.
 - **Breaking changes** -- The underlying NotebookLM API is not versioned.
   Pin `notebooklm-py` to a known-good version and test before upgrading.
+- **Watermark position** -- If NotebookLM changes their watermark location,
+  update the `LOGO_COORDS` constant in `remove_watermark.py`.
+
+## Watermark Removal
+
+Built-in tool to remove the NotebookLM logo from generated slides and infographics.
+
+- **No AI / No GPU** -- uses biharmonic inpainting (classical image processing)
+- **Auto mode** -- enabled by default (`auto_remove_watermark: true`)
+- **Manual**: `python skills/notebooklm-bridge/remove_watermark.py input.pdf`
+- **Formats**: PDF (default), `--pptx` (PowerPoint), `--png` (ZIP of images)
+
+Based on [WaterMarkLM](https://huggingface.co/spaces/dseditor/WaterMarkLM) (MIT).
 
 ---
 
-**Version:** 0.1.0 | **Kind:** prompt-pattern | **Default:** disabled (optional)
+**Version:** 0.2.0 | **Kind:** prompt-pattern | **Default:** disabled (optional)
