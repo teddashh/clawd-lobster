@@ -16,10 +16,14 @@ Based on: https://huggingface.co/spaces/dseditor/WaterMarkLM (MIT)
 """
 
 import argparse
+import json
+import re
 import sys
 import tempfile
+import time
 import zipfile
 from pathlib import Path
+from urllib.request import urlopen
 
 import fitz  # PyMuPDF
 import numpy as np
@@ -27,11 +31,66 @@ from PIL import Image
 from skimage.restoration import inpaint
 
 
-# NotebookLM watermark position (fixed coordinates at base resolution)
-BASE_WIDTH = 2867
-BASE_HEIGHT = 1600
-LOGO_COORDS = (1530, 1595, 2620, 2860)  # (row1, row2, col1, col2)
+# Fallback coordinates (known-good as of 2026-04)
+_FALLBACK_BASE_WIDTH = 2867
+_FALLBACK_BASE_HEIGHT = 1600
+_FALLBACK_LOGO_COORDS = (1530, 1595, 2620, 2860)  # (row1, row2, col1, col2)
+
+# Auto-update from HuggingFace
+_HF_APP_URL = "https://huggingface.co/spaces/dseditor/WaterMarkLM/raw/main/app.py"
+_CACHE_FILE = Path(__file__).parent / ".watermark_coords_cache.json"
+_CACHE_TTL = 86400 * 7  # refresh weekly
+
 DPI = 150
+
+
+def _fetch_coords_from_hf() -> tuple[int, int, int, tuple] | None:
+    """Fetch latest watermark coordinates from the HuggingFace source."""
+    try:
+        resp = urlopen(_HF_APP_URL, timeout=10)
+        code = resp.read().decode("utf-8")
+
+        bw = re.search(r"self\.base_width\s*=\s*(\d+)", code)
+        bh = re.search(r"self\.base_height\s*=\s*(\d+)", code)
+        lc = re.search(r"self\.logo_coords\s*=\s*\(([^)]+)\)", code)
+
+        if bw and bh and lc:
+            coords = tuple(int(x.strip()) for x in lc.group(1).split(","))
+            return int(bw.group(1)), int(bh.group(1)), coords
+    except Exception:
+        pass
+    return None
+
+
+def _load_coords() -> tuple[int, int, tuple]:
+    """Load coords from cache or fetch from HuggingFace. Falls back to hardcoded."""
+    # Try cache first
+    if _CACHE_FILE.exists():
+        try:
+            data = json.loads(_CACHE_FILE.read_text(encoding="utf-8"))
+            if time.time() - data.get("ts", 0) < _CACHE_TTL:
+                return data["bw"], data["bh"], tuple(data["coords"])
+        except Exception:
+            pass
+
+    # Fetch fresh
+    result = _fetch_coords_from_hf()
+    if result:
+        bw, bh, coords = result
+        try:
+            _CACHE_FILE.write_text(
+                json.dumps({"bw": bw, "bh": bh, "coords": list(coords), "ts": time.time()}),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+        return bw, bh, coords
+
+    # Fallback
+    return _FALLBACK_BASE_WIDTH, _FALLBACK_BASE_HEIGHT, _FALLBACK_LOGO_COORDS
+
+
+BASE_WIDTH, BASE_HEIGHT, LOGO_COORDS = _load_coords()
 
 
 def pdf_to_images(pdf_path: str, dpi: int = DPI) -> list[Path]:
