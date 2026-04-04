@@ -117,20 +117,11 @@ Skills are self-contained modules managed via `skill-manager.py`. Each skill has
 - **poller**: Long-running integration with external systems (e.g., connect-odoo)
 
 ### Codex Bridge (optional integration)
-When the Codex plugin is installed, you have these slash commands — **use them proactively**:
-
-| Command | When to use | What it does |
-|---------|------------|--------------|
-| `/codex:review` | After writing code, before commit | Read-only code review by Codex. Does not modify code. |
-| `/codex:adversarial-review` | For architecture decisions, risky changes, security-sensitive code | Challenges your design choices, assumptions, and tradeoffs. Harder than review. |
-| `/codex:rescue` | When stuck, need a second opinion, or want parallel investigation | Delegates investigation/fix to Codex. Supports `--effort` (minimal→xhigh). |
-
-**Guidelines:**
-- Wrote significant code? → offer `/codex:review` before committing
-- Risky refactor or security change? → use `/codex:adversarial-review`
-- Stuck debugging or want a second pass? → use `/codex:rescue`
-- Both review commands support `--wait` (foreground) and `--background`
-- Auth: `codex login` (ChatGPT subscription) or OpenAI API key
+When enabled, Claude can delegate parallelizable work to OpenAI Codex:
+- **Worker role**: parallel tasks, boilerplate, bulk refactoring
+- **Critic role**: security audit, architecture debate, code review
+- See `skills/codex-bridge/SKILL.md` for full commands and usage
+- Auth: `codex login` (ChatGPT Plus) or API key
 - Claude decides when, what, and how much to delegate — Codex never acts autonomously
 
 ### Adding a New Skill
