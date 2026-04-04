@@ -832,10 +832,28 @@ def cmd_reconcile(args):
     save_registry(reg)
 
     _reconcile_files(reg)
+    _patch_codex_plugin()
     print(green("Reconcile complete."))
     print(f"  .mcp.json:     {MCP_FILE}")
     print(f"  settings.json: {SETTINGS_FILE}")
     print()
+
+
+def _patch_codex_plugin():
+    """Run patch-codex-plugin.py if codex plugin is installed."""
+    patch_script = Path(__file__).parent / "patch-codex-plugin.py"
+    if not patch_script.exists():
+        return
+    try:
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(patch_script)],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.stdout.strip():
+            print(result.stdout.strip())
+    except Exception:
+        pass  # non-critical — skip silently if patch fails
 
 
 def _reconcile_files(reg: dict) -> None:
