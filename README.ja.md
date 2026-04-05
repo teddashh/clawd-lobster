@@ -1,78 +1,87 @@
-🌐 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md) | [**日本語**](README.ja.md) | [한국어](README.ko.md)
+[English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
 
 # Clawd-Lobster
 
-![Version](https://img.shields.io/badge/version-0.5.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/github/license/teddashh/clawd-lobster)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Runtime](https://img.shields.io/badge/footprint-25MB_RAM-orange)
 
 <p align="center">
-<strong>結局、最高のものを使うことになる。</strong><br>
-<em>究極のエージェント体験 — 最軽量、厳選された機能、最大のパフォーマンス。</em>
+<strong>アイデアから動くコードへ。一回の会話で。</strong><br>
+<em>Spec Squad があなたの説明をレビュー済み・テスト済みのコードベースに変換します -- Claude Agent SDK を活用。</em>
 </p>
 
 <p align="center">
-<sub>Webガイド付きセットアップ。多層メモリ。マルチエージェント共有ナレッジ。自由な進化。</sub>
+<sub>Web ダッシュボード + CLI。マルチエージェント開発。永続メモリ。マルチマシン同期。</sub>
 </p>
 
 ---
 
 ## Clawd-Lobster とは？
 
-Claude Codeは頭脳。Clawd-Lobsterは神経系統。
+Claude Code は脳。Clawd-Lobster は神経系統です。
 
-Claude Codeは現時点で最も優れたコーディングエージェントですが、セッション間ですべてを忘れ、1台のマシンでしか動作せず、スキル管理もありません。Clawd-Lobsterは不足しているものを的確に補います：永続メモリ、マルチマシンオーケストレーション、厳選されたスキル、そして自己進化。それ以上でも以下でもありません。
+Claude Code は現在利用可能な最も高性能なコーディングエージェントですが、セッション間で全てを忘れ、1台のマシンでしか動作せず、スキル管理機能もありません。Clawd-Lobster はまさに足りない部分を補います：コードの設計・レビュー・実装・テストを敵対的マルチエージェント協調で行う **Spec Squad** に加え、永続メモリ、マルチマシンオーケストレーション、厳選されたスキル、自己進化機能を提供します。
 
-**Clawd-Lobsterはジェネレーターです。** 一度実行するだけで、あなた専用の**Hub** — プライベートGitHubリポジトリがコマンドセンターになります。Hubがすべてのマシン、ワークスペース、メモリ、スキルを管理します。
-
-```
-  clawd-lobster (このリポジトリ — ジェネレーター)
-       │
-       │  install.ps1 を一度実行
-       │
-       ▼
-  clawd-yourname (あなたのプライベートHub — あなた用に生成)
-       │
-       │  これが日常的に実際に使うもの
-       │
-       ├── Machine A ── Claude Code + skills + memory
-       ├── Machine B ── Claude Code + skills + memory
-       └── Machine C ── Claude Code + skills + memory
-            │
-            すべて接続。すべて知識を共有。
-            すべてheartbeatで常時稼働。
-```
-
-GitHubがコントロールプレーン。Gitがプロトコル。すべての状態 — スキル、ナレッジ、ワークスペース登録、heartbeatステータス — がgitに格納され、自動的に同期されます。
-
-**ランタイムフットプリント：25 MB RAM、672 KBディスク。** 1つのPythonプロセス（MCP Memory Server）とSQLite。その他はOSスケジューラで実行→終了するか、ブラウザ上で動作します。ポーリングゼロ、デーモンゼロ、肥大化ゼロ。
+**Clawd-Lobster はジェネレーターです。** 一度実行すると、あなた専用の **Hub** が作成されます -- Hub はプライベート GitHub リポジトリで、あなたのコマンドセンターになります。Hub が全マシン、ワークスペース、メモリ、スキルを管理します。
 
 ```
-Disk: 672 KB (コード + 設定、.gitと画像アセットを除く)
-RAM:  ~25 MB (MCPサーバー、唯一の常駐プロセス)
-CPU:  0% アイドル (ポーリングなし、デーモンなし — OSスケジューラが起動を担当)
+  clawd-lobster (このリポジトリ -- ジェネレーター)
+       |
+       |  pip install -e . && clawd-lobster setup
+       |
+       v
+  clawd-yourname (あなた専用のプライベート Hub -- 自動生成)
+       |
+       |  日常的に使うのはこちら
+       |
+       +-- Machine A -- Claude Code + skills + memory
+       +-- Machine B -- Claude Code + skills + memory
+       +-- Machine C -- Claude Code + skills + memory
+            |
+            全て接続済み。全てのナレッジを共有。
+            ハートビートで常時稼働。
 ```
 
----
+GitHub がコントロールプレーンです。Git がプロトコルです。すべてのステート -- スキル、ナレッジ、ワークスペースレジストリ、ハートビートステータス -- は git に格納され、自動的に同期されます。
 
-## 必要条件
-
-- **Node.js** 18+ と **Python** 3.11+ と **Git** 2.x+
-- **Claude Code** CLI（[インストールガイド](https://docs.anthropic.com/en/docs/claude-code/getting-started)）
-- **GitHub** アカウント（プライベート Hub リポジトリ用）
+**ランタイムフットプリント: 25 MB RAM、672 KB ディスク。** Python プロセス 1つ (MCP Memory Server) と SQLite のみ。その他は OS スケジューラ経由で実行・終了するか、ブラウザ上で動作します。ポーリングなし、デーモンなし、肥大化なし。
 
 ---
 
 ## クイックスタート
 
-### 最初のマシン（Hubを作成）
+スタイルに合わせて3つの方法から選べます。
+
+### Web UI (初心者におすすめ)
+
+```bash
+git clone https://github.com/teddashh/clawd-lobster
+cd clawd-lobster
+pip install -e .
+clawd-lobster serve
+# ブラウザが http://localhost:3333 で開きます
+# オンボーディングウィザードが全てガイドします
+```
+
+### Terminal (上級者向け)
+
+```bash
+git clone https://github.com/teddashh/clawd-lobster
+cd clawd-lobster
+pip install -e .
+clawd-lobster setup
+# 4ステップのインタラクティブウィザード: 前提条件確認 -> ペルソナ選択 -> ワークスペースルート設定 -> 最初のワークスペース作成
+```
+
+### Classic (インストールスクリプト)
 
 **Windows**
 ```powershell
 git clone https://github.com/teddashh/clawd-lobster
 cd clawd-lobster
 .\install.ps1
-# 4つの質問に答える → プライベートHubが作成される → すべてセットアップ完了
 ```
 
 **macOS / Linux**
@@ -91,661 +100,491 @@ docker compose up -d && docker compose exec clawd bash
 
 ### セットアップの仕組み
 
-インストーラーが4つの質問をします。それだけです。残りはすべて自動です。
+インストーラーは前提条件を確認し、Claude Code + GitHub の認証を行い、Hub を作成し、MCP Memory Server (32 ツール) をインストールし、ワークスペースを構成し、スケジューラとハートビートを登録します。必要な認証情報: OAuth クリック 2回のみ。API キーは不要です。
 
-```
-  ┌──────────────────────────────────────────────────┐
-  │  1. Language?                                     │
-  │     English / 繁體中文 / 简体中文 / 日本語 / 한국어   │
-  │                                                   │
-  │  2. First machine or joining?                     │
-  │     → New Hub (I'm the first)                     │
-  │     → Join Hub (I have the URL)                   │
-  │                                                   │
-  │  3. Fresh or importing?                           │
-  │     → Fresh start                                 │
-  │     → Absorb existing system                      │
-  │                                                   │
-  │  4. Name your Hub / Machine                       │
-  │     → Hub: clawd-yourname (becomes private repo)  │
-  │     → Machine: home-pc / office-vm / laptop       │
-  │     → Domain: work / personal / hybrid            │
-  └──────────────────────────────────────────────────┘
-             │
-             ▼
-```
-
-その後、9つのステップが自動実行されます：
-
-### 9つのステップの内容
-
-| ステップ | アクション | 時間 |
-|------|--------|------|
-| 1 | 前提条件のチェック（Node、Python、Git） | 5秒 |
-| 2 | Claude Code + GitHubの認証（OAuthクリック2回） | 30秒 |
-| 3 | **Hubを作成**（プライベートリポジトリ）または既存をクローン | 10秒 |
-| 4 | 設定の書き込み | 5秒 |
-| 5 | MCP Memory Serverのインストール（32ツール） | 10秒 |
-| 6 | Claude Codeの設定（CLAUDE.md + .mcp.json） | 5秒 |
-| 7 | ワークスペースのデプロイ（リポジトリをクローン、memory.dbを初期化） | 場合による |
-| 8 | スケジューラ + heartbeatの登録 | 5秒 |
-| 9 | 既存システムの吸収（選択した場合） | 場合による |
-
-| プラットフォーム | 同期 | Heartbeat |
+| プラットフォーム | 同期 | ハートビート |
 |----------|------|-----------|
 | Windows | Task Scheduler (30分) | Task Scheduler (30分) |
 | macOS | launchd | launchd |
 | Linux | cron | cron |
-| Docker | Container lifecycle | Container lifecycle |
-
-**必要な認証情報はOAuthクリック2回だけ。** Oracle L4を使用する場合を除き、APIキーは不要です。
-
-### 後からマシンを追加
-
-HubがすでにGitHub上にあれば、マシンの追加はさらに簡単です：
-
-```bash
-git clone https://github.com/you/clawd-lobster
-cd clawd-lobster
-./install.ps1   # or ./install.sh
-
-  → Join existing Hub
-  → paste your Hub URL
-  → name this machine
-  → done (clones Hub, deploys workspaces, starts heartbeat)
-```
+| Docker | コンテナライフサイクル | コンテナライフサイクル |
 
 ---
 
-## Chapter 1：メモリ — エージェントは記憶する
+## Web ダッシュボード
 
-なぜ重要か：ほとんどのAIエージェントは毎回ゼロからセッションを開始します。同じミスを繰り返し、コンテキストを学び直し、時間を無駄にします。
+`clawd-lobster serve` で起動します (デフォルトポート 3333)。ダッシュボードには3つのメインビューがあります:
 
-### 4層メモリシステム
+### /onboarding -- セットアップウィザード
 
-| レイヤー | 内容 | 速度 | スコープ |
-|-------|------|-------|-------|
-| **L1.5** | CC auto-memory（ネイティブ） | 即時 | 現在のプロジェクト |
-| **L2** | SQLite + 32のMCPツール | ~1ms | ワークスペースごと |
-| **L3** | Markdownナレッジベース | ~10ms | gitで共有 |
-| **L4** | Cloud DB（オプション） | ~100ms | ワークスペース横断 |
+初回訪問時は自動的にここに遷移します。ウィザードが前提条件 (Python, Claude CLI, Git, pip) をチェックし、ペルソナの選択 (Guided / Expert / Tech)、ワークスペースルートの設定、最初のワークスペースの作成まで、すべてブラウザ上で完結します。
 
-### Salienceエンジン
+### /workspaces -- ワークスペースマネージャー
 
-重要なメモリは浮上し、古くなったメモリは沈みます：
-- アクセスごと：salienceが+5%
-- 手動強化：+20%ブースト（上限2.0x）
-- 30日間未アクセス：-5%/日の減衰（下限0.01、削除はされません）
+登録済みの全ワークスペースをリアルタイムステータス付きで一覧表示します。各ワークスペースカードにはパス、メモリデータベースサイズ、git 同期ステータス、Spec Squad のフェーズが表示されます。ダッシュボードから直接新しいワークスペースを作成したり、同期のオン・オフを切り替えたりできます。
 
-**CJK対応トークン推定** — 多言語ワークロード向けの正確なコンパクション・タイミング。
+### /squad -- Spec Squad
 
-### 実際の動作
-
-メモリは受動的なストアではありません — エージェントの動作に能動的に影響を与えます。
-
-```
-あなたが決定を下す
-  → memory_record_decision("chose SQLite over Postgres", "local-first, no server needed")
-
-次のセッション開始
-  → ブートプロトコルが重要な決定 + ナレッジをロード
-  → Claudeがその決定とその理由を覚えている
-
-30日後
-  → 重要な決定は依然として高salience（頻繁にアクセスされる → ブースト）
-  → 些末なコンテキストは自然に減衰（ただし削除されることはない）
-```
-
-すべてのトラジェクトリは記録されます。すべてのワークスペースは共有されます。エージェントたちは共に成長します。知識は蓄積されます。作業は決して失われません。
+マルチエージェント開発インターフェースです。ディスカバリー会話を開始し、Architect が仕様を書き、Reviewer がそれに異議を唱え、Coder がビルドし、Tester が検証する様子を、SSE によるライブプログレス更新で追跡できます。
 
 ---
 
-## Chapter 2：ワークスペース — エージェントの作業場
+## Spec Squad -- マルチエージェント開発
 
-なぜ重要か：構造化された作業場所がなければ、エージェントはコンテキストを混同し、プロジェクトを混乱させ、マシン間でナレッジを共有できません。
+Spec Squad は v1.0 のコア機能です。4つの専門エージェントが協調して、あなたのアイデアをレビュー済み・テスト済みのコードに変換します -- Claude Agent SDK を使用。
 
-ワークスペースはメモリ、スキル、specサポートを備えたプロジェクトディレクトリです。すべてのワークスペースはgitリポジトリです（通常はGitHub上のプライベートリポジトリ）。
-
-### ワークスペースの作成
-
-2つの方法：
-
-1. **`/spec new`** — 完全なspecを伴うガイド付き作成（推奨）。詳細は[Chapter 4](#chapter-4spec--エージェントの計画方法)を参照。
-2. **`workspace-create.py`** — specなしのクイック作成：
-
-```powershell
-.\scripts\new-workspace.ps1 -name "my-api"
-# フォルダ、memory.db、CLAUDE.md、GitHubリポジトリを作成 — 完了。
-```
-
-### ワークスペース構造
+### パイプライン
 
 ```
-my-project/
-├── CLAUDE.md              ← プロジェクト固有の指示
-├── .claude-memory/
-│   └── memory.db          ← L2メモリ (SQLite)
-├── knowledge/             ← L3ナレッジ (git同期)
-├── skills/learned/        ← 自動生成されたスキル
-├── openspec/              ← specアーティファクト (/spec使用時)
-│   ├── project.md
-│   ├── changes/
-│   └── specs/
-└── .blitz-active          ← blitz実行中に存在
+あなたがプロジェクトを説明する
+  | clawd-lobster squad start (ターミナル)
+  | または /squad ページ (Web)
+  v
+Discovery Interview
+  | シニアコンサルタントが3-6個のスマートな質問 (3W1H: Why, What, Who, How)
+  | 十分なコンテキストが集まったら: DISCOVERY_COMPLETE
+  v
+Architect
+  | 完全な OpenSpec を作成: project.md -> proposal.md -> design.md
+  | -> specs/ (SHALL/MUST + Gherkin) -> tasks.md (フェーズ分け、各5-30分)
+  v
+Reviewer (敵対的)
+  | 仕様を徹底的に精査。ギャップ、曖昧さ、弱い判断を発見。
+  | 判定: REVISE (問題点付き) または APPROVED (信頼度スコア付き)
+  | 最大5ラウンドのレビュー -- Architect は全ての問題を修正必須
+  v
+Coder
+  | 承認された仕様をタスクごと、フェーズごとに実行
+  | フェーズ完了ごとにコミット。tasks.md のタスクを完了マーク
+  v
+Tester
+  | 全ての SHALL/MUST 要件をコードに照らして検証
+  | Gherkin シナリオを実行。判定: PASSED または ISSUES (パス率付き)
+  v
+完了 -- レビュー済み・テスト済みのコードベースが完成
 ```
 
-### ワークスペースの有効化と同期
+### 敵対的レビューの仕組み
 
-```
-~/Documents/Workspace/
-├── my-api/          ← 登録済み、30分ごとに同期
-├── data-pipeline/   ← 登録済み、30分ごとに同期
-└── random-notes/    ← gitリポジトリではない、同期でスキップ
-```
+Reviewer は「容赦なく、しかし公正に」指示されています。`openspec/` 内の全ファイルを読み、アーキテクチャ、要件、タスク分割に異議を唱えます。問題が見つかれば、Architect は修正しなければなりません。このループは Reviewer が信頼度スコア付きの APPROVED 判定を出すまで最大5ラウンド実行されます。結果として、コードを1行も書く前にストレステスト済みの仕様が得られます。
 
-- すべてのアクティブなワークスペースは30分ごとにgitで同期されます
-- Web UIのワークスペースタブでワークスペースのON/OFFを切り替えます
-- 非アクティブなワークスペースは同期を停止しますがデータは保持されます
-- スケジューラがワークスペースルート配下のすべてのgitリポジトリを自動同期します
+### Web モード vs ターミナルモード
 
-### マルチマシン共有
+| | Web (`/squad`) | Terminal (`clawd-lobster squad start`) |
+|---|---|---|
+| Discovery | ブラウザ上のチャットインターフェース | stdin/stdout |
+| 進捗表示 | ライブ SSE イベント、ビジュアルフェーズ | フェーズラベルをターミナルに出力 |
+| ビルド承認 | ブラウザ上でプロンプト | `Build now? (y/n)` |
+| 状態管理 | `.spec-squad.json` に永続化 | 同じファイル |
+| 基盤エンジン | 同じ `squad.py` 非同期コア | 同じ `squad.py` 非同期コア |
 
-これは単なる1つのエージェントではありません。フリートです — そしてすべてが同じ頭脳を共有しています。
-
-```
-        ┌─────── GitHub (Control Plane) ───────┐
-        │  skills, knowledge, workspace registry │
-        └──────────┬────────────┬───────────────┘
-                   │            │
-     ┌─────────────▼──┐  ┌─────▼─────────────┐
-     │  Agent A        │  │  Agent B           │
-     │  (office)       │  │  (cloud VM)        │
-     │  Claude Code    │  │  Claude Code       │
-     │  + local L2 ────┼──┼──► shared L3/L4    │
-     └────────────────┘  └───────────────────┘
-                   │            │
-              ┌────▼────────────▼────┐
-              │  Agent C (laptop)    │
-              │  joins in 2 minutes  │
-              └──────────────────────┘
-
-Every agent contributes memories → shared knowledge grows
-Any agent retrieves memories → collective intelligence available
-```
-
-- **L2** はローカルに保持（高速、ワークスペースごと）— 各エージェントが独自のキャッシュを持ちます
-- **L3** はgitで同期 — すべてのエージェントが同じナレッジベースを読み書きします
-- **L4** はすべてを統合 — ワークスペース横断検索、監査証跡、完全な履歴
-- **新しいエージェントが参加？** `git clone + install.ps1` — 蓄積されたすべての知識を即座に継承します
-
-### 常時稼働 — Heartbeat
-
-エージェントは決して死にません。OSスケジューラが30分ごとにチェック：各ワークスペースセッションは生きているか？そうでなければ、`claude --resume`で復活させます — 完全なコンテキストが復元されます。
-
-```
-OS Scheduler (every 30 min)
-    │
-    ▼ heartbeat.ps1 / heartbeat.sh
-    │
-    For each workspace in workspaces.json:
-    ├─ Session alive? → skip
-    └─ Session dead?  → claude --resume → context restored
-    │
-    ▼ All sessions visible via Claude Code Remote / App
-```
-
-- **ターミナルが開いている** — セッション稼働中、エージェントは完全なコンテキストを持ち、24/7で動作
-- **ターミナルが閉じた** — heartbeatが検知し、自動的に復活
-- **すべてのセッション** — Claude Code Remoteで任意のデバイスから閲覧可能
-- **カスタムデーモンなし** — OSスケジューラがウォッチドッグ。クラッシュしない。メンテナンスゼロ。
-
-### スケジュール自動化
-
-OSレベルのスケジューラ（Windows Task Scheduler / cron / launchd）— Claude Codeが起動していなくても実行されます：
-
-- **Heartbeat** — すべてのワークスペースセッションが稼働し続けることを保証（停止していれば復活）
-- **Git同期** — 30分ごとにすべてのリポジトリをpullおよびpush
-- **Salience減衰** — 日次のメモリ重要度調整
-- **クライアントステータス** — 各マシンのセッション、最終heartbeat、デプロイ済みワークスペースを追跡
+両モードとも同じパイプライン、同じ Agent SDK 呼び出し、同じステートファイルを使用します。ワークフローに合う方をお選びください。
 
 ---
 
-## Chapter 3：スキル — エージェントにできること
+## スキル
 
-なぜ重要か：Claude Codeにはビルトインスキルがありますが、独自のスキルを追加したり、変更したり、チームと共有したりすることはできません。スキルはあなたの競争優位性です。
+9つのスキルモジュール。それぞれ `skill.json` マニフェスト付き。合計 32 MCP ツール。
 
-スキルは自己完結型のモジュールです。AIエージェント用のChrome拡張機能のようなものです。
+### Core Skills (固定)
 
-### 3つのスキルソース
-
-| タブ | 内容 | 切り替え可？ |
+| スキル | タイプ | 機能 |
 |---|---|---|
-| **Claude Native** | ビルトイン：`/batch`、`/loop`、`/simplify`、`/compact`など | スキル：可（権限経由）。コマンド：読み取り専用。 |
-| **Clawd-Lobster** | マネージド：memory、heartbeat、evolve、absorb、spec、connect-odoo | 可 — フルライフサイクル |
-| **Custom / Hub** | 独自 + ClawHubからダウンロードしたコミュニティスキル | 可 — フルライフサイクル |
+| **Memory Server** | mcp-server | 26ツールの MCP メモリ。SQLite、重要度エンジン、CJK 対応コンパクション |
+| **Heartbeat** | cron | OS スケジューラによるセッション維持 -- 停止したセッションを自動復活 |
+| **Evolve** | prompt-pattern | パターン抽出、改善提案、重要度減衰 |
+| **Absorb** | prompt-pattern | フォルダ、GitHub リポジトリ、URL からのナレッジ取り込み |
+| **Spec** | prompt-pattern | OpenSpec 手法によるガイド付き設計 + blitz 実行 |
 
-1つの統一ビュー。3つのソース。システム上のすべてのスキル — Anthropicからのものも、Clawd-Lobsterからのものも、あなた自身のものも — 1か所で表示・管理できます。
+### Optional Skills
 
-### コアスキル（ロック — 無効化不可）
-
-| スキル | 機能 | ロックの理由 |
-|---|---|---|
-| Memory Server | 32ツールMCPメモリ + SQLite | メモリなし = エージェントなし |
-| Heartbeat | OSスケジューラによるセッションキープアライブ | heartbeatなし = セッションが死ぬ |
-| Evolve | 自己進化 + TODO処理 | コア差別化機能 |
-| Absorb | あらゆるソースからのナレッジ取り込み | コア学習能力 |
-| Spec | ガイド付きプランニング + blitz実行 | コア開発ワークフロー |
-
-### オプショナルスキル
-
-| スキル | 機能 | デフォルト |
-|---|---|---|
-| Migrate | 他のAIセットアップからのインポート | 有効 |
-| Connect-Odoo | Odoo ERP連携（XML-RPC） | 無効 |
-| Codex Bridge | OpenAI Codexに作業を委任（worker + critic） | 無効 |
-| NotebookLM Bridge | Google NotebookLMによる無料RAG + コンテンツエンジン | 無効 |
+| スキル | タイプ | 機能 | デフォルト |
+|---|---|---|---|
+| **Migrate** | prompt-pattern | 既存 AI セットアップからのインポート (フォーマット自動検出) | 有効 |
+| **Connect-Odoo** | mcp-server | Odoo ERP 連携 -- XML-RPC + ポーラー経由の 6 MCP ツール | 無効 |
+| **Codex Bridge** | prompt-pattern | OpenAI Codex に worker + critic ロールでタスク委任 | 無効 |
+| **NotebookLM Bridge** | prompt-pattern | Google NotebookLM 経由の無料 RAG + コンテンツエンジン | 無効 |
 
 ### スキル管理
 
-すべてのスキルは`skill.json`マニフェストを持つ自己完結型モジュールです。**Web UI**または**CLI**で管理します。
-
-**Web Dashboard** — `webapp/index.html`を開く：
-- カードグリッドにON/OFFトグル、ステータスインジケーター、カテゴリフィルター、検索
-- インライン設定 — スキルごとに設定と認証情報を編集
-- ヘルスチェック — 有効なすべてのスキルに緑/黄/赤のステータスを表示
-
-**CLI管理ツール：**
+各スキルは `skill.json` マニフェストを持つ独立したモジュールです。**Web UI** または **CLI** で管理できます:
 
 ```bash
-python scripts/skill-manager.py list                     # すべてのスキルを一覧表示
+clawd-lobster serve                                      # トグル付き Web ダッシュボード
+python scripts/skill-manager.py list                     # 全スキルの一覧表示
 python scripts/skill-manager.py enable connect-odoo      # スキルを有効化
 python scripts/skill-manager.py disable connect-odoo     # スキルを無効化
-python scripts/skill-manager.py status                   # 詳細ステータス
-python scripts/skill-manager.py config connect-odoo      # 設定の表示/編集
-python scripts/skill-manager.py credentials connect-odoo # 認証情報の管理
-python scripts/skill-manager.py health                   # すべてのヘルスチェックを実行
+python scripts/skill-manager.py health                   # 全ヘルスチェックを実行
 python scripts/skill-manager.py reconcile                # .mcp.json + settings.json を再生成
 ```
 
 ### 独自スキルの追加
 
-1. `skills/my-skill/skill.json`を作成 — マニフェストがすべてを宣言：
-
-```jsonc
-{
-  "id": "my-skill",
-  "name": "My Skill",
-  "description": "What it does",
-  "version": "0.1.0",
-  "category": "utility",       // core | integration | automation | intelligence | utility
-  "kind": "mcp-server",        // mcp-server | prompt-pattern | cron | poller
-  "alwaysOn": false,
-  "defaultEnabled": true,
-  "mcp": {
-    "serverName": "my-skill",
-    "command": "python",
-    "args": ["-m", "my_skill.server"],
-    "cwd": "."
-  },
-  "permissions": { "allow": ["mcp__my-skill__my_tool"] },
-  "credentials": [],
-  "configSchema": { ... },
-  "healthCheck": { "type": "mcp-ping", "intervalSeconds": 300 },
-  "dependencies": { "skills": [], "system": ["python>=3.11"], "python": ["fastmcp>=3.0"] }
-}
-```
-
-2. スキルを実装（MCPサーバー、スクリプト、またはSKILL.md）
-3. `skill-manager.py reconcile`を実行 — 自動的に登録し、`.mcp.json` + `settings.json`を更新
-
-**スキルはたった3つの設定エントリです。** SDKなし。プラグインAPIなし。フレームワークロックインなし。マニフェスト**が**コントラクトです。
-
----
-
-## Chapter 4：Spec — エージェントの計画方法
-
-なぜ重要か：計画なしの自律実行は、ランダムなコード生成に過ぎません。Spec駆動開発はClaudeに従うべきブループリントを与えます。
-
-OpenSpec方法論に基づいています。Claudeがプランニングをガイドし、その後自律的に実行します。
-
-### フロー
-
-```
-You: "I want to build a membership site"
-  ↓ /spec new
-Claude asks questions (3W1H: Why, What, Who, How)
-  ↓ you answer (typically 3-6 exchanges)
-Claude creates:
-  ├── GitHub repo + workspace
-  ├── project.md (context capture)
-  ├── proposal.md (Why + What + scope)
-  ├── design.md (Architecture + data model)
-  ├── specs/ (Gherkin scenarios with SHALL/MUST requirements)
-  └── tasks.md (100-300 phased tasks, each 5-30 min)
-  ↓ you review
-"Ready to blitz?"
-  ↓ yes
-Claude executes all tasks autonomously
-  ↓ blitz complete
-V1 is ready. Evolution begins.
-```
-
-### 3W1H標準
-
-すべてのアーティファクトはWhy、What、Who、How — それぞれ適切なレベルで従います：
-
-| アーティファクト | レベル |
-|---|---|
-| project.md | 広範なコンテキストキャプチャ |
-| proposal.md | スコープ定義 |
-| design.md | アーキテクチャのブループリント |
-| specs/ | テスト可能な要件（SHALL/MUST + Gherkin） |
-| tasks.md | 実行計画（フェーズ分け、ファイルパス参照付き） |
-
-プランニングから意思決定、ログ、アーカイブまで、同じ標準が一貫して適用されます。
-
-### Blitzモード
-
-フルスピードの自律実行。Specが計画 — 質問なし、実行あるのみ。
-
-- **ブランチ分離** — すべての作業は`blitz/v1`で行われ、mainは検証まで保護
-- **フェーズコミット** — 各フェーズ完了後に`git commit`
-- **進化の一時停止** — `.blitz-active`マーカーがevolve-tickにこのワークスペースをスキップするよう通知
-- **委任マーカー** — `[codex]`プレフィックスのタスクは外部実行用にスキップ
-- **Blitz完了後** — mainにマージ、specをナレッジとして保存、次のステップを提案
-
-### バリデーション
-
-- 各アーティファクト完了後にセルフバリデーションを実行（proposal、design、specs、tasks）
-- 要件はSHALLまたはMUSTを使用 — "should"、"could"、"might"は不可
-- すべての要件に少なくとも1つのGherkinシナリオ
-- すべてのタスクにファイルパスが含まれ、5-30分で完了できる範囲
-- アーティファクトDAGは厳格：project → proposal → design → specs → tasks
-
-### コマンド
-
-| コマンド | 機能 |
-|---|---|
-| `/spec new` | ガイド付きワークスペース + spec作成 |
-| `/spec:status` | 進捗表示（フェーズごとにプログレスバー付き） |
-| `/spec:add "feature"` | 既存specへの追加（差分操作） |
-| `/spec:blitz` | blitz実行の開始/再開 |
-| `/spec:archive` | 完了した変更のアーカイブ + ナレッジとして保存 |
-
----
-
-## Chapter 5：進化 — エージェントの改善方法
-
-なぜ重要か：v1は始まりに過ぎません。自分の作業から学べないエージェントは、成長が止まるエージェントです。
-
-v1が完成した後、エージェントは自動的に改善し続けます。
-
-### 進化ループ
-
-```
-/absorb (input)
-  ├── Scan folder → extract knowledge, decisions, TODOs
-  ├── Read GitHub repo → learn patterns + skills
-  └── Fetch URL → store insights
-       ↓
-evolve-tick (every 2 hours)
-  ├── Pick highest-priority pending TODO
-  ├── Create git worktree (isolated branch)
-  ├── Run Claude to complete it (5 min timeout)
-  └── Stage for review (never auto-merge)
-       ↓
-Review (you decide)
-  ├── Web UI: see staged changes
-  ├── Claude explains what changed and why
-  └── Approve (merge) or Reject (archive + learn)
-```
-
-### Absorb（吸収）
-
-何でも投入できます — フォルダ、GitHubリポジトリ、URL。Claudeが見つけたものすべてを自動的に分類します：
-
-```
-Detected environments:
-  ✓ claude-setup     → 11 workspaces, Oracle config, soul files
-  ✓ Raw Claude Code  → CLAUDE.md, auto-memory, sessions
-  ✓ OpenClaw         → SOUL.md, MEMORY.md, skills, approvals
-  ✓ Hermes Agent     → skills, memory, profiles
-```
-
-パーサースクリプトは不要です。Claude Code**がそのまま**パーサーです — どんなフォーマットでも読み取り、セマンティクスを理解し、重要なものを保存します。3つのスキャン深度：
-
-| 深度 | 内容 |
-|---|---|
-| `shallow` | README、CLAUDE.md、トップレベルの設定ファイル |
-| `normal` | shallowの全部 + 主要なソースファイル、スキル定義、重要なドキュメント |
-| `deep` | 完全なコードベース分析 — すべてのソースファイル、テスト、CI設定、スクリプト |
-
-項目はナレッジ（事実、アーキテクチャ）、決定（教訓、落とし穴）、スキル（再利用可能なパターン）、TODO（アクションアイテム）に分類されます。
-
-### 進化（自動）
-
-2時間ごとに、`evolve-tick.py`が保留中のTODOを1つ選び、隔離されたgit worktreeで作業します。主要な特性：
-
-- **1回のtickにつき1つのTODO** — シンプルかつ安全に
-- **自動マージなし** — すべての作業は`evolve/<id>`ブランチでレビュー待ち
-- **学習したスキルは永続化** — データベースとgit同期されたスキルファイルの両方に保存
-- **有効性の追跡** — 使用ごとに+2%、改善ごとに+10%、実証済みスキルのスコアは2.0x以上
-- **エージェント間共有** — Agent Aで学習したスキルはgit同期を通じてAgent Bでも利用可能
-- **自然な引退** — 90日以上使用されていないスキルは潜在的に陳腐化したものとしてフラグ
-- **知識の複利効果** — あるワークスペースでの判断が別のワークスペースの作業に活かされ、解決済みの問題は二度と解き直す必要がない
-
-### Blitz vs 進化
-
-| | Blitz | 進化 |
-|---|---|---|
-| タイミング | specからv1を構築 | v1以降の改善 |
-| 速度 | すべてのタスク、ノンストップ | 2時間ごとに1つのTODO |
-| スコープ | プロジェクト全体 | 個別の改善 |
-| ブランチ | `blitz/v1`（終了時にマージ） | `evolve/<id>`（個別にレビュー） |
-| 自動マージ | あり（blitzブランチ内） | なし — 人間がレビュー |
+`skills/my-skill/skill.json` にマニフェストを作成し、スキルを実装 (MCP server、スクリプト、または SKILL.md) して、`skill-manager.py reconcile` を実行するだけです。スキルは設定エントリ3つで完結 -- SDK 不要、プラグイン API 不要、フレームワークロックイン不要。
 
 ---
 
 ## アーキテクチャ
 
-内部構造を理解したいエンジニア向けです。
-
-### 内部の仕組み
+### 3層設計
 
 ```
-┌──────────────────────────────────────────────┐
-│          Clawd-Lobster (Skills Layer)         │
-│                                              │
-│  Memory System    Workspace Manager          │
-│  Scheduler        Migration Tool             │
-│  Self-Evolution   (your custom skills)       │
-│                                              │
-│  Installed via: .mcp.json + settings.json    │
-│                 + CLAUDE.md                  │
-└──────────────────┬───────────────────────────┘
-                   │
-┌──────────────────▼───────────────────────────┐
-│            Claude Code (The Brain)            │
-│                                              │
-│  Agent Loop · Streaming · Tools · Permissions │
-│  Maintained by Anthropic. Auto-upgrades.     │
-└──────────────────────────────────────────────┘
++----------------------------------------------+
+|        Skills Layer (Clawd-Lobster)           |
+|                                               |
+|  Memory System    Workspace Manager           |
+|  Spec Squad       Scheduler                   |
+|  Self-Evolution   (カスタムスキル)             |
+|                                               |
+|  インストール方法: .mcp.json + settings.json  |
+|                    + CLAUDE.md                 |
++----------------------+------------------------+
+                       |
++----------------------v------------------------+
+|            Claude Code (ブレイン)               |
+|                                                |
+|  Agent Loop - Streaming - Tools - Permissions  |
+|  Anthropic がメンテナンス。自動アップグレード。 |
++------------------------------------------------+
 ```
 
-### 実際に動いているものは？
+### 4層メモリ
 
-リポジトリ全体は約~13K行ですが、大部分はセットアップファイル、ドキュメント、Claudeが読むための指示です。エージェントが作業中に実際にメモリを占有しているのは：
+| レイヤー | 内容 | 速度 | スコープ |
+|-------|------|-------|-------|
+| **L1.5** | Claude Code auto-memory (ネイティブ) | 即時 | 現在のプロジェクト |
+| **L2** | SQLite + 26 MCP ツール | ~1ms | ワークスペース単位 |
+| **L3** | Markdown ナレッジベース | ~10ms | git 経由で共有 |
+| **L4** | Cloud DB (オプション) | ~100ms | ワークスペース横断 |
+
+重要度エンジンが重要なメモリへのアクセスを維持します: アクセスごとに重要度が 5% 上昇、手動強化で 20% 上昇 (上限 2.0x)、30日以上アクセスのないアイテムは 1日 5% 減衰 (下限 0.01 -- 削除はされません)。
+
+### 実際に動いているもの
 
 | レイヤー | 内容 | 行数 | RAM | タイミング |
 |-------|------|-------|-----|------|
-| **Runtime** | MCP Memory Server (32 tools + SQLite) | ~1,400 | ~25 MB | 常時 |
-| **Runtime** | Odoo Connector (if enabled) | ~280 | ~22 MB | 有効時 |
-| **Cron** | evolve-tick (TODO processor) | ~465 | ~20 MB peak | 2時間ごと、実行後終了 |
-| **Cron** | heartbeat + sync | ~300 | ~5 MB peak | 30分ごと、実行後終了 |
-| **Static** | Web UI (browser renders it) | ~1,900 | 0 on server | オンデマンド |
-| **Setup** | Installers, workspace-create, skill-manager | ~2,800 | 0 | 一度だけ実行 |
-| **Docs** | SKILL.md files, README, CHANGELOG | ~3,500 | 0 | Claudeがオンデマンドで読取 |
-| **Config** | skill.json manifests, templates | ~900 | 0 | 起動時に読取 |
+| **Runtime** | MCP Memory Server (26ツール + SQLite) | ~1,400 | ~25 MB | 常時稼働 |
+| **Runtime** | Odoo Connector (有効時) | ~280 | ~22 MB | 有効時のみ |
+| **Runtime** | Web Dashboard (stdlib HTTP) | ~800 | ~15 MB | サーブ時 |
+| **Cron** | evolve-tick (提案生成) | ~465 | ~20 MB ピーク | 2時間ごと、実行後終了 |
+| **Cron** | heartbeat + sync | ~300 | ~5 MB ピーク | 30分ごと、実行後終了 |
+| **Setup** | CLI + オンボーディング + squad オーケストレーター | ~1,200 | 0 | オンデマンド |
+| **Config** | skill.json マニフェスト、テンプレート | ~900 | 0 | 起動時に読み込み |
 
-**常駐フットプリント：1つのPythonプロセス（~25 MB）+ SQLite。** その他は実行後終了（cronスクリプト）、ブラウザ内（Web UI）、またはClaudeがコンテキストを必要とするときに読むだけのファイルです。
+**常駐フットプリント: Python プロセス 1つ (~25 MB) + SQLite。** Web ダッシュボードは stdlib `http.server` を使用 -- Flask なし、FastAPI なし、外部依存なし。
 
-### Claude Codeとの関係
+### 設計思想
 
-他のフレームワークはClaudeをゼロから再構築し、実際の思考にはClaudeのAPIを呼び出します：
+1. **巨人の肩に立つ。** Claude Code の背後には何百万時間ものエンジニアリングがあります。私たちは足りないものを追加し (~3K 行)、最高のエンジンを活かします。
 
-```
-Heavyweight framework approach:
-  Custom Engine (300K LOC) ──API call──→ Claude Model
-                                ↑
-                    Anthropic can change pricing,
-                    revoke OAuth, rate-limit,
-                    or deprecate endpoints — at any time.
-                    Your 300K lines are at their mercy.
+2. **コードが少なければ、故障も少ない。** 設定エントリ3つ = スキル1つ。SDK ゼロ。OS スケジューラは 1970年代から信頼されてきました -- カスタムデーモンの代わりに `cron` + `claude --resume` を使います。
 
-Clawd-Lobster approach:
-  User runs: claude login          ← human authenticates once
-  OS scheduler runs: claude --resume  ← Anthropic's own CLI, their own flag
-  Clawd-Lobster just keeps the session alive and manages skills.
-```
+3. **巨人が成長すれば、あなたも成長する。** Anthropic がネイティブメモリ、24/7 エージェント、マルチエージェント連携を提供したとき -- 私たちは書き直すのではなく、コードを引退させます。**私たちのコードベースは時間とともに縮小します。彼らのは成長します。**
 
-私たちはClaudeのAPIを呼び出しません。OAuthトークンを管理しません。レートリミットを処理しません。私たちがスケジュールするのは**Claude Code自体** — Anthropicが構築し、配布し、メンテナンスするツールです。Anthropicが改善すれば、私たちも高速化します。APIが変わっても、影響ありません。
-
-他のフレームワークは**他人の車の**リモコンを作っています。私たちは**車の中に**座っています。
-
-### GitHubとの関係
-
-GitHubはすべてのコントロールプレーンです：
-
-- **Hubリポジトリ** — あなたのプライベートコマンドセンター
-- **ワークスペースリポジトリ** — 各プロジェクトはプライベートリポジトリ
-- **Git同期** — ナレッジ、スキル、ステートが30分ごとに同期
-- **Heartbeatステータス** — マシンの稼働状況をgitにプッシュ
-- **Specアーティファクト** — ワークスペースリポジトリにコミット
-
-### 設計哲学
-
-#### 1. 巨人の肩に立つ。
-
-Claude Codeの背後には数百万時間のエンジニアリングがある。ゼロから再構築するのは野心ではない — 無駄だ。足りない部分だけを追加し（〜2K行）、最高のエンジンを維持する。
-
-#### 2. 少ないコード、少ない障害。
-
-3つの設定 = 1つのスキル。SDK不要。OSスケジューラは1970年代から信頼性が高い — カスタムデーモンの代わりに `cron` + `claude --resume` を使用。書かなかったコードは壊れないコード。
-
-#### 3. 巨人が成長すれば、あなたも成長する。
-
-Anthropicがネイティブメモリ、24/7エージェント、マルチエージェント連携を出荷した時 — 書き直すのではなく、コードを引退させる。他のフレームワークはClaude Codeと競合する。我々は補完する。**我々のコードベースは時間とともに縮小する。彼らのは膨張する。**
-
-### プロジェクト構成
-
-```
-clawd-lobster/
-├── skills/          9つのスキルモジュール（各skill.jsonマニフェスト付き）
-├── scripts/         CLIツール：skill-manager、heartbeat、sync、evolve-tick等
-├── templates/       設定テンプレート（シークレットなし）
-├── webapp/          スキル管理ダッシュボード（3タブWeb UI）
-├── knowledge/       共有ナレッジベース（git同期）
-├── install.ps1/sh   インストーラ（Windows / macOS / Linux）
-└── Dockerfile       Dockerサポート
-```
-
-完全なファイルツリーは [ARCHITECTURE.md](ARCHITECTURE.md) を参照。
+詳細は [ARCHITECTURE.md](ARCHITECTURE.md) をご覧ください。
 
 ---
 
-## 比較
+## CLI リファレンス
 
-| | Claude Code（素） | OpenClaw | Hermes Agent | **Clawd-Lobster** |
-|---|---|---|---|---|
-| エージェントエンジン | Anthropic | カスタム（300K LOC） | カスタム（50K LOC） | **Anthropic（ネイティブ）** |
-| 認証モデル | 人間がログイン | OAuth/APIキー | APIキー | **人間が一度ログイン** |
-| コストモデル | サブスクリプション | トークン課金API | トークン課金API | **サブスクリプション（定額）** |
-| 常時稼働 | なし | カスタムデーモン | カスタムデーモン | **OSハートビート + 自動復活** |
-| 永続メモリ | なし | ハイブリッド検索 | FTS5 + LLM | **4層 + salience** |
-| マルチエージェント共有メモリ | なし | なし | なし | **あり（git同期）** |
-| スキル管理 | N/A | CLIのみ | 手動 | **Web UI + CLI + マニフェスト** |
-| エージェント進化 | なし | なし | セルフインプルービングスキル | **あり（提案 + 学習済みスキル）** |
-| マルチマシン | なし | なし | なし | **あり（MDMスタイル）** |
-| セッション管理 | 手動 | Gatewayプロセス | 手動 | **全セッション自動復活** |
-| オンボーディング | 手動 | 複雑 | 中程度 | **Webウィザード、5言語** |
-| 自動アップグレード | あり | なし | なし | **あり** |
-| コードベースサイズ | 0 | ~300K LOC | ~50K LOC | **~2K LOC** |
-| Anthropic API変更 | 透過的 | 破壊的 | 破壊的 | **透過的** |
-| 監査証跡 | なし | セキュリティ監査 | なし | **完全（すべてのアクション）** |
-| スキルインストール | — | Plugin SDK | 3ファイル変更 | **1マニフェスト + reconcile** |
+| コマンド | 機能 |
+|---|---|
+| `clawd-lobster serve` | Web ダッシュボードを localhost:3333 で起動 |
+| `clawd-lobster serve --port 8080` | カスタムポートを使用 |
+| `clawd-lobster serve --daemon` | サーバーをバックグラウンドで実行 |
+| `clawd-lobster setup` | ターミナルオンボーディングウィザードを実行 |
+| `clawd-lobster workspace create <name>` | 新しいワークスペースを作成 |
+| `clawd-lobster workspace create <name> --repo` | ワークスペース + プライベート GitHub リポジトリを作成 |
+| `clawd-lobster workspace create <name> --dry-run` | 変更を加えずプレビュー |
+| `clawd-lobster squad start` | Spec Squad をターミナルモードで起動 |
+| `clawd-lobster squad start --workspace <path>` | 対象ワークスペースを指定 |
+| `clawd-lobster status` | システムヘルス、ワークスペース、バージョンを表示 |
+| `clawd-lobster --version` | バージョンを表示 |
 
 ---
 
-## ロードマップ
+## マルチマシンセットアップ
 
-**スキル**
-- [x] Odoo ERP Connector — XML-RPC連携 + poller (v0.4.0)
-- [x] Codex Bridge — OpenAI Codexに作業を委任、worker + criticロール (v0.5.0)
-- [x] NotebookLM Bridge — Google NotebookLMによる無料RAG + コンテンツエンジン (v0.5.0)
-- [x] Spec駆動開発 — OpenSpec方法論によるガイド付きプランニング (v0.5.0)
-- [ ] SearXNG — プライベートなセルフホスト型Web検索、データがネットワーク外に出ない
-- [ ] Docker Sandbox — 信頼できないオペレーション用の隔離されたコード実行環境
-- [ ] Browser Automation — Playwrightを活用したWebインタラクション
+### Hub パターン
 
-**プラットフォーム**
-- [x] Linuxインストーラー（bash）+ macOSインストーラー (v0.3.0)
-- [x] スキル管理Dashboard — Web UI + CLIでスキルのフルライフサイクル管理 (v0.4.0)
-- [x] スキルマニフェストシステム — `skill.json`に設定、認証情報、ヘルスチェック (v0.4.0)
-- [ ] Supabase L4 — ワンクリックのクラウドデータベース（Oracle wallet不要）
+Hub はプライベート GitHub リポジトリで、コマンドセンターとして機能します。すべてのマシンが Hub をクローンし、自動的に同期します。
 
-**進化**
-- [x] 進化ループ + 提案 — evolveがgit同期された提案を生成、直接TODOではない (v0.5.0)
-- [ ] スキルマーケットプレイス — コミュニティ貢献のスキル、ワンクリックインストール
-- [x] 自動スキル生成 — エージェントが成功パターンから学習 (v0.3.0 evolve skill)
-- [ ] チームモード — ロールベースアクセス制御付きマルチユーザー共有ワークスペース
-- [ ] エージェント間委任 — エージェントが互いにタスクを割り当て
+```
+        +------- GitHub (Control Plane) -------+
+        |  skills, knowledge, workspace registry|
+        +----------+------------+--------------+
+                   |            |
+     +-------------v--+  +-----v-------------+
+     |  Agent A        |  |  Agent B           |
+     |  (office)       |  |  (cloud VM)        |
+     |  Claude Code    |  |  Claude Code       |
+     |  + local L2 ----+--+---> shared L3/L4   |
+     +----------------+  +-------------------+
+                   |            |
+              +----v------------v----+
+              |  Agent C (laptop)    |
+              |  2分で参加可能       |
+              +---------------------+
+```
+
+### 別のマシンを追加する
+
+```bash
+git clone https://github.com/you/clawd-lobster
+cd clawd-lobster
+pip install -e .
+clawd-lobster setup
+# "Join existing Hub" を選択 -> Hub URL を貼り付け -> このマシンに名前を付ける -> 完了
+```
+
+新しいマシンは蓄積された全ナレッジを即座に引き継ぎます。L2 (SQLite) はワークスペースごとにローカル、L3 (markdown) は git 経由で同期、L4 (オプションの Cloud DB) は全てを統合します。
+
+### Always Alive -- ハートビート
+
+エージェントは決して停止しません。OS スケジューラが 30分ごとに確認します: 各ワークスペースのセッションは稼働中か？停止していれば `claude --resume` で復活 -- コンテキスト完全復元。カスタムデーモン不要。Claude Code が常に稼働し続けます。
+
+---
+
+## ワークスペース
+
+ワークスペースはメモリ、スキル、仕様サポートを備えたプロジェクトディレクトリです。
+
+### ワークスペース構造
+
+```
+my-project/
++-- CLAUDE.md              <- プロジェクト固有の指示
++-- .claude-memory/
+|   +-- memory.db          <- L2 メモリ (SQLite)
++-- knowledge/             <- L3 ナレッジ (git同期)
++-- skills/learned/        <- 自動生成されたスキル
++-- openspec/              <- 仕様成果物 (/spec または squad 使用時)
+|   +-- project.md
+|   +-- changes/
+|   +-- specs/
++-- .spec-squad.json       <- squad 状態 (squad 使用時)
++-- .blitz-active          <- blitz 実行中に存在
+```
+
+### スケジュール自動化
+
+OS レベルのスケジューラ (Windows Task Scheduler / cron / launchd) は Claude Code が起動していなくても動作します:
+
+- **Heartbeat** -- 全ワークスペースセッションの稼働を確認 (停止していれば復活)
+- **Git sync** -- 30分ごとに全リポジトリを pull・push
+- **Salience decay** -- 毎日のメモリ重要度調整
+- **evolve-tick** -- 2時間ごとのパターン抽出 + 改善提案
+
+---
+
+## メモリシステム
+
+### 26 MCP ツール
+
+| カテゴリ | ツール |
+|---|---|
+| **Write** | `memory_store`, `memory_record_decision`, `memory_record_resolved`, `memory_record_question`, `memory_record_knowledge` |
+| **Read** | `memory_list`, `memory_get`, `memory_get_summary` |
+| **Delete** | `memory_delete` |
+| **Search** | `memory_search` (ベクトル + テキスト、重要度加重、全テーブル) |
+| **Salience** | `memory_reinforce` |
+| **Evolve** | `memory_learn_skill`, `memory_list_skills`, `memory_improve_skill` |
+| **TODO** | `memory_todo_add`, `memory_todo_list`, `memory_todo_update`, `memory_todo_search` |
+| **Audit Trail** | `memory_log_action`, `memory_audit_search`, `memory_audit_stats`, `memory_daily_report`, `memory_activity_log` |
+| **Admin** | `memory_compact`, `memory_status`, `memory_oracle_summary` |
+
+メモリは受動的なストアではありません -- エージェントの動作を能動的に形作ります。すべての軌跡が記録されます。すべてのワークスペースが git 経由でナレッジを共有します。エージェントたちは共に成長します。
+
+---
+
+## 進化システム
+
+v1 が構築された後も、エージェントは自動的に改善し続けます。
+
+### ループ
+
+```
+/absorb (入力)
+  +-- フォルダをスキャン -> ナレッジ、決定事項、TODO を抽出
+  +-- GitHub リポジトリを読み取り -> パターン + スキルを学習
+  +-- URL を取得 -> インサイトを保存
+       |
+evolve-tick (2時間ごと)
+  +-- 完了した作業からパターンを抽出
+  +-- 改善提案を生成 (git 同期される markdown ファイル)
+  +-- 古くなったナレッジに重要度減衰を適用
+  +-- マシン間でナレッジを同期
+       |
+Review (あなたが判断)
+  +-- openspec/proposals/ 内の提案をレビュー
+  +-- 承認 -> 次の blitz の TODO になる
+  +-- 却下 -> 学びを記録してアーカイブ
+```
+
+Evolve は直接変更ではなく**提案**を生成します。すべての提案は `openspec/proposals/` に保存され、人間のレビューを待ちます。学習されたスキルは git sync を通じてセッション間・マシン間で永続します。
+
+---
+
+## 要件
+
+- **Python** 3.10+ および **Git** 2.x+
+- **Claude Code** CLI ([インストールガイド](https://docs.anthropic.com/en/docs/claude-code/getting-started))
+- **GitHub** アカウント (プライベート Hub リポジトリ用)
+- **Node.js** 18+ (オプション -- MCP server が必要とする場合のみ)
+
+---
+
+## インストール (詳細)
+
+### 1. クローンとインストール
+
+```bash
+git clone https://github.com/teddashh/clawd-lobster
+cd clawd-lobster
+pip install -e .
+```
+
+これで `clawd-lobster` CLI コマンドがグローバルに登録されます。
+
+### 2. セットアップの実行
+
+いずれかを選択:
+
+```bash
+clawd-lobster serve    # Web ウィザード (http://localhost:3333)
+clawd-lobster setup    # ターミナルウィザード
+./install.ps1          # Windows クラシックインストーラー
+./install.sh           # macOS/Linux クラシックインストーラー
+```
+
+### 3. 確認
+
+```bash
+clawd-lobster status
+# 表示内容: Python バージョン、Claude CLI、Git、ワークスペース、サーバーステータス
+```
+
+### 4. 構築開始
+
+```bash
+clawd-lobster squad start                    # プロジェクトを説明 -> 仕様作成 -> ビルド
+clawd-lobster workspace create my-app --repo # またはワークスペースを手動で作成
+```
 
 ---
 
 ## FAQ
 
-### 「これってただのClaude Codeのラッパーでは？」
+### 「これは Claude Code のラッパーにすぎないのでは？」
 
 はい。それが狙いです。
 
-Claude Codeは現時点で最も優れたコーディングエージェントです — Anthropicの数百万時間のエンジニアリングに支えられています。OpenClawはエンジンをゼロから再構築します（30万行）。Hermesもまた再構築します（5万行）。私たちは不足分を追加し（2千行）、最高のエンジンを保持します。
+Claude Code は現在利用可能な最も高性能なコーディングエージェントであり、Anthropic の何百万時間ものエンジニアリングに支えられています。他のフレームワークはエンジンをゼロから再構築します (5万-30万行)。私たちは足りないものを追加し (~3K 行)、最高のエンジンを活かします。
 
-Anthropicが次のブレイクスルーをリリースしたとき、私たちは即座に恩恵を受けます。彼らはアダプターの書き直しに追われます。
+Anthropic が次のブレークスルーを提供したとき、私たちは即座にそれを享受できます。他のフレームワークはアダプターを書き直す必要があります。
 
-### 「Heartbeat / スキル / MCPは他でもあるのでは？」
+### 「Spec Squad は Claude にコードを頼むのとどう違うの？」
 
-OSスケジューラ（Task Scheduler / launchd / cron）がheartbeatとして30分ごとにチェック — セッション生存、git同期、salience減衰、すべて処理。カスタムデーモン不要、アイドル時トークン消費ゼロ。Anthropicがネイティブ24/7モードを出荷すれば、無料で移行。
+Spec Squad はコーディング開始前に**敵対的レビュー**を追加します。Architect が完全な仕様を書き、Reviewer がそれを徹底的に精査 -- ギャップ、曖昧さ、弱い判断を見つけます。Coder が何かに触れる前に最大5ラウンドの修正が行われます。つまり、カジュアルなプロンプトからではなく、ストレステスト済みの設計図からコードが構築されます。
 
-Claude Codeのビルトインスキルはクローズドです — 追加・変更・共有不可。Clawd-Lobsterはあなた独自のスキル（ERP連携、コンプライアンスチェック等）を`skill.json`マニフェスト1つで追加可能にします。
+### 「でも他のエージェントは 24/7 稼働して学習し続けるでしょ」
 
-**MCPはプロトコル。我々はパッケージマネージャー。** MCPの`.mcp.json`は手動編集のフラット設定。我々のスキル層がマニフェスト、ヘルスチェック、認証情報管理、Web UI、マシン間同期を追加します。`npm`がNode.jsを置き換えないのと同じ — スケールで使えるようにするものです。
+私たちもそうです。スケジューラが 30分ごとにナレッジを同期します。メモリは重要度減衰によって毎日進化します。学習されたスキルは git を通じて全マシンに伝播します。ハートビートがセッションの稼働を保証します: ターミナルが閉じれば、OS スケジューラが `claude --resume` で復活させます -- コンテキスト完全復元。
 
-### 「Anthropicがこれをブロックしない？」
+### 「Claude Code にはすでに組み込みスキルと MCP があるけど、なぜもっと必要？」
 
-ユーザーが`claude login`を1回実行 — 人間が、ブラウザで。その後OSスケジューラがAnthropicのCLI（`--resume`、`-p`）でセッションを維持。cronで`git pull`をスケジュールするのと同じです。OAuthトークン管理なし、APIキー自動化なし、リバースエンジニアリングなし。**CLIツールの自動化であり、ユーザーのなりすましではありません。**
+Claude Code の組み込みスキルはクローズドです -- 追加、変更、共有ができません。MCP はプロトコルを提供しますが、ライフサイクル管理はありません。スキルのインストールは 3つの JSON ファイルを手動で編集する必要があります。2台目のマシン？全部やり直しです。
 
-### 「ヘビーなワークロードのAPI費用は？」
+**MCP はプロトコルです。私たちはパッケージマネージャーです。** 私たちが追加するもの: `skill.json` マニフェスト、ワンコマンドでの有効化/無効化、認証情報の一元管理、ヘルスチェック、Web ダッシュボード、git 経由のクロスマシンレジストリ同期。
 
-Proサブスクリプション（$20/月）= トークン課金なし。最初のタスクも480番目のタスクも限界費用$0。モデルルーター不要、推論スタック2つ不要。レートリミット時はskill-managerが優雅にキューイング。**予測可能なコストは機能です。**
+### 「Anthropic はこれをブロックしない？」
+
+私たちは OS cron 経由で `claude` CLI コマンドをスケジュールしています -- `git pull` をスケジュールするのと同じ方法です。`claude --resume`、`--allowedTools`、MCP server を使用しています -- すべて Anthropic が自身の CLI で提供しているフラグです。API キーの自動化なし。OAuth トークンのスクレイピングなし。リバースエンジニアリングなし。
+
+### 「コストはどうなの？」
+
+Pro サブスクリプション ($20/月) では、トークンごとの課金はありません。サブスクリプション1つ。エンジン1つ。予測可能なコストは機能です。
+
+---
+
+## 比較
+
+| | Claude Code (素) | 重量級フレームワーク | **Clawd-Lobster** |
+|---|---|---|---|
+| エージェントエンジン | Anthropic | カスタム (5万-30万 LOC) | **Anthropic (ネイティブ)** |
+| マルチエージェント開発 | なし | 一部あり | **あり (Spec Squad: 4エージェント)** |
+| 敵対的レビュー | なし | なし | **あり (最大5ラウンド)** |
+| 永続メモリ | なし | 様々 | **4層 + 重要度エンジン** |
+| マルチマシン | なし | なし | **あり (Hub + git sync)** |
+| 常時稼働 | なし | カスタムデーモン | **OS ハートビート + 自動復活** |
+| スキル管理 | N/A | CLI/SDK | **Web UI + CLI + マニフェスト** |
+| 自己進化 | なし | 様々 | **あり (提案 + 学習スキル)** |
+| オンボーディング | 手動 | 複雑 | **Web ウィザードまたはターミナル、5言語対応** |
+| Web ダッシュボード | なし | 様々 | **あり (localhost:3333)** |
+| コードベース | 0 | 5万-30万 LOC | **~3K LOC** |
+| コストモデル | サブスクリプション | トークン課金 API | **サブスクリプション (定額)** |
+| Anthropic アップグレード | 透過的 | 破壊的 | **透過的** |
+
+---
+
+## ロードマップ
+
+**v1.0 で完了**
+- [x] 統一 CLI エントリポイント (`clawd-lobster serve/setup/squad/workspace/status`)
+- [x] Web Dashboard -- オンボーディングウィザード、ワークスペースマネージャー、Spec Squad UI
+- [x] Spec Squad -- Claude Agent SDK によるマルチエージェント開発
+- [x] 3つのユーザーペルソナ (Guided / Expert / Tech)
+- [x] 9 スキル、32 MCP ツール、`skill.json` マニフェストシステム
+- [x] 重要度エンジン付き 4層メモリ
+- [x] git sync によるマルチマシン Hub パターン
+- [x] OS スケジューラによるハートビート自動復活
+- [x] git 同期提案による進化ループ
+- [x] Docker サポート
+
+**次のステップ**
+- [ ] Supabase L4 -- ワンクリック Cloud Database (Oracle wallet 不要)
+- [ ] SearXNG -- プライベートセルフホスト Web 検索
+- [ ] Docker Sandbox -- 信頼できない操作のための隔離されたコード実行
+- [ ] Skill marketplace -- コミュニティ提供スキル、ワンクリックインストール
+- [ ] Team mode -- ロールベースアクセスによるマルチユーザー共有ワークスペース
+- [ ] Agent-to-agent delegation -- エージェント間でのタスク割り当て
+
+---
+
+## プロジェクト構造
+
+```
+clawd-lobster/
++-- clawd_lobster/       CLI + Web サーバー + squad オーケストレーター + オンボーディング
++-- skills/              9つのスキルモジュール (各 skill.json マニフェスト付き)
++-- scripts/             Heartbeat、sync、evolve-tick、skill-manager など
++-- templates/           設定テンプレート (シークレットなし)
++-- knowledge/           共有ナレッジベース (git同期)
++-- install.ps1/sh       クラシックインストーラー (Windows / macOS / Linux)
++-- pyproject.toml       パッケージ定義 (pip install -e .)
++-- Dockerfile           Docker サポート
++-- docker-compose.yml   Docker Compose 設定
+```
 
 ---
 
 ## コントリビューション
 
-コントリビューションを歓迎します！最も簡単な貢献方法：
+コントリビューションを歓迎します！最も簡単な貢献方法:
 
-1. **スキルを追加** — `skills/`にフォルダを作成し、`SKILL.md`またはMCPサーバーを追加
-2. **テンプレートを改善** — `templates/`のデフォルトをより良いものに
-3. **プラットフォームサポート** — Linux/macOSインストーラーの開発に協力
+1. **スキルを追加** -- `skills/` にフォルダを作成し、`skill.json` マニフェストを配置
+2. **テンプレートを改善** -- `templates/` のデフォルト値を改善
+3. **プラットフォームサポート** -- Linux/macOS テストへの協力
+4. **バグ報告** -- Issue を開く
 
 ---
 
 ## ライセンス
 
-MIT — お好きなようにお使いください。
+MIT -- お好きなようにお使いください。
 
 ---
 
 <p align="center">
-<sub>Anthropicとは無関係です。<a href="https://claude.ai/code">Claude Code</a>の上に構築されています。</sub>
+<sub>Anthropic とは無関係です。<a href="https://claude.ai/code">Claude Code</a> の上に構築されています。</sub>
 </p>
