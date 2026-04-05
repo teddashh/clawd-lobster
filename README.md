@@ -5,586 +5,271 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/github/license/teddashh/clawd-lobster)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Runtime](https://img.shields.io/badge/footprint-25MB_RAM-orange)
+![Runtime](https://img.shields.io/badge/RAM-25MB-orange)
 
 <p align="center">
-<strong>From idea to working code. One conversation.</strong><br>
-<em>Spec Squad turns your description into a reviewed, tested codebase — powered by Claude Agent SDK.</em>
-</p>
-
-<p align="center">
-<sub>Web dashboard + CLI. Multi-agent development. Persistent memory. Multi-machine sync.</sub>
+<strong>你終究要用 Claude Code 的 — 為什麼不一開始就選最好的體驗？</strong><br>
+<strong>You'll end up using Claude Code anyway — why not start with the best experience?</strong>
 </p>
 
 ---
 
-## What is Clawd-Lobster?
+## The Problem
 
-Claude Code is the brain. Clawd-Lobster is the nervous system.
+You've seen the AI agent frameworks. Maybe you've tried a few. Here's what actually happens:
 
-Claude Code is the most capable coding agent available, but it forgets everything between sessions, runs on one machine, and has no skill management. Clawd-Lobster adds exactly what's missing: a **Spec Squad** that plans, reviews, builds, and tests your code through adversarial multi-agent collaboration — plus persistent memory, multi-machine orchestration, curated skills, and self-evolution.
+**Problem 1: Claude Code is powerful, but you babysit it.**
+Every session starts from zero. It forgets what it learned yesterday. You copy-paste context, re-explain architecture, re-describe conventions. You're the memory. You're the manager. You're the bottleneck.
 
-**Clawd-Lobster is a generator.** You run it once, it creates your personal **Hub** — a private GitHub repo that becomes your command center. Your Hub manages all your machines, workspaces, memory, and skills.
+**Problem 2: AI Agent frameworks are impressive demos, terrible experiences.**
+300,000 lines of code. Custom adapters. Config files longer than your actual project. Breaks every time the underlying model updates. You spend more time maintaining the framework than building your product.
+
+**Problem 3: The gray zone.**
+Self-hosted agent loops that bypass safety. API calls billed per token with no ceiling. Frankenstein stacks where you're not sure if you're using the tool or the tool is using you.
+
+## The Answer
+
+Clawd-Lobster doesn't replace Claude Code. It **makes Claude Code remember, plan, review, build, and evolve** — using nothing but official Anthropic tools.
+
+- **100% Claude Code CLI + Agent SDK.** No wrappers, no custom agent loops, no gray area. Runs on your existing Claude subscription. No extra API costs.
+- **~2,000 lines of code.** Not 300,000. When Claude Code updates, you get the new features for free. Nothing to rewrite, nothing breaks.
+- **5 minutes to start.** Open browser. Click twice. Done. No API keys, no Docker, no PhD in YAML.
 
 ```
-  clawd-lobster (this repo -- the generator)
-       |
-       |  pip install -e . && clawd-lobster setup
+  You describe what you want
        |
        v
-  clawd-yourname (YOUR private Hub -- generated for you)
+  Claude asks smart questions (Discovery)
        |
-       |  this is what you actually use day-to-day
+       v
+  +-------------------------------------+
+  |         SPEC SQUAD                   |
+  |                                      |
+  |  [A] Architect    writes the spec    |
+  |  [R] Reviewer     challenges it      |
+  |  [C] Coder        builds it          |
+  |  [T] Tester       verifies it        |
+  |                                      |
+  |  Each is a separate Claude session.  |
+  |  The Reviewer has never seen the     |
+  |  Architect's prompt.                 |
+  |  That's why it catches real bugs.    |
+  +-------------------------------------+
        |
-       +-- Machine A -- Claude Code + skills + memory
-       +-- Machine B -- Claude Code + skills + memory
-       +-- Machine C -- Claude Code + skills + memory
-            |
-            All connected. All sharing knowledge.
-            All always alive via heartbeat.
+       v
+  Reviewed, tested, working code.
 ```
-
-GitHub is the control plane. Git is the protocol. Every piece of state — skills, knowledge, workspace registry, heartbeat status — lives in git and syncs automatically.
-
-**Runtime footprint: 25 MB RAM, 672 KB disk.** One Python process (MCP Memory Server) plus SQLite. Everything else runs-and-exits via OS scheduler or lives in the browser. Zero polling, zero daemon, zero bloat.
 
 ---
 
 ## Quick Start
 
-Three ways to get started, depending on your style.
-
-### Web UI (recommended for beginners)
+### For Everyone (Web UI)
 
 ```bash
 git clone https://github.com/teddashh/clawd-lobster
 cd clawd-lobster
 pip install -e .
 clawd-lobster serve
-# Browser opens at http://localhost:3333
-# Onboarding wizard walks you through everything
 ```
 
-### Terminal (for experts)
+Browser opens. Setup wizard guides you through everything.
+
+### For Terminal People
 
 ```bash
-git clone https://github.com/teddashh/clawd-lobster
-cd clawd-lobster
-pip install -e .
-clawd-lobster setup
-# 4-step interactive wizard: prerequisites -> persona -> workspace root -> first workspace
+clawd-lobster setup        # terminal onboarding
+clawd-lobster squad start  # run Spec Squad in terminal
 ```
 
-### Classic (install scripts)
+### Classic Install (power users)
 
-**Windows**
 ```powershell
-git clone https://github.com/teddashh/clawd-lobster
-cd clawd-lobster
+# Windows
 .\install.ps1
-```
 
-**macOS / Linux**
-```bash
-git clone https://github.com/teddashh/clawd-lobster
-cd clawd-lobster
+# macOS / Linux
 chmod +x install.sh && ./install.sh
 ```
 
-**Docker**
-```bash
-git clone https://github.com/teddashh/clawd-lobster
-cd clawd-lobster
-docker compose up -d && docker compose exec clawd bash
-```
+---
 
-### How the setup works
+## What You Get
 
-The installer checks prerequisites, authenticates Claude Code + GitHub, creates your Hub, installs the MCP Memory Server (32 tools), configures workspaces, and registers the scheduler + heartbeat. Total credentials: 2 OAuth clicks. No API keys required.
+### 1. Spec Squad — Your AI Development Team
 
-| Platform | Sync | Heartbeat |
-|----------|------|-----------|
-| Windows | Task Scheduler (30 min) | Task Scheduler (30 min) |
-| macOS | launchd | launchd |
-| Linux | cron | cron |
-| Docker | Container lifecycle | Container lifecycle |
+You describe what you want. Four Claude sessions do the rest.
+
+The **Architect** writes a complete spec with testable requirements. The **Reviewer** — a completely separate Claude session that has never seen the Architect's instructions — tears it apart. They loop until the Reviewer approves. Then the **Coder** builds exactly what the spec says. The **Tester** verifies every requirement.
+
+This isn't a gimmick. In testing, the Reviewer found 11 real bugs in the first spec — issues that self-validation checklists would never catch. Return type conflicts, API inconsistencies, impossible Gherkin scenarios, library incompatibilities.
+
+**Why it works:** Each agent runs in isolated context. The Reviewer can't be influenced by the Architect's reasoning. The Tester doesn't know what shortcuts the Coder took. Independent brains find independent problems.
+
+Two interfaces, same engine:
+- **Web:** Chat with Claude in the browser, then watch agents work on a live dashboard
+- **Terminal:** Claude asks questions in your terminal, progress prints as agents run
+
+### 2. A Brain That Doesn't Forget
+
+Four layers of memory, from instant to global:
+
+| Layer | Speed | What |
+|-------|-------|------|
+| L1.5 | Instant | Claude Code's native auto-memory |
+| L2 | ~1ms | SQLite + MCP — per-workspace, salience-weighted |
+| L3 | ~10ms | Markdown + Git — synced across machines |
+| L4 | ~100ms | Cloud DB (optional) — cross-workspace search |
+
+Important ideas float up. Noise sinks away. Skills that work get reinforced. Stale knowledge decays. You don't manage any of this — it happens automatically.
+
+### 3. Always Alive
+
+Close your laptop. Clawd-Lobster keeps working.
+
+The heartbeat uses your OS scheduler (Task Scheduler / cron / launchd) — not a custom daemon, not a polling loop, not a token-burning process. If a session dies, it gets revived with full context. No babysitting.
+
+### 4. All Your Machines, One Brain
+
+GitHub is the control plane. Git is the protocol.
+
+Machine A learns a pattern. It syncs to your private Hub. Machine B inherits it instantly. New machine? `install.ps1`, "Join Hub", paste URL, 2 minutes, fully operational.
+
+### 5. Self-Evolution
+
+After completing complex work, the system extracts reusable patterns and stores them as learned skills. Next time a similar task comes up, it remembers how it solved it last time.
+
+Skills have effectiveness scores. Proven patterns get reinforced. Stale skills decay. The system gets smarter the more you use it — not because of magic, but because it writes down what worked.
 
 ---
 
-## The Web Dashboard
+## The Dashboard
 
-Start with `clawd-lobster serve` (default port 3333). The dashboard provides three main views:
+`clawd-lobster serve` opens a persistent web dashboard at `localhost:3333`.
 
-### /onboarding — Setup Wizard
+**Onboarding** — First-time wizard checks prerequisites, guides setup, creates your first workspace.
 
-First-time visitors land here automatically. The wizard checks prerequisites (Python, Claude CLI, Git, pip), lets you pick a persona (Guided / Expert / Tech), set your workspace root, and create your first workspace — all in the browser.
+**Workspaces** — All your projects in one view. Status, spec progress, memory size, last activity.
 
-### /workspaces — Workspace Manager
-
-Lists all registered workspaces with real-time status. Each workspace card shows its path, memory database size, git sync status, and Spec Squad phase. Create new workspaces directly from the dashboard or toggle them on/off for syncing.
-
-### /squad — Spec Squad
-
-The multi-agent development interface. Start a discovery conversation, watch the Architect write specs, see the Reviewer challenge them, follow the Coder as it builds, and track the Tester's verification — all with live progress updates via SSE.
-
----
-
-## Spec Squad — Multi-Agent Development
-
-Spec Squad is the core v1.0 feature. Four specialized agents collaborate to turn your idea into reviewed, tested code — using the Claude Agent SDK.
-
-### The Pipeline
-
-```
-You describe your project
-  | clawd-lobster squad start (terminal)
-  | or /squad page (web)
-  v
-Discovery Interview
-  | Senior consultant asks 3-6 smart questions (3W1H: Why, What, Who, How)
-  | When enough context is gathered: DISCOVERY_COMPLETE
-  v
-Architect
-  | Writes complete OpenSpec: project.md -> proposal.md -> design.md
-  | -> specs/ (SHALL/MUST + Gherkin) -> tasks.md (phased, 5-30 min each)
-  v
-Reviewer (adversarial)
-  | Tears apart the spec. Finds gaps, ambiguities, weak decisions.
-  | Verdict: REVISE (with issues) or APPROVED (with confidence score)
-  | Up to 5 review rounds -- Architect must fix every issue
-  v
-Coder
-  | Executes the approved spec task by task, phase by phase
-  | Commits after each phase. Marks tasks done in tasks.md
-  v
-Tester
-  | Verifies every SHALL/MUST requirement against the code
-  | Runs Gherkin scenarios. Verdict: PASSED or ISSUES (with pass rate)
-  v
-Done -- reviewed, tested codebase ready
-```
-
-### How the adversarial review works
-
-The Reviewer is instructed to be "ruthless but fair." It reads every file in `openspec/` and challenges the architecture, requirements, and task breakdown. If it finds issues, the Architect must revise. This loop runs up to 5 rounds until the Reviewer gives an APPROVED verdict with a confidence score. The result is a spec that has been stress-tested before a single line of code is written.
-
-### Web mode vs terminal mode
-
-| | Web (`/squad`) | Terminal (`clawd-lobster squad start`) |
-|---|---|---|
-| Discovery | Chat interface in browser | stdin/stdout |
-| Progress | Live SSE events, visual phases | Phase labels printed to terminal |
-| Build approval | Prompted in browser | `Build now? (y/n)` |
-| State | Persisted in `.spec-squad.json` | Same file |
-| Underlying engine | Same `squad.py` async core | Same `squad.py` async core |
-
-Both modes use the same pipeline, same Agent SDK calls, same state file. Pick whichever fits your workflow.
+**Spec Squad** — Chat with Claude to discover your requirements. Watch four agents work in real-time on a live dashboard with phase timeline and turn history.
 
 ---
 
 ## Skills
 
-9 skill modules, each with a `skill.json` manifest. 32 MCP tools total.
+9 curated skills. Each does one thing well.
 
-### Core Skills (locked)
+| Skill | What It Does |
+|-------|-------------|
+| **memory-server** | 4-layer persistent memory via MCP (SQLite + Git + Cloud) |
+| **spec** | Guided workspace creation + spec-driven development + Spec Squad |
+| **evolve** | Extract reusable patterns from completed work (auto, every 2h) |
+| **absorb** | Learn from existing repos, URLs, or folders |
+| **heartbeat** | Keep sessions alive via OS scheduler |
+| **migrate** | Import from other AI setups (one-time) |
+| **codex-bridge** | Delegate to OpenAI Codex for review, bulk work, second opinions |
+| **connect-odoo** | Bidirectional Odoo ERP integration via XML-RPC |
+| **notebooklm-bridge** | Auto-sync to Google NotebookLM + watermark removal |
 
-| Skill | Type | What it does |
-|---|---|---|
-| **Memory Server** | mcp-server | 26-tool MCP memory with SQLite, salience engine, CJK-aware compaction |
-| **Heartbeat** | cron | Session keep-alive via OS scheduler — auto-revives dead sessions |
-| **Evolve** | prompt-pattern | Pattern extraction, improvement proposals, salience decay |
-| **Absorb** | prompt-pattern | Knowledge ingestion from folders, GitHub repos, URLs |
-| **Spec** | prompt-pattern | Guided planning with OpenSpec methodology + blitz execution |
-
-### Optional Skills
-
-| Skill | Type | What it does | Default |
-|---|---|---|---|
-| **Migrate** | prompt-pattern | Import from existing AI setups (detects format automatically) | Enabled |
-| **Connect-Odoo** | mcp-server | Odoo ERP integration — 6 MCP tools via XML-RPC + poller | Disabled |
-| **Codex Bridge** | prompt-pattern | Delegate work to OpenAI Codex with worker + critic roles | Disabled |
-| **NotebookLM Bridge** | prompt-pattern | Free RAG + content engine via Google NotebookLM | Disabled |
-
-### Skill Management
-
-Every skill is a self-contained module with a `skill.json` manifest. Manage them via **Web UI** or **CLI**:
-
-```bash
-clawd-lobster serve                                      # Web dashboard with toggles
-python scripts/skill-manager.py list                     # Table of all skills
-python scripts/skill-manager.py enable connect-odoo      # Enable a skill
-python scripts/skill-manager.py disable connect-odoo     # Disable a skill
-python scripts/skill-manager.py health                   # Run all health checks
-python scripts/skill-manager.py reconcile                # Regenerate .mcp.json + settings.json
-```
-
-### Adding Your Own Skill
-
-Create `skills/my-skill/skill.json` with the manifest, implement the skill (MCP server, script, or SKILL.md), run `skill-manager.py reconcile`. A skill is just 3 config entries — no SDK, no plugin API, no framework lock-in.
+Every skill has a trigger description (Claude knows when to activate), a Gotchas section (common mistakes to avoid), and dynamic `!command` injection (runtime context on load).
 
 ---
 
 ## Architecture
 
-### 3-Layer Design
-
 ```
-+----------------------------------------------+
-|          Skills Layer (Clawd-Lobster)         |
-|                                               |
-|  Memory System    Workspace Manager           |
-|  Spec Squad       Scheduler                   |
-|  Self-Evolution   (your custom skills)        |
-|                                               |
-|  Installed via: .mcp.json + settings.json     |
-|                 + CLAUDE.md                    |
-+----------------------+------------------------+
-                       |
-+----------------------v------------------------+
-|            Claude Code (The Brain)             |
-|                                                |
-|  Agent Loop - Streaming - Tools - Permissions  |
-|  Maintained by Anthropic. Auto-upgrades.       |
-+------------------------------------------------+
+Skills (the what)     ->  9 skills with manifests, instructions, gotchas
+Tools (the how)       ->  32 MCP tools + Claude Code native tools
+Hooks (the when)      ->  OS scheduler, git hooks, PostToolUse, Stop hooks
 ```
 
-### 4-Layer Memory
+**Standing on the giant's shoulders.** Clawd-Lobster doesn't rebuild Claude Code. It uses Claude Code's native extension points (MCP servers, CLAUDE.md, hooks, settings.json) exactly as Anthropic designed them. When Claude Code ships a new feature, you get it for free. When the model improves, your agent improves. Zero adapter code.
 
-| Layer | What | Speed | Scope |
-|-------|------|-------|-------|
-| **L1.5** | Claude Code auto-memory (native) | Instant | Current project |
-| **L2** | SQLite + 26 MCP tools | ~1ms | Per workspace |
-| **L3** | Markdown knowledge base | ~10ms | Shared via git |
-| **L4** | Cloud DB (optional) | ~100ms | Cross-workspace |
+```
+Disk: 672 KB    (code + configs)
+RAM:  ~25 MB    (MCP server only)
+CPU:  0% idle   (OS scheduler, not polling)
+LOC:  ~2,000    (not 300,000)
+```
 
-The salience engine keeps important memories accessible: each access boosts salience by 5%, manual reinforcement by 20% (capped at 2.0x), and untouched items decay 5%/day after 30 days (floor at 0.01 — never deleted).
-
-### What's Actually Running?
-
-| Layer | What | Lines | RAM | When |
-|-------|------|-------|-----|------|
-| **Runtime** | MCP Memory Server (26 tools + SQLite) | ~1,400 | ~25 MB | Always on |
-| **Runtime** | Odoo Connector (if enabled) | ~280 | ~22 MB | When enabled |
-| **Runtime** | Web Dashboard (stdlib HTTP) | ~800 | ~15 MB | When serving |
-| **Cron** | evolve-tick (proposal generator) | ~465 | ~20 MB peak | Every 2h, then exits |
-| **Cron** | heartbeat + sync | ~300 | ~5 MB peak | Every 30 min, then exits |
-| **Setup** | CLI + onboarding + squad orchestrator | ~1,200 | 0 | On demand |
-| **Config** | skill.json manifests, templates | ~900 | 0 | Read at startup |
-
-**Resident footprint: one Python process (~25 MB) + SQLite.** The web dashboard uses stdlib `http.server` — no Flask, no FastAPI, no external dependencies.
-
-### Philosophy
-
-1. **Stand on the shoulders of giants.** Claude Code has millions of engineering hours behind it. We add what's missing (~3K lines) and keep the best engine.
-
-2. **Less code, less breakage.** Three config entries = one skill. Zero SDK. The OS scheduler has been reliable since the 1970s — we use `cron` + `claude --resume` instead of custom daemons.
-
-3. **When the giant grows, you grow.** When Anthropic ships native memory, 24/7 agents, or multi-agent coordination — we don't rewrite, we retire code. **Our codebase shrinks over time. Theirs grows.**
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full file tree and internals.
+For the full file tree and runtime details, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
 ## CLI Reference
 
-| Command | What |
-|---|---|
-| `clawd-lobster serve` | Start the web dashboard on localhost:3333 |
-| `clawd-lobster serve --port 8080` | Use a custom port |
-| `clawd-lobster serve --daemon` | Run the server in background |
-| `clawd-lobster setup` | Run the terminal onboarding wizard |
+| Command | What It Does |
+|---------|-------------|
+| `clawd-lobster serve` | Start web dashboard (localhost:3333) |
+| `clawd-lobster setup` | Terminal onboarding wizard |
 | `clawd-lobster workspace create <name>` | Create a new workspace |
-| `clawd-lobster workspace create <name> --repo` | Create workspace + private GitHub repo |
-| `clawd-lobster workspace create <name> --dry-run` | Preview without making changes |
-| `clawd-lobster squad start` | Launch Spec Squad in terminal mode |
-| `clawd-lobster squad start --workspace <path>` | Specify target workspace |
-| `clawd-lobster status` | Show system health, workspaces, versions |
-| `clawd-lobster --version` | Print version |
+| `clawd-lobster squad start` | Run Spec Squad in terminal |
+| `clawd-lobster status` | Show system health |
 
 ---
 
 ## Multi-Machine Setup
 
-### The Hub Pattern
-
-Your Hub is a private GitHub repo that acts as your command center. Every machine clones the Hub and syncs automatically.
-
 ```
-        +------- GitHub (Control Plane) -------+
-        |  skills, knowledge, workspace registry|
-        +----------+------------+--------------+
-                   |            |
-     +-------------v--+  +-----v-------------+
-     |  Agent A        |  |  Agent B           |
-     |  (office)       |  |  (cloud VM)        |
-     |  Claude Code    |  |  Claude Code       |
-     |  + local L2 ----+--+---> shared L3/L4   |
-     +----------------+  +-------------------+
-                   |            |
-              +----v------------v----+
-              |  Agent C (laptop)    |
-              |  joins in 2 minutes  |
-              +---------------------+
-```
-
-### Adding another machine
-
-```bash
-git clone https://github.com/you/clawd-lobster
-cd clawd-lobster
-pip install -e .
-clawd-lobster setup
-# Choose "Join existing Hub" -> paste your Hub URL -> name this machine -> done
-```
-
-The new machine inherits all accumulated knowledge instantly. L2 (SQLite) stays local per workspace, L3 (markdown) syncs via git, L4 (optional cloud DB) unifies everything.
-
-### Always Alive — Heartbeat
-
-Your agents never die. The OS scheduler checks every 30 minutes: is each workspace session alive? If not, it revives with `claude --resume` — full context restored. No custom daemon. Just Claude Code, always on.
-
----
-
-## Workspaces
-
-A workspace is a project directory with memory, skills, and spec support.
-
-### Workspace Structure
-
-```
-my-project/
-+-- CLAUDE.md              <- project-specific instructions
-+-- .claude-memory/
-|   +-- memory.db          <- L2 memory (SQLite)
-+-- knowledge/             <- L3 knowledge (git-synced)
-+-- skills/learned/        <- auto-generated skills
-+-- openspec/              <- spec artifacts (if using /spec or squad)
-|   +-- project.md
-|   +-- changes/
-|   +-- specs/
-+-- .spec-squad.json       <- squad state (if using squad)
-+-- .blitz-active          <- present during blitz execution
-```
-
-### Scheduled Automation
-
-OS-level scheduler (Windows Task Scheduler / cron / launchd) runs even when Claude Code is not active:
-
-- **Heartbeat** — Ensure all workspace sessions stay alive (revive if dead)
-- **Git sync** — Pull and push all repos every 30 minutes
-- **Salience decay** — Daily memory importance adjustment
-- **evolve-tick** — Pattern extraction + improvement proposals every 2 hours
-
----
-
-## Memory System
-
-### 26 MCP Tools
-
-| Category | Tools |
-|---|---|
-| **Write** | `memory_store`, `memory_record_decision`, `memory_record_resolved`, `memory_record_question`, `memory_record_knowledge` |
-| **Read** | `memory_list`, `memory_get`, `memory_get_summary` |
-| **Delete** | `memory_delete` |
-| **Search** | `memory_search` (vector + text, salience-weighted, all tables) |
-| **Salience** | `memory_reinforce` |
-| **Evolve** | `memory_learn_skill`, `memory_list_skills`, `memory_improve_skill` |
-| **TODO** | `memory_todo_add`, `memory_todo_list`, `memory_todo_update`, `memory_todo_search` |
-| **Audit Trail** | `memory_log_action`, `memory_audit_search`, `memory_audit_stats`, `memory_daily_report`, `memory_activity_log` |
-| **Admin** | `memory_compact`, `memory_status`, `memory_oracle_summary` |
-
-Memory is not a passive store — it actively shapes how your agent works. Every trajectory is recorded. Every workspace shares knowledge via git. Your agents grow together.
-
----
-
-## Evolution System
-
-After v1 is built, your agent keeps getting better — automatically.
-
-### The Loop
-
-```
-/absorb (input)
-  +-- Scan folder -> extract knowledge, decisions, TODOs
-  +-- Read GitHub repo -> learn patterns + skills
-  +-- Fetch URL -> store insights
+  clawd-lobster (this repo -- the generator)
        |
-evolve-tick (every 2 hours)
-  +-- Extract patterns from completed work
-  +-- Generate improvement proposals (git-synced markdown files)
-  +-- Apply salience decay to stale knowledge
-  +-- Sync knowledge across machines
+       |  install once
+       v
+  clawd-yourname (your private Hub on GitHub)
        |
-Review (you decide)
-  +-- Review proposals in openspec/proposals/
-  +-- Approve -> becomes TODO for next blitz
-  +-- Reject -> archived with learning captured
+       +-- Machine A -- skills + memory + heartbeat
+       +-- Machine B -- skills + memory + heartbeat
+       +-- Machine C -- skills + memory + heartbeat
+            |
+            All connected. All sharing knowledge.
 ```
 
-Evolve generates **proposals**, not direct changes. All proposals stay in `openspec/proposals/` for human review. Learned skills persist across sessions and machines via git sync.
+First machine creates the Hub. Every machine after that joins in 2 minutes.
 
 ---
 
 ## Requirements
 
-- **Python** 3.10+ and **Git** 2.x+
-- **Claude Code** CLI ([install guide](https://docs.anthropic.com/en/docs/claude-code/getting-started))
-- A **GitHub** account (for your private Hub repo)
-- **Node.js** 18+ (optional — needed if using MCP servers that require it)
-
----
-
-## Installation (detailed)
-
-### 1. Clone and install
-
-```bash
-git clone https://github.com/teddashh/clawd-lobster
-cd clawd-lobster
-pip install -e .
-```
-
-This registers the `clawd-lobster` CLI command globally.
-
-### 2. Run setup
-
-Choose one:
-
-```bash
-clawd-lobster serve    # Web wizard at http://localhost:3333
-clawd-lobster setup    # Terminal wizard
-./install.ps1          # Windows classic installer
-./install.sh           # macOS/Linux classic installer
-```
-
-### 3. Verify
-
-```bash
-clawd-lobster status
-# Shows: Python version, Claude CLI, Git, workspaces, server status
-```
-
-### 4. Start building
-
-```bash
-clawd-lobster squad start                    # Describe your project -> spec -> build
-clawd-lobster workspace create my-app --repo # Or create a workspace manually
-```
-
----
-
-## FAQ
-
-### "Isn't this just Claude Code with a wrapper?"
-
-Yes. That is the point.
-
-Claude Code is the most capable coding agent available — backed by millions of engineering hours from Anthropic. Other frameworks rebuild the engine from scratch (50K-300K lines). We add what's missing (~3K lines) and keep the best engine.
-
-When Anthropic ships the next breakthrough, we get it instantly. They have to rewrite their adapters.
-
-### "How is Spec Squad different from just asking Claude to code something?"
-
-Spec Squad adds **adversarial review** before coding starts. The Architect writes a complete spec, then the Reviewer tears it apart — finding gaps, ambiguities, and weak decisions. Up to 5 rounds of revision happen before the Coder touches anything. This means the code is built from a stress-tested blueprint, not from a casual prompt.
-
-### "But other agents run 24/7 and keep learning"
-
-So does ours. The scheduler syncs knowledge every 30 minutes. Memory evolves daily via salience decay. Learned skills propagate across all machines via git. The heartbeat ensures sessions stay alive: if a terminal closes, the OS scheduler revives it with `claude --resume` — full context restored.
-
-### "Claude Code already has built-in skills and MCP. Why do I need more?"
-
-Claude Code's built-in skills are closed — you can't add, modify, or share them. MCP gives you a protocol, but no lifecycle management. Installing a skill means editing 3 JSON files manually. Second machine? Redo everything.
-
-**MCP is the protocol. We are the package manager.** What we add: `skill.json` manifests, one-command enable/disable, centralized credentials, health checks, web dashboard, and cross-machine registry sync via git.
-
-### "Won't Anthropic block this?"
-
-We schedule `claude` CLI commands via OS cron — the same way you'd schedule `git pull`. We use `claude --resume`, `--allowedTools`, and MCP servers — all flags Anthropic ships in their own CLI. No API key automation. No OAuth token scraping. No reverse engineering.
-
-### "What about costs?"
-
-With a Pro subscription ($20/month), there is no per-token cost. One subscription. One engine. Predictable cost is a feature.
+- Python 3.10+
+- Claude Code CLI ([install](https://claude.ai/code))
+- Git 2.x+
+- Node.js 18+ (optional, for Codex Bridge)
+- GitHub account (for Hub sync)
 
 ---
 
 ## Comparison
 
-| | Claude Code (raw) | Heavyweight Frameworks | **Clawd-Lobster** |
-|---|---|---|---|
-| Agent engine | Anthropic | Custom (50K-300K LOC) | **Anthropic (native)** |
-| Multi-agent dev | No | Some | **Yes (Spec Squad: 4 agents)** |
-| Adversarial review | No | No | **Yes (up to 5 rounds)** |
-| Persistent memory | None | Varies | **4-layer + salience** |
-| Multi-machine | No | No | **Yes (Hub + git sync)** |
-| Always alive | No | Custom daemon | **OS heartbeat + auto-revive** |
-| Skill management | N/A | CLI/SDK | **Web UI + CLI + manifest** |
-| Self-evolution | No | Varies | **Yes (proposals + learned skills)** |
-| Onboarding | Manual | Complex | **Web wizard or terminal, 5 languages** |
-| Web dashboard | No | Varies | **Yes (localhost:3333)** |
-| Codebase | 0 | 50K-300K LOC | **~3K LOC** |
-| Cost model | Subscription | Per-token API | **Subscription (flat)** |
-| Anthropic upgrade | Transparent | Breaking | **Transparent** |
+|  | Heavyweight Frameworks | Raw Claude Code | Clawd-Lobster |
+|--|----------------------|----------------|---------------|
+| Codebase | 300K+ lines | 0 (built-in) | ~2,000 lines |
+| Setup | Hours/days | 0 | 5 minutes |
+| Memory | Session-only | Session-only | 4-layer persistent |
+| Multi-machine | Usually none | None | Git sync + Hub |
+| Model updates | Breaks adapters | Automatic | Automatic |
+| Token cost | API per-token | Subscription | Subscription |
+| Multi-agent review | Some | None | Spec Squad (adversarial) |
+| Self-evolution | None | None | Learned skills + salience |
 
 ---
 
-## Roadmap
+## Philosophy
 
-**Done in v1.0**
-- [x] Unified CLI entry point (`clawd-lobster serve/setup/squad/workspace/status`)
-- [x] Web Dashboard with onboarding wizard, workspace manager, Spec Squad UI
-- [x] Spec Squad — multi-agent development via Claude Agent SDK
-- [x] Three user personas (Guided / Expert / Tech)
-- [x] 9 skills, 32 MCP tools, `skill.json` manifest system
-- [x] 4-layer memory with salience engine
-- [x] Multi-machine Hub pattern with git sync
-- [x] Heartbeat auto-revive via OS scheduler
-- [x] Evolution loop with git-synced proposals
-- [x] Docker support
+**1. Amplify, don't rebuild.**
+Claude Code is the most capable coding agent in the world. We add a nervous system to it. We don't rebuild the brain.
 
-**Next**
-- [ ] Supabase L4 — one-click cloud database (no Oracle wallet needed)
-- [ ] SearXNG — private self-hosted web search
-- [ ] Docker Sandbox — isolated code execution for untrusted operations
-- [ ] Skill marketplace — community-contributed skills, one-click install
-- [ ] Team mode — multi-user shared workspaces with role-based access
-- [ ] Agent-to-agent delegation — agents assign tasks to each other
+**2. When the giant grows taller, you grow taller.**
+Every Claude Code update makes your Clawd-Lobster better. Zero migration, zero rewrite.
 
----
-
-## Project Structure
-
-```
-clawd-lobster/
-+-- clawd_lobster/       CLI + web server + squad orchestrator + onboarding
-+-- skills/              9 skill modules (each with skill.json manifest)
-+-- scripts/             Heartbeat, sync, evolve-tick, skill-manager, etc.
-+-- templates/           Config templates (no secrets)
-+-- knowledge/           Shared knowledge base (git-synced)
-+-- install.ps1/sh       Classic installers (Windows / macOS / Linux)
-+-- pyproject.toml       Package definition (pip install -e .)
-+-- Dockerfile           Docker support
-+-- docker-compose.yml   Docker Compose config
-```
+**3. The plan is the product.**
+Spec Squad doesn't write code first. It writes a spec, has it adversarially reviewed, then builds to spec. The plan is the contract.
 
 ---
 
 ## Contributing
 
-Contributions welcome! The easiest ways to contribute:
-
-1. **Add a skill** — create a folder in `skills/` with a `skill.json` manifest
-2. **Improve templates** — better defaults in `templates/`
-3. **Platform support** — help with Linux/macOS testing
-4. **Report bugs** — open an issue
-
----
+PRs welcome. Read [ARCHITECTURE.md](ARCHITECTURE.md) before contributing.
 
 ## License
 
-MIT — use it however you want.
-
----
-
-<p align="center">
-<sub>Not affiliated with Anthropic. Built on top of <a href="https://claude.ai/code">Claude Code</a>.</sub>
-</p>
+MIT — see [LICENSE](LICENSE).
