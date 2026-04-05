@@ -18,15 +18,37 @@ Takes < 10 seconds. Skip only if user says "continue".
 - Has tasks → "Spec active: X/Y tasks (Z%)"
 - Has .blitz-active → "BLITZ IN PROGRESS — resuming"
 
-## Knowledge Base
-@knowledge/INDEX.md
+## MCP Memory Server
+Use MCP tools for all memory operations. Key tools:
+- **Write:** memory_store, memory_record_decision, memory_record_knowledge
+- **Read:** memory_list, memory_get, memory_search
+- **Evolve:** memory_learn_skill, memory_list_skills, memory_improve_skill
+- **Trail:** memory_log_action, memory_audit_search, memory_activity_log
+- **Admin:** memory_status, memory_compact
 
-## Rules
-Detailed rules are in `.claude/rules/`:
-- `memory.md` — 4-layer memory architecture, learnings vs skills
-- `safety.md` — workspace isolation, security, git safety
-- `evolution.md` — when/how to learn skills, effectiveness tracking
-- `tools.md` — MCP memory tools reference, action logging, skill manager
+## Memory Layers
+- **L1.5** CC Auto-Memory (native, no config needed)
+- **L2** SQLite + MCP (per-workspace, salience-weighted)
+- **L3** Knowledge Base (Markdown + Git, shared)
+- **L4** Cloud (optional, cross-workspace search)
+
+<important if="saving to memory or modifying knowledge">
+- Learnings record *mistakes to avoid* — `memory_store(content, type="learning")`
+- Skills record *patterns to follow* — `memory_learn_skill()`
+- Never cross-read another workspace's memory
+- Never commit secrets, API keys, or personal info
+</important>
+
+## Action Logging
+Log significant actions via `memory_log_action`:
+TASK_START → SPEC → DELEGATE → REVIEW → REVIEW_OK/FIX → COMMIT → TASK_DONE
+
+## Self-Evolution
+After complex tasks (3+ tool calls), check if a reusable pattern was discovered:
+1. `memory_list_skills()` — check for existing patterns
+2. `memory_learn_skill()` — store new pattern
+3. `memory_improve_skill()` — update if approach changed
+Skills > 2.0 effectiveness = proven patterns. Skills unused 90+ days = verify first.
 
 ## Skill Kinds
 - **mcp-server**: MCP tools (memory-server, connect-odoo)

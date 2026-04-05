@@ -217,6 +217,8 @@ def create_directory_structure(workspace_path: Path, dry_run: bool = False) -> l
     dirs = [
         workspace_path,
         workspace_path / ".claude-memory",
+        workspace_path / ".claude" / "rules",
+        workspace_path / ".claude" / "hooks",
         workspace_path / "knowledge",
         workspace_path / "knowledge" / "decisions",
         workspace_path / "knowledge" / "learnings",
@@ -534,6 +536,18 @@ def create_workspace(
     # 5. .gitignore
     print(f"  {dim('Creating .gitignore...')}")
     create_gitignore(workspace_path, dry_run)
+
+    # 5b. Copy .claude/rules/ and .claude/hooks/ from templates
+    print(f"  {dim('Deploying rules and hooks...')}")
+    if not dry_run:
+        import shutil
+        for subdir in ("rules", "hooks"):
+            src = TEMPLATES_DIR / ".claude" / subdir
+            dst = workspace_path / ".claude" / subdir
+            if src.exists():
+                for f in src.iterdir():
+                    if f.is_file():
+                        shutil.copy2(str(f), str(dst / f.name))
 
     # 6. Memory DB
     print(f"  {dim('Initializing memory.db...')}")

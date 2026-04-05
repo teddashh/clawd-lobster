@@ -141,11 +141,9 @@ def convert_claude_md_to_agents_md(claude_md: str) -> str:
         if skip_section:
             continue
 
-        # Replace Claude-specific references
-        line = line.replace("Claude Code", "AI Agent")
-        line = line.replace("claude code", "AI agent")
-        line = line.replace("/spec", "spec workflow")
-        line = line.replace("/evolve", "evolve workflow")
+        # Note: we intentionally do NOT replace "Claude Code" or slash commands
+        # because the content should remain accurate — Codex needs to know
+        # the project uses Claude Code tooling
 
         output.append(line)
 
@@ -161,17 +159,25 @@ def gather_memory_context(workspace: Path | None) -> str:
     # Find the matching memory directory
     if workspace:
         # Claude Code stores per-project memory in ~/.claude/projects/<path-hash>/memory/
+        # The directory name is derived from the workspace path
         projects_dir = CLAUDE_DIR / "projects"
         if projects_dir.exists():
+            # Try to match by path hash (Claude uses C--path-to-project format)
+            ws_str = str(workspace).replace("\\", "-").replace("/", "-").replace(":", "-")
             for proj_dir in projects_dir.iterdir():
-                memory_dir = proj_dir / "memory"
-                if memory_dir.exists():
-                    # Check if this project matches our workspace
-                    # The directory name is a path hash, so check MEMORY.md content
-                    memory_md = memory_dir / "MEMORY.md"
-                    if memory_md.exists():
-                        sections.append(_extract_memory_summary(memory_dir))
-                        break
+                if not proj_dir.is_dir():
+                    continue
+                # Check if the directory name contains the workspace path segments
+                dir_name = proj_dir.name
+                # Match if the dir name contains key path segments from the workspace
+                ws_parts = [p for p in workspace.parts[-2:] if len(p) > 2]
+                if all(p.lower() in dir_name.lower() for p in ws_parts):
+                    memory_dir = proj_dir / "memory"
+                    if memory_dir.exists():
+                        memory_md = memory_dir / "MEMORY.md"
+                        if memory_md.exists():
+                            sections.append(_extract_memory_summary(memory_dir))
+                            break
 
     if not sections:
         return ""
