@@ -293,15 +293,7 @@ When this skill is enabled, run the sync once:
 python scripts/sync-claude-to-codex.py --workspace <current-workspace>
 ```
 
-Then set up a cron job (via OpenClaw or OS scheduler) to keep it fresh:
-```bash
-# Every 30 minutes: sync current workspace + global
-openclaw cron add --name "claude-to-codex-sync" \
-  --schedule "*/30 * * * *" \
-  --command "python scripts/sync-claude-to-codex.py --workspace <workspace>"
-```
-
-Or on Windows Task Scheduler / Unix cron:
+Then set up a cron job to keep it fresh:
 ```bash
 # crontab -e (Unix)
 */30 * * * * cd /path/to/clawd-lobster && python scripts/sync-claude-to-codex.py -q
