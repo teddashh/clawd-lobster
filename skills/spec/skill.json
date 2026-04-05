@@ -4,7 +4,7 @@
   "description": "Guided workspace creation and spec-driven development — Claude leads you through planning, then blitzes execution",
   "version": "0.1.0",
   "category": "core",
-  "tags": ["spec", "planning", "workspace", "openspec", "sdd", "blitz"],
+  "tags": ["spec", "planning", "workspace", "openspec", "sdd", "blitz", "squad", "multi-agent"],
   "kind": "prompt-pattern",
   "icon": "📋",
   "alwaysOn": true,

@@ -27,6 +27,7 @@ architect, not like a checklist of meta-rules about how to write specs.
 | Invocation | Mode | Description |
 |-----------|------|-------------|
 | `/spec` or `/spec new` | **Create** | Full guided flow: discovery → workspace → spec → TODOs → blitz |
+| `/spec:squad` | **Squad** | Multi-session spec flow: Architect writes → Reviewer challenges → Coder builds → Tester verifies |
 | `/spec:status` | **Status** | Show current spec progress and blitz state |
 | `/spec:add "feature"` | **Add** | Add a new change to an existing spec (with delta operations) |
 | `/spec:archive` | **Archive** | Archive a completed change + store as knowledge |
@@ -349,7 +350,70 @@ Check `.blitz-active` before evolve-tick — if present, skip evolve.
 
 ---
 
-## Mode 2: `/spec:status` — Show Current Spec Status
+## Mode 2: `/spec:squad` — Multi-Session Spec Flow
+
+Run the full spec-to-code pipeline using separate Claude sessions for each role.
+This provides adversarial review and role isolation — the Architect can't see the
+Reviewer's prompt, so the review is genuinely independent.
+
+**The Team:**
+
+| Role | ID | What It Does |
+|------|----|-------------|
+| **Architect** | `A` | Writes the complete OpenSpec (same DAG as Phase 3 above) |
+| **Reviewer** | `R` | Challenges the spec — finds gaps, ambiguities, weak decisions |
+| **Coder** | `C` | Builds exactly what the approved spec says (blitz mode) |
+| **Tester** | `T` | Verifies code against spec requirements and Gherkin scenarios |
+
+**Flow:**
+
+```
+[A] Architect writes spec
+        │
+        ▼
+[R] Reviewer challenges  ←──┐
+        │                    │ (max 5 rounds)
+        ▼                    │
+[A] Architect revises ───────┘
+        │
+        ▼ (APPROVED)
+[C] Coder builds
+        │
+        ▼
+[T] Tester verifies
+```
+
+**Invocation:**
+
+After completing Phase 1 (Discovery) and Phase 2 (Workspace Creation), instead of
+generating the spec yourself, hand off to the squad:
+
+```bash
+python scripts/spec-squad.py <workspace-path> --project "description"
+```
+
+Or from within Claude Code:
+1. Complete discovery (Phase 1) and workspace creation (Phase 2) as normal
+2. Run: `python scripts/spec-squad.py <workspace> --project "description from discovery"`
+
+**Options:**
+- `--plan-only` — Run Architect + Reviewer only, skip Coder/Tester
+- `--phase review` — Resume from review phase
+- `--status` — Show current squad state
+- `--max-rounds 3` — Limit review rounds (default: 5)
+- `--reset` — Start fresh
+
+**State file:** `.spec-squad.json` in the workspace root tracks progress and
+allows resumption if interrupted.
+
+**Key difference from solo `/spec`:** In solo mode, Claude self-validates using
+the checklist. In squad mode, a separate Claude session acts as an adversarial
+reviewer with no knowledge of the checklist — it finds issues the checklist
+wouldn't catch because it thinks independently.
+
+---
+
+## Mode 3: `/spec:status` — Show Current Spec Status
 
 Read workspace state and display:
 
@@ -374,7 +438,7 @@ per phase) and checking for `.blitz-active` marker.
 
 ---
 
-## Mode 3: `/spec:add "feature"` — Add to Existing Spec (Delta Operations)
+## Mode 4: `/spec:add "feature"` — Add to Existing Spec (Delta Operations)
 
 Create a new change for an existing workspace using delta operations.
 
@@ -410,7 +474,7 @@ Create a new change for an existing workspace using delta operations.
 
 ---
 
-## Mode 4: `/spec:archive` — Archive Completed Change
+## Mode 5: `/spec:archive` — Archive Completed Change
 
 Archive a change after all tasks are complete.
 
@@ -423,7 +487,7 @@ Archive a change after all tasks are complete.
 
 ---
 
-## Mode 5: `/spec:blitz` — Resume or Start Blitz
+## Mode 6: `/spec:blitz` — Resume or Start Blitz
 
 If there are pending tasks in any change:
 
