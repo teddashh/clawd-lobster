@@ -307,8 +307,16 @@ class _Handler(BaseHTTPRequestHandler):
         # Try to use the squad module if it has the chat function
         try:
             from . import squad
-            if hasattr(squad, "handle_chat_turn"):
-                result = squad.handle_chat_turn(message, workspace)
+            if hasattr(squad, "discovery_turn_sync"):
+                response = squad.discovery_turn_sync(message, workspace)
+                # Check for discovery complete
+                discovery_complete = False
+                if hasattr(squad, "extract_discovery_data") and "DISCOVERY_COMPLETE" in response:
+                    data = squad.extract_discovery_data(response)
+                    if data:
+                        discovery_complete = True
+                        response = response.split("DISCOVERY_COMPLETE")[0].strip() or "Ready! Launching the squad..."
+                result = {"response": response, "discovery_complete": discovery_complete}
                 self._send_json(result)
                 return
         except Exception:
@@ -343,8 +351,9 @@ class _Handler(BaseHTTPRequestHandler):
         # Try to use the squad module
         try:
             from . import squad
-            if hasattr(squad, "start_squad_background"):
-                squad.start_squad_background(workspace, project_desc)
+            if hasattr(squad, "run_squad_web"):
+                from pathlib import Path as _P
+                squad.run_squad_web(_P(workspace), project_desc)
                 self._send_json({"ok": True, "message": "Squad started"})
                 return
         except Exception:

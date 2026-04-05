@@ -305,7 +305,7 @@ def _get_tool_version(tool: str, args: list[str]) -> str:
     try:
         result = subprocess.run(
             [exe] + args,
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace",
         )
         output = result.stdout.strip() or result.stderr.strip()
         # Clean up — take first line, strip common prefixes

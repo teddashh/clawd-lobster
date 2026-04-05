@@ -61,7 +61,7 @@ def _run_cmd(args: list[str]) -> subprocess.CompletedProcess:
     """Run a command, capturing output. Returns CompletedProcess."""
     try:
         return subprocess.run(
-            args, capture_output=True, text=True, timeout=10,
+            args, capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace",
         )
     except FileNotFoundError:
         return subprocess.CompletedProcess(
