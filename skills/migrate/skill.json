@@ -1,7 +1,7 @@
 {
   "id": "migrate",
   "name": "Migrate",
-  "description": "Import memories and configs from existing AI agent setups (claude-setup, OpenClaw, Hermes)",
+  "description": "Use when setting up a fresh install or switching from another agent framework — triggers on /migrate, 'import my old setup', 'bring over my configs', or when ~/.claude/, ~/.openclaw/, or ~/.hermes/ directories are detected during onboarding.",
   "version": "0.3.0",
   "category": "utility",
   "tags": ["migration", "import", "onboarding", "setup"],

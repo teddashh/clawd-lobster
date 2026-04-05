@@ -1,5 +1,10 @@
 # Migrate — Import from existing AI agent setups
 
+!ls -d ~/.claude 2>/dev/null && echo "Found: ~/.claude" || true
+!ls -d ~/.openclaw 2>/dev/null && echo "Found: ~/.openclaw" || true
+!ls -d ~/.hermes 2>/dev/null && echo "Found: ~/.hermes" || true
+!ls -d ~/Documents/claude-setup 2>/dev/null && echo "Found: ~/Documents/claude-setup" || true
+
 When the user asks to migrate or import from an existing setup, scan these paths and import what you find:
 
 ## Sources to scan
@@ -53,3 +58,15 @@ When the user asks to migrate or import from an existing setup, scan these paths
 - Merge, don't replace
 - Skip binary files and credentials (note them for manual setup)
 - Use `--dry-run` flag to preview without changes
+
+## Gotchas
+
+1. **Overwriting instead of merging.** Claude's instinct is to write a fresh config file. Migration MUST merge into existing configs, preserving any clawd-lobster settings already configured. Read the destination file first, merge the new entries, then write.
+
+2. **Importing secrets accidentally.** Source directories often contain `.env` files, API keys in config files, or credentials in memory databases. Claude must skip these and note them for manual setup — never store credentials in L2 memory or copy them to new config files.
+
+3. **Path assumptions across operating systems.** `~/Documents/claude-setup/` may not exist on Linux. `~/.openclaw/` may be at a different path on Windows. Always use the `!command` detection above to verify which sources actually exist before scanning.
+
+4. **Stale or corrupted SQLite databases.** Old memory databases from previous agent setups may have schema mismatches or corrupted data. When reading from a foreign `.claude-memory/memory.db`, catch SQLite errors gracefully and report which items could not be read instead of failing the entire migration.
+
+5. **Double migration creates duplicates.** Running `/migrate` twice imports the same items again. Before storing each item via `memory_record_*`, search for existing items with matching titles or content to avoid duplicates. Report skipped duplicates in the summary.

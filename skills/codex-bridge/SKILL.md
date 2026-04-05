@@ -1,5 +1,8 @@
 # Codex Bridge — Intelligent Work Delegation
 
+!codex --version 2>/dev/null || echo "Codex CLI not installed"
+!codex whoami 2>/dev/null || echo "Codex not authenticated"
+
 Claude is the brain. Codex is an extra pair of hands. You decide when to use them.
 
 ---
@@ -328,3 +331,15 @@ Claude → Codex, never Codex → Claude. Because:
 - Review output is read-only (no auto-apply)
 - AGENTS.md has a 32 KiB limit — large memory sets are truncated
 - Sync is periodic (not real-time) — Codex sees Claude's state as of last sync
+
+## Gotchas
+
+1. **Using `codex -p` instead of `codex exec`.** The `-p` flag does not exist in Codex CLI. Always use `codex exec "prompt"` for non-interactive execution. This is the single most common invocation error.
+
+2. **Delegating context-dependent work.** Codex does not share Claude's conversation context or recent decisions. If you just made an architectural choice that affects the delegated task, Codex will not know about it and will produce inconsistent code. Only delegate tasks that are self-contained.
+
+3. **Auto-applying Codex review output.** Review mode (`/codex:review`, `/codex:adversarial-review`) is read-only by design. Claude sometimes tries to auto-apply suggested fixes from review output. Always present review findings to the user and let them decide.
+
+4. **Forgetting to sync AGENTS.md before delegation.** Codex reads AGENTS.md for project context. If the sync script hasn't run recently, Codex operates with stale or missing context. Run `sync-claude-to-codex.py` before delegating if the project has changed significantly.
+
+5. **Parallel Codex jobs.** Only one Codex task runs at a time per session. Attempting to launch a second task while one is running will fail or queue unpredictably. Wait for the first to complete before starting another.

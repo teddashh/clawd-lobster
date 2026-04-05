@@ -1,5 +1,7 @@
 # Odoo ERP Connector
 
+!python -m connect_odoo.server --health 2>/dev/null || echo "Odoo connection not configured or unreachable"
+
 Connects a Clawd-Lobster agent to an Odoo ERP instance via XML-RPC. Provides MCP tools for searching, reading, creating, and updating records across any Odoo model (CRM, HR, Invoicing, etc.), plus a poller that checks for pending agent tasks.
 
 ## Enabling
@@ -66,3 +68,15 @@ Optional settings in `configDefaults`:
 - Python 3.11+
 - `fastmcp` (for MCP server)
 - Python's built-in `xmlrpc.client` (no additional packages needed for Odoo communication)
+
+## Gotchas
+
+1. **Hardcoding business logic in executors.** Odoo already handles workflows, validations, and computed fields natively. Claude tends to re-implement business rules in the executor layer instead of calling the appropriate Odoo model method. Always check if Odoo's built-in automation or server action can do it first.
+
+2. **XML-RPC type coercion surprises.** Odoo's XML-RPC returns `False` (Python bool) instead of `None` for empty relational fields. Claude may treat `False` as a meaningful value. Always check `if result and result != False` for nullable fields.
+
+3. **Domain filter syntax errors.** Odoo domain filters use Polish notation: `['&', ('field', '=', 'val1'), ('field2', '>', 5)]`. Claude often writes SQL-like conditions or forgets the `&`/`|` prefix operators for compound filters. Triple-check domain syntax before calling `odoo_search`.
+
+4. **Polling a model that does not exist.** The poller queries `arp.task` by default, which is a custom module. On vanilla Odoo instances this model does not exist. The poller handles this gracefully (returns empty list), but Claude may report "no tasks found" without mentioning the model is missing — always distinguish "no tasks" from "model not found".
+
+5. **Credential environment variables not set.** The MCP server reads `ODOO_URL`, `ODOO_DB`, `ODOO_USER`, `ODOO_PASSWORD` from environment. If credentials are not configured via the credential store, the server starts but every call fails with a cryptic XML-RPC fault. Always verify credentials are set before diagnosing connection issues.

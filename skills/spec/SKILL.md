@@ -1,5 +1,9 @@
 # Spec — Guided Workspace Creation & Spec-Driven Development
 
+!git branch --show-current 2>/dev/null || echo "Not in a git repo"
+!ls .blitz-active 2>/dev/null && echo "BLITZ ACTIVE — check before evolving" || echo "No active blitz"
+!find . -path "*/openspec/changes/*/tasks.md" -exec grep -c "^\- \[ \]" {} + 2>/dev/null || echo "No pending tasks"
+
 The most important skill in Clawd-Lobster. You LEAD the user through planning,
 spec generation, and blitz execution. The user answers questions; you do everything else.
 
@@ -572,3 +576,15 @@ do not expose it to the user or copy it into generated files.
 - Never commit credentials, secrets, API keys, or tokens to spec files.
 - Never include personal names, hardcoded user paths, or machine-specific information.
 - If the user provides sensitive information during discovery, store it in environment variables or a `.env` file (gitignored), not in the spec.
+
+## Gotchas
+
+1. **Generating tasks.md before design.md.** Claude gets eager and jumps to task generation because it "knows enough." The DAG is strict: project.md, then proposal.md, then design.md, then specs/, then tasks.md. Generating tasks without a finalized architecture means tasks reference files and patterns that don't exist yet.
+
+2. **Copying SKILL.md constraints into generated spec files.** This file contains behavioral constraints for Claude, not content for output documents. The generated proposal.md should read like a professional engineering document, not a meta-checklist of "MUST have ## Why section." Constraint does not equal output.
+
+3. **Tasks without file paths.** Every task in tasks.md MUST include a target file path in backticks. "Implement authentication" is not a valid task. "Implement authentication middleware (`src/middleware/auth.ts`)" is. Without file paths, blitz execution stalls because Claude doesn't know where to write.
+
+4. **Asking questions during blitz.** Once blitz starts, the spec is the plan. Claude tends to pause and ask "should I use library X or Y?" mid-blitz. If the spec is ambiguous, decide, add a comment explaining the choice, and continue. Never block on user input during blitz.
+
+5. **Running evolve during an active blitz.** The `.blitz-active` marker exists to prevent evolve-tick from extracting patterns from half-finished work. If Claude manually invokes evolve or if the cron fires during blitz, check for the marker first and skip. Evolving mid-build causes style inconsistency across phases.

@@ -1,7 +1,7 @@
 {
   "id": "heartbeat",
   "name": "Heartbeat",
-  "description": "Session keep-alive — OS scheduler revives dead Claude Code sessions every 30 minutes",
+  "description": "Use when checking session health, diagnosing dead sessions, or configuring keep-alive behavior. Triggers on /heartbeat, 'is my session alive', 'revive session', 'session status', or when troubleshooting workspace connectivity. Runs automatically via OS scheduler every 30 minutes.",
   "version": "0.3.0",
   "category": "core",
   "tags": ["session", "keep-alive", "scheduler", "lifecycle"],

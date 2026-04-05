@@ -1,7 +1,8 @@
 {
   "id": "absorb",
   "name": "Absorb",
-  "description": "Knowledge absorption engine — feed it folders, repos, or URLs and it extracts knowledge, skills, and TODOs",
+  "description": "Use when the user provides a folder, repo URL, or web link to learn from — triggers on /absorb, 'scan this repo', 'import this project', or 'learn from this codebase'. Also fires when migrating knowledge from another workspace or onboarding a reference project.",
+  "context": "fork",
   "version": "0.1.0",
   "category": "intelligence",
   "tags": ["knowledge", "learning", "import", "migration", "absorb"],

@@ -1,5 +1,8 @@
 # NotebookLM Bridge — Free RAG + Content Engine for Workspaces
 
+!PYTHONIOENCODING=utf-8 python -m notebooklm auth check 2>/dev/null || echo "NotebookLM not authenticated — run: python -m notebooklm login"
+!PYTHONIOENCODING=utf-8 python -m notebooklm list 2>/dev/null | head -5 || echo "No notebooks found or notebooklm-py not installed"
+
 Connect any workspace to Google NotebookLM. Push your docs as sources,
 query with Gemini, generate slides/infographics/podcasts — all from terminal.
 Zero token cost. Powered by notebooklm-py.
@@ -444,3 +447,15 @@ python skills/notebooklm-bridge/remove_watermark.py slides.pdf --dpi 300
 - Only works on NotebookLM-generated PDFs (fixed watermark position)
 - If NotebookLM changes their watermark position/size, the coordinates
   in `remove_watermark.py` need updating (constants at top of file)
+
+## Gotchas
+
+1. **Generating deliverables from raw sources.** The most common mistake is skipping the 3-stage pipeline (Discovery, Synthesis Note, Controlled Generation) and generating slides/infographics directly from a messy pile of raw docs. Always extract insights first, forge a Synthesis Note, then generate from that single source.
+
+2. **Forgetting PYTHONIOENCODING=utf-8 on Windows.** Every `python -m notebooklm` command on Windows must be prefixed with `PYTHONIOENCODING=utf-8`. Without it, CJK characters cause UnicodeEncodeError and the command fails silently or produces garbled output.
+
+3. **Auth cookie expiration.** Google cookies expire after days to weeks with no warning. Claude may attempt to generate content, wait for the artifact, and get a cryptic timeout error. Always run `auth check` before any generation workflow. If it fails, prompt the user to re-login.
+
+4. **Watermark removal on non-NotebookLM PDFs.** The `remove_watermark.py` script uses fixed coordinates calibrated for NotebookLM's exact watermark position (2867x1600 resolution). Running it on PDFs from other sources will corrupt random pixels in the bottom-right corner. Only apply to NotebookLM-generated files.
+
+5. **Exceeding the 500KB per-source limit.** NotebookLM rejects sources larger than 500KB. The sync script handles this automatically, but if Claude manually adds a source via CLI (`source add`), large files will fail. Always check file size before manual source addition, or use the sync script which handles truncation.

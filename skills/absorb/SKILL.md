@@ -1,5 +1,7 @@
 # Absorb — Knowledge Absorption Engine
 
+!git log --oneline -5 2>/dev/null || echo "Not in a git repo"
+
 When `/absorb` is invoked, follow this protocol exactly.
 
 ## 1. Parse Input
@@ -99,3 +101,15 @@ If `dry_run` is true:
 - Never store personal names, hardcoded paths, or machine-specific information.
 - Tag all absorbed items with `source:absorb` and the source identifier for traceability.
 - If the source is unreachable or empty, report clearly and exit — do not fabricate content.
+
+## Gotchas
+
+1. **Verbatim dump instead of synthesis.** Claude tends to store raw file contents as knowledge items instead of summarizing. Always distill before storing — if the content exceeds a few hundred words, extract the key insight, don't paste the whole thing.
+
+2. **Missing source tags make items untraceable.** Every absorbed item MUST include a `source:absorb` tag plus the source identifier. Without this, you cannot distinguish absorbed knowledge from manually stored knowledge, making cleanup impossible.
+
+3. **Shallow scan misses the real architecture.** When `depth=shallow`, Claude reads only README/config files and may conclude the project uses a stack that the actual source code contradicts. If the user seems confused by results, suggest re-running with `depth=normal`.
+
+4. **GitHub URLs fail silently on private repos.** If `git clone` fails due to auth, Claude may proceed with an empty directory and report "0 items found" without explaining why. Always check the clone exit code and report auth failures explicitly.
+
+5. **Duplicate absorption creates noise.** Running `/absorb` twice on the same source creates duplicate knowledge items. Before storing, search existing memory for items tagged with the same source identifier and skip duplicates.

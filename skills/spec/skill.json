@@ -1,7 +1,7 @@
 {
   "id": "spec",
   "name": "Spec-Driven Development",
-  "description": "Guided workspace creation and spec-driven development — Claude leads you through planning, then blitzes execution",
+  "description": "Use when starting a new project, creating a workspace, planning a feature, or executing a build — triggers on /spec, 'build this', 'plan a project', 'new workspace', 'add a feature', 'start blitz', or architecture questions. The primary skill for going from idea to working code.",
   "version": "0.1.0",
   "category": "core",
   "tags": ["spec", "planning", "workspace", "openspec", "sdd", "blitz", "squad", "multi-agent"],

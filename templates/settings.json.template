@@ -4,6 +4,11 @@
       "Read",
       "Glob",
       "Grep",
+      "Bash(npm run *)",
+      "Bash(pytest *)",
+      "Bash(git *)",
+      "Edit(**/*.md)",
+      "Write(**/*.md)",
       "mcp__memory__memory_list",
       "mcp__memory__memory_get",
       "mcp__memory__memory_search",
@@ -18,15 +23,32 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[hook] file modified'",
-            "description": "Example: log file modifications (customize this)"
+            "command": ".claude/hooks/auto-format.sh",
+            "description": "Auto-format files after edit (remove to disable)"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/verify-on-stop.sh",
+            "description": "Quick health check on turn end (remove to disable)"
           }
         ]
       }
     ]
+  },
+  "display": {
+    "statusLine": "{model} | ctx: {context}% | cost: ${cost} | {cwd}",
+    "thinking": true,
+    "outputStyle": "explanatory"
   }
 }

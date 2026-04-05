@@ -1,7 +1,7 @@
 {
   "id": "memory-server",
   "name": "Memory Server",
-  "description": "Unified MCP memory server with SQLite + optional Oracle + vector search",
+  "description": "Always-on memory backbone. Triggers automatically on any memory operation — storing decisions, recording knowledge, tracking TODOs, learning skills, searching past context, or running audit reports. Core dependency for all other skills.",
   "version": "0.4.0",
   "category": "core",
   "tags": ["memory", "mcp", "sqlite", "oracle", "search", "audit"],

@@ -1,5 +1,7 @@
 # Memory Server
 
+!python -c "import sqlite3, os, glob; dbs=glob.glob(os.path.expanduser('~/.claude-memory/memory.db')) or glob.glob('.claude-memory/memory.db'); print(f'DB: {dbs[0]}, Size: {os.path.getsize(dbs[0])//1024}KB') if dbs else print('No memory.db found')" 2>/dev/null || echo "Memory DB check failed"
+
 > Unified MCP memory server with 4-layer architecture, salience engine, and 32 tools.
 
 ## What It Does
@@ -54,5 +56,17 @@ No credentials are required for the default SQLite-only configuration.
 - This is the only skill without a `SKILL.md` file; this README serves as its primary documentation.
 - SQLite database is stored locally; back it up if you care about L2 data.
 - When upgrading `fastmcp`, test that the MCP server still starts before committing.
+
+## Gotchas
+
+1. **Storing too much, retrieving too little.** Claude aggressively stores every decision and insight but rarely calls `memory_search` or `memory_list_skills` before starting a task. The value of memory is in retrieval, not storage. Always search before storing (to avoid duplicates) and before starting a task (to leverage past learnings).
+
+2. **Salience decay making important items invisible.** Items not accessed for 30+ days lose salience progressively. Long-term architectural decisions or project conventions that are rarely accessed but critically important will sink in search rankings. Periodically reinforce foundational knowledge items via `memory_reinforce`.
+
+3. **SQLite lock contention with multiple consumers.** If the MCP server and a cron script (e.g., evolve-tick) access `memory.db` simultaneously, SQLite may throw `database is locked` errors. The server should use WAL mode and retry on lock errors. Never open the database directly from scripts while the MCP server is running.
+
+4. **Forgetting to compact.** Over time, the database accumulates low-salience items, superseded decisions, and duplicate knowledge entries. Without periodic `memory_compact`, search results fill up with noise. Run compaction at least weekly or as part of the evolve cycle.
+
+5. **Oracle L4 sync assumes network.** When `oracle_enabled: true`, every write attempts to sync to Oracle. If the network is down, writes may block or fail. Oracle sync should be async and best-effort — local SQLite is the source of truth, Oracle is the backup.
 
 **Version:** 0.4.0 | **Kind:** mcp-server | **Category:** core
