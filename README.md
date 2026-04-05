@@ -121,7 +121,7 @@ Then 9 automated steps run:
 | 2 | Authenticate Claude Code + GitHub (2 OAuth clicks) | 30s |
 | 3 | **Create your Hub** (private repo) or clone existing | 10s |
 | 4 | Write config | 5s |
-| 5 | Install MCP Memory Server (32 tools) | 10s |
+| 5 | Install MCP Memory Server (26 tools) | 10s |
 | 6 | Configure Claude Code (CLAUDE.md + .mcp.json) | 5s |
 | 7 | Deploy workspaces (clone repos, init memory.db) | varies |
 | 8 | Register scheduler + heartbeat | 5s |
@@ -576,7 +576,7 @@ The repo is ~13K lines total, but most of that is setup files, docs, and instruc
 
 | Layer | What | Lines | RAM | When |
 |-------|------|-------|-----|------|
-| **Runtime** | MCP Memory Server (32 tools + SQLite) | ~1,400 | ~25 MB | Always on |
+| **Runtime** | MCP Memory Server (26 tools + SQLite) | ~1,400 | ~25 MB | Always on |
 | **Runtime** | Odoo Connector (if enabled) | ~280 | ~22 MB | When enabled |
 | **Cron** | evolve-tick (proposal generator) | ~465 | ~20 MB peak | Every 2h, then exits |
 | **Cron** | heartbeat + sync | ~300 | ~5 MB peak | Every 30min, then exits |

@@ -2,7 +2,7 @@
 
 !python -c "import sqlite3, os, glob; dbs=glob.glob(os.path.expanduser('~/.claude-memory/memory.db')) or glob.glob('.claude-memory/memory.db'); print(f'DB: {dbs[0]}, Size: {os.path.getsize(dbs[0])//1024}KB') if dbs else print('No memory.db found')" 2>/dev/null || echo "Memory DB check failed"
 
-> Unified MCP memory server with 4-layer architecture, salience engine, and 32 tools.
+> Unified MCP memory server with 4-layer architecture, salience engine, and 26 tools.
 
 ## What It Does
 
@@ -10,7 +10,7 @@ Memory Server is the core persistence layer for clawd-lobster. It provides struc
 
 ## How It Works
 
-Runs as an always-on MCP server (`python -m mcp_memory.server`) that exposes 32 tools over the MCP protocol. Claude Code connects to it automatically on startup.
+Runs as an always-on MCP server (`python -m mcp_memory.server`) that exposes 26 tools over the MCP protocol. Claude Code connects to it automatically on startup.
 
 **Salience engine** keeps memories relevant over time:
 - Access a memory: salience +5%

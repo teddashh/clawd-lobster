@@ -393,12 +393,12 @@ After completing Phase 1 (Discovery) and Phase 2 (Workspace Creation), instead o
 generating the spec yourself, hand off to the squad:
 
 ```bash
-python scripts/spec-squad.py <workspace-path> --project "description"
+clawd-lobster squad start --workspace <workspace-path> --project "description"
 ```
 
 Or from within Claude Code:
 1. Complete discovery (Phase 1) and workspace creation (Phase 2) as normal
-2. Run: `python scripts/spec-squad.py <workspace> --project "description from discovery"`
+2. Run: `clawd-lobster squad start --workspace <workspace> --project "description from discovery"`
 
 **Options:**
 - `--plan-only` — Run Architect + Reviewer only, skip Coder/Tester

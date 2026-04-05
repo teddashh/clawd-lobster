@@ -9,15 +9,7 @@
       "Bash(git *)",
       "Edit(**/*.md)",
       "Write(**/*.md)",
-      "mcp__clawd-memory__memory_list",
-      "mcp__clawd-memory__memory_get",
-      "mcp__clawd-memory__memory_search",
-      "mcp__clawd-memory__memory_get_summary",
-      "mcp__clawd-memory__memory_status",
-      "mcp__clawd-memory__memory_log_action",
-      "mcp__clawd-memory__memory_list_skills",
-      "mcp__clawd-memory__memory_audit_search",
-      "mcp__clawd-memory__memory_activity_log"
+      "mcp__clawd-memory__*"
     ]
   },
   "hooks": {
