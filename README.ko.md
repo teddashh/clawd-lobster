@@ -33,7 +33,7 @@ AI 에이전트 프레임워크, 본 적 있으시죠. 몇 개 써봤을 수도 
 Clawd-Lobster는 Claude Code를 대체하지 않습니다. Claude Code가 **기억하고, 계획하고, 리뷰하고, 구축하고, 진화하게** 만듭니다 — 공식 Anthropic 도구만으로.
 
 - **100% Claude Code CLI + Agent SDK.** 래퍼 없음, 커스텀 에이전트 루프 없음, 그레이 존 없음. 기존 Claude 구독으로 동작합니다. 추가 API 비용 없음.
-- **약 2,000줄.** 30만 줄이 아닙니다. Claude Code가 업데이트되면 새 기능을 그대로 사용할 수 있습니다. 다시 작성할 필요 없음, 깨지지 않음.
+- **약 9,000줄.** 30만 줄이 아닙니다. Claude Code가 업데이트되면 새 기능을 그대로 사용할 수 있습니다. 다시 작성할 필요 없음, 깨지지 않음.
 - **5분이면 시작.** 브라우저를 열고, 두 번 클릭하면, 끝. API 키 불필요, Docker 불필요, YAML 박사학위 불필요.
 
 ```
@@ -187,10 +187,10 @@ Hooks (the when)      ->  OS scheduler, git hooks, PostToolUse, Stop hooks
 **거인의 어깨 위에 서다.** Clawd-Lobster는 Claude Code를 재구축하지 않습니다. Claude Code의 네이티브 확장 포인트(MCP 서버, CLAUDE.md, hooks, settings.json)를 Anthropic이 설계한 그대로 사용합니다. Claude Code가 새 기능을 출시하면 그대로 사용 가능. 모델이 개선되면 에이전트도 개선됩니다. 어댑터 코드 제로.
 
 ```
-Disk: 672 KB    (code + configs)
+Disk: ~830 KB    (code + configs)
 RAM:  ~25 MB    (MCP server only)
 CPU:  0% idle   (OS scheduler, not polling)
-LOC:  ~2,000    (not 300,000)
+LOC:  ~9,000    (not 300,000)
 ```
 
 파일 트리와 런타임 상세 정보는 [ARCHITECTURE.md](ARCHITECTURE.md)를 참조하세요.
@@ -243,7 +243,7 @@ LOC:  ~2,000    (not 300,000)
 
 |  | Heavyweight Frameworks | Raw Claude Code | Clawd-Lobster |
 |--|----------------------|----------------|---------------|
-| Codebase | 300K+ lines | 0 (built-in) | ~2,000 lines |
+| Codebase | 300K+ lines | 0 (built-in) | ~9,000 lines |
 | Setup | Hours/days | 0 | 5 minutes |
 | Memory | Session-only | Session-only | 4-layer persistent |
 | Multi-machine | Usually none | None | Git sync + Hub |

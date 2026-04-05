@@ -32,7 +32,7 @@
 Clawd-Lobster 不是要取代 Claude Code。它讓 Claude Code 學會**記憶、規劃、審查、建構、進化** — 而且只用 Anthropic 官方工具。
 
 - **100% Claude Code CLI + Agent SDK。** 沒有包裝層，沒有自訂 agent 迴圈，沒有灰色地帶。跑在你現有的 Claude 訂閱上。不用額外 API 費用。
-- **約 2,000 行程式碼。** 不是 300,000 行。Claude Code 更新時，新功能直接到手。不用改寫，不會壞掉。
+- **約 9,000 行程式碼。** 不是 300,000 行。Claude Code 更新時，新功能直接到手。不用改寫，不會壞掉。
 - **5 分鐘上手。** 開瀏覽器。點兩下。搞定。不用 API key，不用 Docker，不用 YAML 博士學位。
 
 ```
@@ -186,10 +186,10 @@ Hooks (the when)      ->  OS scheduler, git hooks, PostToolUse, Stop hooks
 **站在巨人肩膀上。** Clawd-Lobster 不重建 Claude Code。它用 Claude Code 原生的擴充點（MCP servers、CLAUDE.md、hooks、settings.json），完全照 Anthropic 的設計走。Claude Code 出新功能，你直接受益。模型進步，你的 agent 跟著進步。零 adapter 程式碼。
 
 ```
-Disk: 672 KB    (code + configs)
+Disk: ~830 KB    (code + configs)
 RAM:  ~25 MB    (MCP server only)
 CPU:  0% idle   (OS scheduler, not polling)
-LOC:  ~2,000    (not 300,000)
+LOC:  ~9,000    (not 300,000)
 ```
 
 完整檔案樹和執行時期細節，請見 [ARCHITECTURE.md](ARCHITECTURE.md)。
@@ -242,7 +242,7 @@ LOC:  ~2,000    (not 300,000)
 
 |  | Heavyweight Frameworks | Raw Claude Code | Clawd-Lobster |
 |--|----------------------|----------------|---------------|
-| Codebase | 300K+ lines | 0 (built-in) | ~2,000 lines |
+| Codebase | 300K+ lines | 0 (built-in) | ~9,000 lines |
 | Setup | Hours/days | 0 | 5 minutes |
 | Memory | Session-only | Session-only | 4-layer persistent |
 | Multi-machine | Usually none | None | Git sync + Hub |
