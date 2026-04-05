@@ -272,15 +272,67 @@ The `effort` config option controls compute intensity:
 
 ---
 
+## Context Sync: Claude → Codex
+
+By default, Codex doesn't know what Claude knows. The sync bridge fixes this
+by converting Claude's project state into Codex's `AGENTS.md` format.
+
+### What gets synced (one-way: Claude → Codex)
+
+| Claude Source | Codex Destination | Content |
+|--------------|-------------------|---------|
+| `CLAUDE.md` | `AGENTS.md` | Project instructions, conventions, key files |
+| Auto-memory | `AGENTS.md` appendix | Key decisions, constraints, architecture |
+| Learned skills | `AGENTS.md` appendix | Skills the agent has learned |
+| `settings.json` | `~/.codex/config.toml` | Global defaults (first sync only) |
+
+### Setup (automatic on skill enable)
+
+When this skill is enabled, run the sync once:
+```bash
+python scripts/sync-claude-to-codex.py --workspace <current-workspace>
+```
+
+Then set up a cron job (via OpenClaw or OS scheduler) to keep it fresh:
+```bash
+# Every 30 minutes: sync current workspace + global
+openclaw cron add --name "claude-to-codex-sync" \
+  --schedule "*/30 * * * *" \
+  --command "python scripts/sync-claude-to-codex.py --workspace <workspace>"
+```
+
+Or on Windows Task Scheduler / Unix cron:
+```bash
+# crontab -e (Unix)
+*/30 * * * * cd /path/to/clawd-lobster && python scripts/sync-claude-to-codex.py -q
+
+# Task Scheduler (Windows) — run every 30 min:
+# python C:\path\to\clawd-lobster\scripts\sync-claude-to-codex.py -q
+```
+
+### Manual sync
+
+```bash
+python scripts/sync-claude-to-codex.py                    # current workspace
+python scripts/sync-claude-to-codex.py -w /path/to/ws     # specific workspace
+python scripts/sync-claude-to-codex.py --global            # global only
+python scripts/sync-claude-to-codex.py --dry-run           # preview
+```
+
+### Why one-way only?
+
+Claude → Codex, never Codex → Claude. Because:
+- Claude has a full memory system (MCP, auto-memory, knowledge base)
+- Codex is a task worker — it doesn't accumulate project knowledge
+- Claude is the brain; Codex reads Claude's notes before each task
+
+---
+
 ## Limitations
 
 - Codex must be installed locally (`npm install -g @openai/codex`)
 - Codex must be authenticated (`codex login`)
 - One task at a time per session (no parallel Codex jobs)
 - Review output is read-only (no auto-apply)
-- Codex doesn't have access to your MCP memory tools
-- Codex doesn't know about your learned skills or decisions
-
-**This is by design.** Codex is a worker, not a partner. It does what
-you tell it, well. It doesn't need your full context to write a
-database migration or generate test stubs.
+- AGENTS.md has a 32 KiB limit — large memory sets are truncated
+- Sync is periodic (not real-time) — Codex sees Claude's state as of last sync
