@@ -57,7 +57,9 @@ for ws in reg.get('workspaces', []):
     if not should: continue
     root = roots.get(ws_domain, default_root)
     print(f\"{ws['id']}|{root}/{ws.get('path', ws['id'])}\")
-" 2>/dev/null | while IFS='|' read -r ws_id ws_path; do
+" 2>/dev/null > /tmp/clawd-heartbeat-ws.txt
+
+while IFS='|' read -r ws_id ws_path; do
     if [ ! -d "$ws_path" ]; then
         log "  [$ws_id] path not found, skipping"
         skipped=$((skipped + 1))
@@ -103,7 +105,8 @@ for ws in reg.get('workspaces', []):
             skipped=$((skipped + 1))
         fi
     fi
-done
+done < /tmp/clawd-heartbeat-ws.txt
+rm -f /tmp/clawd-heartbeat-ws.txt
 
 log "=== Heartbeat complete: $alive alive, $revived revived, $skipped skipped ==="
 

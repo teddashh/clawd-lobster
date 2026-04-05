@@ -9,15 +9,15 @@
       "Bash(git *)",
       "Edit(**/*.md)",
       "Write(**/*.md)",
-      "mcp__memory__memory_list",
-      "mcp__memory__memory_get",
-      "mcp__memory__memory_search",
-      "mcp__memory__memory_get_summary",
-      "mcp__memory__memory_status",
-      "mcp__memory__memory_log_action",
-      "mcp__memory__memory_list_skills",
-      "mcp__memory__memory_audit_search",
-      "mcp__memory__memory_activity_log"
+      "mcp__clawd-memory__memory_list",
+      "mcp__clawd-memory__memory_get",
+      "mcp__clawd-memory__memory_search",
+      "mcp__clawd-memory__memory_get_summary",
+      "mcp__clawd-memory__memory_status",
+      "mcp__clawd-memory__memory_log_action",
+      "mcp__clawd-memory__memory_list_skills",
+      "mcp__clawd-memory__memory_audit_search",
+      "mcp__clawd-memory__memory_activity_log"
     ]
   },
   "hooks": {
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/auto-format.sh",
+            "command": "bash .claude/hooks/auto-format.sh",
             "description": "Auto-format files after edit (remove to disable)"
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/verify-on-stop.sh",
+            "command": "bash .claude/hooks/verify-on-stop.sh",
             "description": "Quick health check on turn end (remove to disable)"
           }
         ]

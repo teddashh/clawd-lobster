@@ -240,13 +240,9 @@ def generate_config_toml(settings: dict) -> str:
         "# Codex config (partially synced from Claude Code settings)",
         f"# Last sync: {datetime.now(timezone.utc).isoformat()}",
         "",
+        "# model = \"o3\"",
+        "",
     ]
-
-    # Model preference
-    lines.append("[model]")
-    lines.append('# Default model for Codex tasks')
-    lines.append('# model = "o3"')
-    lines.append("")
 
     # Sandbox
     lines.append("[sandbox]")

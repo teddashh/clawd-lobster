@@ -1,6 +1,6 @@
 # Tools & Skill Management
 
-## MCP Memory Server (32 tools)
+## MCP Memory Server
 
 **Write:** memory_store, memory_record_decision, memory_record_resolved, memory_record_question, memory_record_knowledge
 **Read:** memory_list, memory_get, memory_get_summary

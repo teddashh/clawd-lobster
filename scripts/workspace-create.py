@@ -114,7 +114,8 @@ def safe_write_json(path: Path, data, restricted: bool = False) -> None:
 
     if restricted and not IS_WINDOWS:
         try:
-            os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+            import stat as _stat
+            os.chmod(path, _stat.S_IRUSR | _stat.S_IWUSR)
         except OSError:
             pass
 

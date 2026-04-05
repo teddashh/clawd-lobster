@@ -19,7 +19,7 @@ Takes < 10 seconds. Skip only if user says "continue".
 - Has .blitz-active → "BLITZ IN PROGRESS — resuming"
 
 ## Knowledge Base
-@{{DATA_DIR}}/knowledge/INDEX.md
+@knowledge/INDEX.md
 
 ## Rules
 Detailed rules are in `.claude/rules/`:

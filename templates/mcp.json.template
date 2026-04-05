@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "memory": {
+    "clawd-memory": {
       "command": "python",
       "args": ["-X", "utf8", "-m", "mcp_memory.server"],
       "cwd": "{{WRAPPER_DIR}}/skills/memory-server"

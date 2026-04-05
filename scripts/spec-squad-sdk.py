@@ -384,7 +384,9 @@ async def run_squad(workspace: Path, project_desc: str, plan_only: bool = False)
 
 def _run_async(coro):
     """Run an async coroutine using anyio (required by claude-agent-sdk)."""
-    anyio.run(lambda: coro)
+    async def wrapper():
+        return await coro
+    anyio.run(wrapper)
 
 
 def _run_async_sync(async_fn, *args):
