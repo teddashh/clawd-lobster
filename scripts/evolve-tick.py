@@ -106,14 +106,14 @@ def scan_completed_tasks(db_list: list) -> list:
             conn = sqlite3.connect(str(db_path))
             conn.row_factory = sqlite3.Row
 
-            # Check for todos table
+            # Check for todo_items table (created by MCP memory server)
             tables = [r[0] for r in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'"
             ).fetchall()]
 
-            if "todos" in tables:
+            if "todo_items" in tables:
                 rows = conn.execute(
-                    "SELECT * FROM todos WHERE status = 'approved' "
+                    "SELECT * FROM todo_items WHERE status = 'approved' "
                     "ORDER BY updated_at DESC LIMIT 20"
                 ).fetchall()
                 for row in rows:

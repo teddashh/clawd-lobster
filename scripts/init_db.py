@@ -52,7 +52,7 @@ def init_db(db_path):
         created_at TEXT DEFAULT (datetime('now')))""")
 
     # TODOs (evolve system — auto-processed by cron)
-    c.execute("""CREATE TABLE IF NOT EXISTS todos (
+    c.execute("""CREATE TABLE IF NOT EXISTS todo_items (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         description TEXT DEFAULT '',

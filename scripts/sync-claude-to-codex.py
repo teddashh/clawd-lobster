@@ -163,7 +163,6 @@ def gather_memory_context(workspace: Path | None) -> str:
         projects_dir = CLAUDE_DIR / "projects"
         if projects_dir.exists():
             # Try to match by path hash (Claude uses C--path-to-project format)
-            ws_str = str(workspace).replace("\\", "-").replace("/", "-").replace(":", "-")
             for proj_dir in projects_dir.iterdir():
                 if not proj_dir.is_dir():
                     continue
