@@ -41,6 +41,7 @@
 
   "healthCheck": {
     "type": "command",
+    "target": "claude --version",
     "intervalSeconds": 1800
   },
 

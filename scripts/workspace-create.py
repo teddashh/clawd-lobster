@@ -633,8 +633,8 @@ def _try_notebooklm_setup(summary: dict) -> str | None:
             capture_output=True, text=True, timeout=10,
             env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
-        if "fail" in result.stdout.lower():
-            return None  # not authenticated, skip silently
+        if not result.stdout or "fail" in result.stdout.lower():
+            return None  # not authenticated or unreadable output, skip silently
 
         # Create notebook
         name = summary.get("name", "workspace")
