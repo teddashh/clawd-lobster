@@ -158,19 +158,36 @@ GitHub이 컨트롤 플레인. Git이 프로토콜.
 
 ## Skills
 
-엄선된 9개 Skills. 각각 하나를 확실하게 합니다.
+엄선된 9개 Skills. 각각 하나를 확실하게 합니다. 이름을 클릭하면 전체 문서를 볼 수 있습니다.
 
-| Skill | What It Does |
-|-------|-------------|
-| **memory-server** | 4-layer persistent memory via MCP (SQLite + Git + Cloud) |
-| **spec** | Guided workspace creation + spec-driven development + Spec Squad |
-| **evolve** | Extract reusable patterns from completed work (auto, every 2h) |
-| **absorb** | Learn from existing repos, URLs, or folders |
-| **heartbeat** | Keep sessions alive via OS scheduler |
-| **migrate** | Import from other AI setups (one-time) |
-| **codex-bridge** | Delegate to OpenAI Codex for review, bulk work, second opinions |
-| **connect-odoo** | Bidirectional Odoo ERP integration via XML-RPC |
-| **notebooklm-bridge** | Auto-sync to Google NotebookLM + watermark removal |
+### [memory-server](skills/memory-server/README.md) — 기반
+세션을 넘나드는 영속 메모리를 위한 MCP 도구 26개. 즉시 로컬 캐시부터 클라우드 동기화까지 4계층 아키텍처. 중요한 지식을 떠올리고 노이즈를 감쇠시키는 salience 엔진. CJK 대응 토큰 추정. Claude Code가 더 이상 잊어버리지 않게 만드는 Skill입니다.
+
+### [spec](skills/spec/README.md) — 아이디어에서 코드로
+가이드 기반 워크스페이스 생성, OpenSpec 문서 생성(3W1H), Spec Squad 멀티 에이전트 파이프라인. 디스커버리 인터뷰로 요구사항을 도출합니다. Architect가 Gherkin 시나리오를 포함한 테스트 가능 사양을 작성합니다. Reviewer가 철저히 뜯어봅니다. Coder가 계약대로 구축합니다. Tester가 모든 요구사항을 검증합니다. 터미널에서도 웹에서도.
+
+### [evolve](skills/evolve/README.md) — 자기 개선
+2시간마다 실행됩니다. 완료된 작업을 스캔하고, 재사용 가능한 패턴을 추출하고, 학습된 스킬로 저장합니다. 스킬에는 유효성 점수가 있어서 입증된 패턴은 강화되고, 오래된 패턴은 감쇠됩니다. 쓸수록 에이전트가 날카로워집니다. 설정 불필요.
+
+### [absorb](skills/absorb/README.md) — 지식 흡수
+GitHub 리포지토리, 로컬 폴더, 또는 웹 URL을 가리키기만 하면 됩니다. 코드베이스를 읽고, 아키텍처 결정/규약/패턴을 추출한 뒤 검색 가능한 지식으로 저장합니다. 기존 프로젝트에 온보딩하거나 레퍼런스 구현을 연구할 때 사용합니다.
+
+### [heartbeat](skills/heartbeat/README.md) — 항상 살아 있음
+OS 네이티브 keep-alive(Task Scheduler / cron / launchd). 30분마다 체크합니다. 죽은 세션은 `claude --resume`으로 풀 컨텍스트와 함께 부활합니다. 커스텀 데몬 없음, 폴링 루프 없음, 토큰 소모 없음. 노트북을 닫아도 에이전트는 계속 일합니다.
+
+### [migrate](skills/migrate/README.md) — 원타임 임포트
+기존 AI 셋업(`~/.claude/`, `~/.openclaw/`, `~/.hermes/`, `~/Documents/claude-setup/`)을 감지하고 메모리, 설정, 지식을 임포트합니다. 온보딩 시 한 번만 실행하면 됩니다. 그 이후로는 필요 없습니다.
+
+### [codex-bridge](skills/codex-bridge/README.md) — 세컨드 브레인
+OpenAI Codex에 대량 작업을 위임합니다(ChatGPT Plus로 동작). **워커**로 사용(병렬 태스크, 보일러플레이트, 테스트 생성)하거나, **크리틱**으로 사용(적대적 보안 리뷰, 아키텍처 토론, 코드 리뷰)합니다. 위임 시점은 Claude가 판단합니다. AGENTS.md를 통해 Claude의 지식을 Codex에 동기화하는 기능도 탑재.
+
+### [connect-odoo](skills/connect-odoo/README.md) — ERP 연동
+XML-RPC + MCP를 통한 양방향 Odoo ERP 연결. Odoo 데이터 읽기/쓰기를 위한 특화 도구 6개. 변경 사항 실시간 폴링. AI 워크플로우가 비즈니스 프로세스와 연동해야 할 때 사용합니다.
+
+### [notebooklm-bridge](skills/notebooklm-bridge/README.md) — 문서 생성
+워크스페이스 문서를 Google NotebookLM에 자동 동기화합니다. 코드베이스 문서로부터 슬라이드, 인포그래픽, 팟캐스트, 리포트를 생성합니다. 페이지 번호 스탬프(다중 페이지) 또는 날짜 스탬프(단일 페이지)를 이용한 워터마크 제거 기능 내장. 모든 페이지에서 일관된 스타일링.
+
+---
 
 모든 Skill에는 트리거 설명(Claude가 활성화 시점을 판단), Gotchas 섹션(흔한 실수 방지책), 동적 `!command` 인젝션(로드 시 런타임 컨텍스트)이 있습니다.
 

@@ -157,21 +157,38 @@ GitHub 是控制平面。Git 是協定。
 
 ## Skills
 
-9 個精選 skill。每個只做好一件事。
+9 個精選 skill。每個只做好一件事。點名稱看完整文件。
 
-| Skill | What It Does |
-|-------|-------------|
-| **memory-server** | 4-layer persistent memory via MCP (SQLite + Git + Cloud) |
-| **spec** | Guided workspace creation + spec-driven development + Spec Squad |
-| **evolve** | Extract reusable patterns from completed work (auto, every 2h) |
-| **absorb** | Learn from existing repos, URLs, or folders |
-| **heartbeat** | Keep sessions alive via OS scheduler |
-| **migrate** | Import from other AI setups (one-time) |
-| **codex-bridge** | Delegate to OpenAI Codex for review, bulk work, second opinions |
-| **connect-odoo** | Bidirectional Odoo ERP integration via XML-RPC |
-| **notebooklm-bridge** | Auto-sync to Google NotebookLM + watermark removal |
+### [memory-server](skills/memory-server/README.md) — 根基
+26 個 MCP 工具，跨 session 持久記憶。4 層架構，從即時本地快取到雲端同步。顯著性引擎自動浮現重要知識、讓雜訊沉澱。支援 CJK token 估算。這就是讓 Claude Code 不再失憶的 skill。
 
-每個 skill 都有觸發描述（Claude 知道何時啟動）、Gotchas 區塊（常見錯誤要避免）、和動態 `!command` 注入（載入時的即時上下文）。
+### [spec](skills/spec/README.md) — 從想法到程式碼
+引導式 workspace 建立、OpenSpec 文件產出（3W1H）、Spec Squad 多 agent 流水線。Discovery 訪談萃取你的需求。Architect 撰寫含 Gherkin 場景的可測試規格書。Reviewer 把它拆開來挑。Coder 按契約實作。Tester 逐條驗證。終端機或 Web 皆可。
+
+### [evolve](skills/evolve/README.md) — 自我精進
+每 2 小時自動執行。掃描已完成的工作，萃取可重用模式，存成學到的技能。技能有效能分數 — 驗證過的模式被強化，過時的自然衰減。你的 agent 越用越犀利。不需任何設定。
+
+### [absorb](skills/absorb/README.md) — 知識吸收
+指向一個 GitHub repo、本地資料夾或網址。它讀完整份 codebase，萃取架構決策、慣例和模式，然後存成可搜尋的知識。適合加入既有專案或研究參考實作時使用。
+
+### [heartbeat](skills/heartbeat/README.md) — 永遠在線
+作業系統原生保活（Task Scheduler / cron / launchd）。每 30 分鐘檢查一次。掛掉的 session 透過 `claude --resume` 帶著完整上下文復活。沒有自訂 daemon，沒有 polling 迴圈，不燒 token。闔上筆電 — 你的 agent 繼續幹活。
+
+### [migrate](skills/migrate/README.md) — 一次性匯入
+偵測現有的 AI 設定（`~/.claude/`、`~/.openclaw/`、`~/.hermes/`、`~/Documents/claude-setup/`）並匯入記憶、設定和知識。上線時跑一次，之後不用再跑。
+
+### [codex-bridge](skills/codex-bridge/README.md) — 第二大腦
+把大量工作委派給 OpenAI Codex（跑在你的 ChatGPT Plus 上）。當**工人**用（平行任務、樣板程式碼、測試產出）或當**評審**用（對抗式安全審查、架構辯論、code review）。Claude 自行判斷何時委派。也能透過 AGENTS.md 把 Claude 的知識同步給 Codex。
+
+### [connect-odoo](skills/connect-odoo/README.md) — ERP 整合
+透過 XML-RPC + MCP 雙向連接 Odoo ERP。6 個專用工具讀寫 Odoo 資料。即時 polling 偵測變更。適合 AI 工作流需要與業務流程互動時使用。
+
+### [notebooklm-bridge](skills/notebooklm-bridge/README.md) — 文件產出
+自動將 workspace 文件同步到 Google NotebookLM。從你的 codebase 文件產出簡報、資訊圖表、podcast 和報告。內建浮水印移除：多頁用頁碼蓋印、單頁用日期蓋印。全頁面風格一致。
+
+---
+
+每個 skill 都有**觸發描述**（Claude 知道何時啟動）、**Gotchas 區塊**（常見錯誤要避免）、和**動態 `!command` 注入**（載入時的即時上下文）。
 
 ---
 

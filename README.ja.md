@@ -158,19 +158,36 @@ GitHub がコントロールプレーン。Git がプロトコル。
 
 ## Skills
 
-厳選された9つの Skills。それぞれが1つのことを確実にこなします。
+厳選された9つの Skills。それぞれが1つのことを確実にこなします。名前をクリックすると詳細ドキュメントが開きます。
 
-| Skill | What It Does |
-|-------|-------------|
-| **memory-server** | 4-layer persistent memory via MCP (SQLite + Git + Cloud) |
-| **spec** | Guided workspace creation + spec-driven development + Spec Squad |
-| **evolve** | Extract reusable patterns from completed work (auto, every 2h) |
-| **absorb** | Learn from existing repos, URLs, or folders |
-| **heartbeat** | Keep sessions alive via OS scheduler |
-| **migrate** | Import from other AI setups (one-time) |
-| **codex-bridge** | Delegate to OpenAI Codex for review, bulk work, second opinions |
-| **connect-odoo** | Bidirectional Odoo ERP integration via XML-RPC |
-| **notebooklm-bridge** | Auto-sync to Google NotebookLM + watermark removal |
+### [memory-server](skills/memory-server/README.md) — 基盤
+セッションをまたぐ永続メモリのための MCP ツール26個。ローカルキャッシュからクラウド同期までの4層アーキテクチャ。重要な知識を浮上させ、ノイズを減衰させるサリエンスエンジン。CJK 対応トークン推定。Claude Code に「忘れる」をやめさせる Skill です。
+
+### [spec](skills/spec/README.md) — アイデアからコードへ
+ガイド付きワークスペース作成、OpenSpec ドキュメント生成（3W1H）、Spec Squad マルチエージェントパイプライン。ディスカバリーインタビューで要件を引き出します。Architect がテスト可能な仕様を Gherkin シナリオ付きで作成。Reviewer が徹底的に叩きます。Coder が契約通りに構築。Tester がすべての要件を検証。ターミナルでも Web でも。
+
+### [evolve](skills/evolve/README.md) — 自己改善
+2時間ごとに実行。完了した作業をスキャンし、再利用可能なパターンを抽出し、学習済みスキルとして保存します。スキルには有効性スコアがあり、実績のあるパターンは強化され、古いものは減衰します。使えば使うほどエージェントが鋭くなります。設定不要。
+
+### [absorb](skills/absorb/README.md) — ナレッジ吸収
+GitHub リポジトリ、ローカルフォルダ、または Web URL を指定するだけ。コードベースを読み取り、アーキテクチャの意思決定、規約、パターンを抽出し、検索可能なナレッジとして保存します。既存プロジェクトへのオンボーディングやリファレンス実装の研究に使えます。
+
+### [heartbeat](skills/heartbeat/README.md) — 常時稼働
+OS ネイティブのキープアライブ（Task Scheduler / cron / launchd）。30分ごとにチェック。落ちたセッションは `claude --resume` でフルコンテキスト付きで復活。カスタムデーモンなし、ポーリングループなし、トークン消費なし。ノートパソコンを閉じても、エージェントは動き続けます。
+
+### [migrate](skills/migrate/README.md) — ワンタイムインポート
+既存の AI セットアップ（`~/.claude/`、`~/.openclaw/`、`~/.hermes/`、`~/Documents/claude-setup/`）を検出し、メモリ、設定、ナレッジをインポートします。オンボーディング時に一度だけ実行。以後は不要です。
+
+### [codex-bridge](skills/codex-bridge/README.md) — セカンドブレイン
+OpenAI Codex にバルクワークを委任（ChatGPT Plus で動作）。**ワーカー**として使う（並列タスク、ボイラープレート、テスト生成）か、**クリティック**として使う（敵対的セキュリティレビュー、アーキテクチャ議論、コードレビュー）。委任タイミングは Claude が判断します。AGENTS.md 経由で Claude のナレッジを Codex に同期する機能も搭載。
+
+### [connect-odoo](skills/connect-odoo/README.md) — ERP 連携
+XML-RPC + MCP による双方向 Odoo ERP 接続。Odoo データの読み書き用に特化したツール6個。変更のリアルタイムポーリング。AI ワークフローがビジネスプロセスと連携する必要がある場合に使えます。
+
+### [notebooklm-bridge](skills/notebooklm-bridge/README.md) — ドキュメント生成
+ワークスペースのドキュメントを Google NotebookLM に自動同期。コードベースドキュメントからスライド、インフォグラフィック、ポッドキャスト、レポートを生成。ページ番号スタンプ（複数ページ）またはデートスタンプ（単一ページ）による透かし除去機能内蔵。全ページで一貫したスタイリング。
+
+---
 
 すべての Skill にはトリガー説明（Claude が起動タイミングを判断）、Gotchas セクション（よくある間違いの回避策）、動的 `!command` インジェクション（ロード時のランタイムコンテキスト）があります。
 

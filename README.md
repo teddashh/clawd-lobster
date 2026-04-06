@@ -157,21 +157,38 @@ Skills have effectiveness scores. Proven patterns get reinforced. Stale skills d
 
 ## Skills
 
-9 curated skills. Each does one thing well.
+9 curated skills. Each does one thing well. Click the name for full documentation.
 
-| Skill | What It Does |
-|-------|-------------|
-| **memory-server** | 4-layer persistent memory via MCP (SQLite + Git + Cloud) |
-| **spec** | Guided workspace creation + spec-driven development + Spec Squad |
-| **evolve** | Extract reusable patterns from completed work (auto, every 2h) |
-| **absorb** | Learn from existing repos, URLs, or folders |
-| **heartbeat** | Keep sessions alive via OS scheduler |
-| **migrate** | Import from other AI setups (one-time) |
-| **codex-bridge** | Delegate to OpenAI Codex for review, bulk work, second opinions |
-| **connect-odoo** | Bidirectional Odoo ERP integration via XML-RPC |
-| **notebooklm-bridge** | Auto-sync to Google NotebookLM + watermark removal |
+### [memory-server](skills/memory-server/README.md) — The Foundation
+26 MCP tools for persistent memory across sessions. 4-layer architecture from instant local cache to cloud sync. Salience engine that surfaces important knowledge and lets noise decay. CJK-aware token estimation. This is the skill that makes Claude Code stop forgetting.
 
-Every skill has a trigger description (Claude knows when to activate), a Gotchas section (common mistakes to avoid), and dynamic `!command` injection (runtime context on load).
+### [spec](skills/spec/README.md) — From Idea to Code
+Guided workspace creation, OpenSpec document generation (3W1H), and Spec Squad multi-agent pipeline. Discovery interview extracts your requirements. Architect writes testable specs with Gherkin scenarios. Reviewer tears them apart. Coder builds to contract. Tester verifies every requirement. Terminal or web.
+
+### [evolve](skills/evolve/README.md) — Self-Improvement
+Runs every 2 hours. Scans completed work, extracts reusable patterns, stores them as learned skills. Skills have effectiveness scores — proven patterns get reinforced, stale ones decay. Your agent gets sharper the more you use it. No configuration needed.
+
+### [absorb](skills/absorb/README.md) — Knowledge Intake
+Point it at a GitHub repo, local folder, or web URL. It reads the codebase, extracts architecture decisions, conventions, and patterns, then stores them as searchable knowledge. Use it when onboarding to an existing project or studying a reference implementation.
+
+### [heartbeat](skills/heartbeat/README.md) — Always Alive
+OS-native keep-alive (Task Scheduler / cron / launchd). Checks every 30 minutes. Dead sessions get revived with full context via `claude --resume`. No custom daemons, no polling loops, no token burn. Close your laptop — your agent keeps working.
+
+### [migrate](skills/migrate/README.md) — One-Time Import
+Detects existing AI setups (`~/.claude/`, `~/.openclaw/`, `~/.hermes/`, `~/Documents/claude-setup/`) and imports memories, configs, and knowledge. Run once during onboarding, never again.
+
+### [codex-bridge](skills/codex-bridge/README.md) — Second Brain
+Delegate bulk work to OpenAI Codex (runs on your ChatGPT Plus). Use it as a **worker** (parallel tasks, boilerplate, test generation) or as a **critic** (adversarial security review, architecture debate, code review). Claude decides when to delegate. Also syncs Claude's knowledge to Codex via AGENTS.md.
+
+### [connect-odoo](skills/connect-odoo/README.md) — ERP Integration
+Bidirectional Odoo ERP connection via XML-RPC + MCP. 6 specialized tools for reading/writing Odoo data. Real-time polling for changes. Use it when your AI workflow needs to interact with business processes.
+
+### [notebooklm-bridge](skills/notebooklm-bridge/README.md) — Document Generation
+Auto-sync workspace docs to Google NotebookLM. Generate slides, infographics, podcasts, and reports from your codebase documentation. Built-in watermark removal with page-number stamping (multi-page) or date stamping (single-page). Consistent styling across all pages.
+
+---
+
+Every skill has a **trigger description** (Claude knows when to activate), a **Gotchas section** (common mistakes to avoid), and **dynamic `!command` injection** (runtime context on load).
 
 ---
 
