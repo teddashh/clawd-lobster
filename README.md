@@ -118,6 +118,7 @@ Two layers that work together. No vector databases. No cloud required.
 |-------|------|------|
 | **SQLite (The Ledger)** | Decisions, TODOs, audit log, salience scores, provenance | Operational truth — fast, structured, queryable |
 | **Git Wiki (The Library)** | Cross-referenced markdown pages, index, journal, sources | Compiled knowledge — human-readable, Git-synced |
+| **Cloud DB (optional)** | Oracle or other cloud DB for cross-machine search | Global sync — only if you need multi-machine recall |
 
 Every knowledge record carries **provenance** — who wrote it, which agent, confidence score, lifecycle state (raw → synthesized → accepted → superseded). No anonymous facts.
 
