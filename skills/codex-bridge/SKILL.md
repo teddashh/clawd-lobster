@@ -45,6 +45,22 @@ When a user enables this skill or enters the Codex Bridge settings:
 
 ---
 
+## Two Checkpoints (with Gemini Bridge)
+
+When both Codex Bridge and Gemini Bridge are enabled, use the two-checkpoint
+pattern to eliminate human round trips:
+
+**Checkpoint 1 — Plan Review (before building):**
+You draft an approach → ask Codex + Gemini to challenge it → fix before coding.
+
+**Checkpoint 2 — Code Review (before delivering):**
+You finish code → Codex adversarial review + Gemini logic check → fix before handoff.
+
+Each checkpoint costs ~3 minutes but can save a 15-minute redo cycle.
+See `skills/gemini-bridge/SKILL.md` for the full two-checkpoint workflow.
+
+---
+
 ## When to Delegate (your judgment, not rules)
 
 You are a senior architect managing a capable assistant. Use your judgment.

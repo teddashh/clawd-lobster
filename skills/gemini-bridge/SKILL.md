@@ -26,39 +26,85 @@ different brain — not a faster one, not a cheaper one, a **different** one.
 
 ---
 
-## When to Consult Gemini
+## Why Three Agents
 
-### Scenario 1: Uncertainty
-You're not confident in your answer. You used words like "I think", "probably",
-"might be", "I believe". Stop guessing — get a second opinion.
+The problem isn't token cost. The problem is **round trips**.
 
-```bash
-gemini -m gemini-2.5-pro -p "I'm working on [context]. My current approach is [X].
-Am I missing anything? What would you do differently?"
+Every time you build something, the user checks it, finds an issue, and asks
+you to redo it — that's 10-20 minutes wasted. If three agents spend 3 minutes
+discussing upfront and catch the issue before you code, that's a net win.
+
+Two checkpoints. Each costs 2-3 minutes. Each can save an entire redo cycle.
+
+```
+User's request
+    |
+    v
+[Checkpoint 1: PLAN REVIEW]
+  You draft the approach
+  → Codex challenges: "what about edge case X?"
+  → Gemini validates: "library Y doesn't support Z, use W instead"
+  → You revise the plan
+  → Build with confidence
+    |
+    v
+[Checkpoint 2: CODE REVIEW]
+  You finish the code
+  → Codex adversarial review: finds integration bugs
+  → Gemini logic check: catches assumption errors
+  → You fix before delivering
+    |
+    v
+Deliver to user — first time right
 ```
 
-### Scenario 2: Research / Fact-Checking
-You need to validate technical facts, API behavior, or library capabilities
-that might be outside your training data or might have changed.
+**When to trigger each checkpoint:**
+
+| Checkpoint | Trigger | What to ask |
+|-----------|---------|-------------|
+| Plan Review | Before any task that would take > 15 minutes to redo | "Here's my plan. What am I missing? What will break?" |
+| Code Review | After completing significant code, before delivering | "Review this for bugs, wrong assumptions, and integration issues." |
+
+**When NOT to bother:**
+- Simple file edits, config changes, documentation
+- Tasks where the answer is obvious
+- Anything that takes < 5 minutes to redo if wrong
+
+## How to Call
+
+### Plan Review (Checkpoint 1)
+
+```bash
+# Ask both in parallel — compare their concerns
+codex exec "I'm about to [task]. My plan: [plan]. What's wrong with this?"
+
+gemini -m gemini-2.5-pro -p "I'm about to [task]. My plan: [plan].
+What am I missing? What assumptions am I making?"
+```
+
+Then synthesize: if both say it's fine, go. If either raises a concern,
+address it before coding.
+
+### Code Review (Checkpoint 2)
+
+```bash
+# Codex: adversarial (find what's broken)
+codex exec review
+
+# Gemini: logical (verify the approach is sound)
+gemini -m gemini-2.5-pro -p "Review this implementation against its spec.
+Does the code actually do what the spec says? Any logic errors?
+[paste key code or point to files]"
+```
+
+### Quick Research (anytime)
 
 ```bash
 gemini -m gemini-2.5-pro -p "Verify: does [library X] support [feature Y]
 as of 2026? Cite sources if possible."
 ```
 
-### Scenario 3: Complex Decisions
-You're choosing between multiple approaches and need a devil's advocate.
-Architecture choices, tech stack decisions, trade-off analysis.
-
-```bash
-gemini -m gemini-2.5-pro -p "I'm choosing between approach A and approach B
-for [problem]. Here's my analysis: [context].
-Argue against my preferred choice. What am I not seeing?"
-```
-
-### Scenario 4: Security Review
-Before shipping auth, encryption, or access control code, get an independent
-security review from a brain that hasn't been marinating in the same codebase.
+### Security Review (before shipping auth/crypto)
 
 ```bash
 gemini -m gemini-2.5-pro -p "Security review this code. Act as a penetration
