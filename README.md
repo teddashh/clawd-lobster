@@ -110,18 +110,27 @@ Two interfaces, same engine:
 - **Web:** Chat with Claude in the browser, then watch agents work on a live dashboard
 - **Terminal:** Claude asks questions in your terminal, progress prints as agents run
 
-### 2. A Brain That Doesn't Forget
+### 2. A Brain That Doesn't Forget — The Thin Ledger
 
-Four layers of memory, from instant to global:
+Two layers that work together. No vector databases. No cloud required.
 
-| Layer | Speed | What |
-|-------|-------|------|
-| L1.5 | Instant | Claude Code's native auto-memory |
-| L2 | ~1ms | SQLite + MCP — per-workspace, salience-weighted |
-| L3 | ~10ms | Markdown + Git — synced across machines |
-| L4 | ~100ms | Cloud DB (optional) — cross-workspace search |
+| Layer | What | Role |
+|-------|------|------|
+| **SQLite (The Ledger)** | Decisions, TODOs, audit log, salience scores, provenance | Operational truth — fast, structured, queryable |
+| **Git Wiki (The Library)** | Cross-referenced markdown pages, index, journal, sources | Compiled knowledge — human-readable, Git-synced |
+
+Every knowledge record carries **provenance** — who wrote it, which agent, confidence score, lifecycle state (raw → synthesized → accepted → superseded). No anonymous facts.
+
+**Three operations keep it healthy:**
+- **INGEST** — New information becomes wiki pages with citations
+- **QUERY** — Search both layers, cite sources. Valuable answers get written back to the wiki.
+- **LINT** — Periodic health check finds contradictions, stale claims, orphan pages, broken links
+
+**Correction workflow:** Agents can't directly edit wiki pages. They propose corrections through `memory_propose_correction`, which creates a review queue. Disputed claims get resolved, not silently overwritten.
 
 Important ideas float up. Noise sinks away. Skills that work get reinforced. Stale knowledge decays. You don't manage any of this — it happens automatically.
+
+*Architecture absorbed from [MemPalace](https://github.com/milla-jovovich/mempalace) (spatial structure) and [Karpathy's LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (INGEST/QUERY/LINT). No dependencies installed — concepts only.*
 
 ### 3. Always Alive
 
@@ -198,9 +207,11 @@ Every skill has a **trigger description** (Claude knows when to activate), a **G
 ## Architecture
 
 ```
-Skills (the what)     ->  10 skills with manifests, instructions, gotchas
-Tools (the how)       ->  32 MCP tools + Claude Code native tools
-Hooks (the when)      ->  OS scheduler, git hooks, PostToolUse, Stop hooks
+Skills (the what)      ->  10 skills with manifests, instructions, gotchas
+Tools (the how)        ->  32 MCP tools + Claude Code native tools
+Hooks (the when)       ->  OS scheduler, git hooks, PostToolUse, Stop hooks
+Memory (the brain)     ->  SQLite Ledger + Git Wiki (Thin Ledger pattern)
+Operations (the cycle) ->  INGEST / QUERY / LINT (continuous knowledge lifecycle)
 ```
 
 **Standing on the giant's shoulders.** Clawd-Lobster doesn't rebuild Claude Code. It uses Claude Code's native extension points (MCP servers, CLAUDE.md, hooks, settings.json) exactly as Anthropic designed them. When Claude Code ships a new feature, you get it for free. When the model improves, your agent improves. Zero adapter code.

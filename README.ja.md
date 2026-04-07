@@ -111,18 +111,27 @@ chmod +x install.sh && ./install.sh
 - **Web：** ブラウザで Claude とチャットし、ライブダッシュボードでエージェントの作業を監視
 - **Terminal：** ターミナルで Claude が質問し、エージェント実行中に進捗を表示
 
-### 2. 忘れない頭脳
+### 2. 忘れない頭脳 — Thin Ledger
 
-即時からグローバルまで、4層のメモリ：
+連携する2つのレイヤー。ベクターデータベース不要。クラウド不要。
 
-| Layer | Speed | What |
-|-------|-------|------|
-| L1.5 | Instant | Claude Code's native auto-memory |
-| L2 | ~1ms | SQLite + MCP — per-workspace, salience-weighted |
-| L3 | ~10ms | Markdown + Git — synced across machines |
-| L4 | ~100ms | Cloud DB (optional) — cross-workspace search |
+| レイヤー | 内容 | 役割 |
+|----------|------|------|
+| **SQLite (The Ledger)** | 意思決定、TODO、監査ログ、salience スコア、provenance | 運用上の真実 — 高速・構造化・クエリ可能 |
+| **Git Wiki (The Library)** | 相互参照されたマークダウンページ、インデックス、ジャーナル、ソース | 体系化された知識 — 人間が読める、Git 同期 |
+
+すべてのナレッジレコードは **provenance** を持ちます — 誰が書いたか、どのエージェントか、確信度スコア、ライフサイクル状態（raw → synthesized → accepted → superseded）。匿名の事実はありません。
+
+**3つのオペレーションが健全性を維持します：**
+- **INGEST** — 新情報がソース引用付きの Wiki ページになります
+- **QUERY** — 両レイヤーを検索し、ソースを引用します。価値ある回答は Wiki に書き戻されます
+- **LINT** — 定期的なヘルスチェックが矛盾、古い主張、孤立ページ、リンク切れを発見します
+
+**修正ワークフロー：** エージェントは Wiki ページを直接編集できません。`memory_propose_correction` を通じて修正を提案し、レビューキューが作られます。争いのある主張はサイレントに上書きされるのではなく、解決されます。
 
 重要なアイデアは浮上し、ノイズは沈む。うまくいったスキルは強化され、古い知識は減衰する。あなたが管理する必要はありません — すべて自動です。
+
+*アーキテクチャは [MemPalace](https://github.com/milla-jovovich/mempalace)（空間構造）と [Karpathy の LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)（INGEST/QUERY/LINT）から吸収しました。依存関係はインストールしていません — コンセプトのみ。*
 
 ### 3. 常に生きている
 
@@ -158,7 +167,7 @@ GitHub がコントロールプレーン。Git がプロトコル。
 
 ## Skills
 
-厳選された9つの Skills。それぞれが1つのことを確実にこなします。名前をクリックすると詳細ドキュメントが開きます。
+厳選された10の Skills。それぞれが1つのことを確実にこなします。名前をクリックすると詳細ドキュメントが開きます。
 
 ### [memory-server](skills/memory-server/README.md) — 基盤
 セッションをまたぐ永続メモリのための MCP ツール26個。ローカルキャッシュからクラウド同期までの4層アーキテクチャ。重要な知識を浮上させ、ノイズを減衰させるサリエンスエンジン。CJK 対応トークン推定。Claude Code に「忘れる」をやめさせる Skill です。
@@ -196,9 +205,11 @@ XML-RPC + MCP による双方向 Odoo ERP 接続。Odoo データの読み書き
 ## アーキテクチャ
 
 ```
-Skills (the what)     ->  9 skills with manifests, instructions, gotchas
-Tools (the how)       ->  32 MCP tools + Claude Code native tools
-Hooks (the when)      ->  OS scheduler, git hooks, PostToolUse, Stop hooks
+Skills (the what)      ->  10 skills with manifests, instructions, gotchas
+Tools (the how)        ->  32 MCP tools + Claude Code native tools
+Hooks (the when)       ->  OS scheduler, git hooks, PostToolUse, Stop hooks
+Memory (the brain)     ->  SQLite Ledger + Git Wiki (Thin Ledger pattern)
+Operations (the cycle) ->  INGEST / QUERY / LINT (continuous knowledge lifecycle)
 ```
 
 **巨人の肩の上に立つ。** Clawd-Lobster は Claude Code を再構築しません。Claude Code のネイティブ拡張ポイント（MCP サーバー、CLAUDE.md、hooks、settings.json）を Anthropic が設計した通りに使います。Claude Code が新機能をリリースすれば、そのまま使える。モデルが改善されれば、あなたのエージェントも改善される。アダプターコードはゼロ。

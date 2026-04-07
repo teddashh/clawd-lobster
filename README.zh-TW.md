@@ -110,18 +110,27 @@ chmod +x install.sh && ./install.sh
 - **Web：** 在瀏覽器跟 Claude 聊，然後在即時 dashboard 上看 agent 幹活
 - **終端機：** Claude 在終端機問你問題，agent 跑起來時即時顯示進度
 
-### 2. 會記東西的腦袋
+### 2. 不會忘記的腦袋 — Thin Ledger
 
-四層記憶體，從即時到全域：
+兩層協作。不用向量資料庫。不需要雲端。
 
-| Layer | Speed | What |
-|-------|-------|------|
-| L1.5 | Instant | Claude Code's native auto-memory |
-| L2 | ~1ms | SQLite + MCP — per-workspace, salience-weighted |
-| L3 | ~10ms | Markdown + Git — synced across machines |
-| L4 | ~100ms | Cloud DB (optional) — cross-workspace search |
+| 層 | 內容 | 角色 |
+|-----|------|------|
+| **SQLite (The Ledger)** | 決策、TODO、稽核日誌、顯著性分數、provenance | 營運真相 — 快速、結構化、可查詢 |
+| **Git Wiki (The Library)** | 交叉引用的 markdown 頁面、索引、日誌、來源 | 編譯後的知識庫 — 人類可讀、Git 同步 |
+
+每筆知識記錄都帶 **provenance** — 誰寫的、哪個 agent、信心分數、生命週期狀態（raw → synthesized → accepted → superseded）。沒有匿名事實。
+
+**三個操作保持它的健康：**
+- **INGEST** — 新資訊變成帶引用的 wiki 頁面
+- **QUERY** — 搜尋兩層、引用來源。有價值的答案會寫回 wiki。
+- **LINT** — 定期健康檢查，找出矛盾、過時聲明、孤立頁面、壞連結
+
+**修正工作流：** Agent 不能直接編輯 wiki 頁面。它們透過 `memory_propose_correction` 提出修正，建立審查佇列。有爭議的聲明會被解決，不會被靜默覆蓋。
 
 重要的想法浮上來。雜訊沉下去。有用的技能被強化。過時的知識自然衰減。你完全不用管 — 全部自動。
+
+*架構吸收自 [MemPalace](https://github.com/milla-jovovich/mempalace)（空間結構）和 [Karpathy's LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)（INGEST/QUERY/LINT）。不安裝任何相依套件 — 只用概念。*
 
 ### 3. 永遠在線
 
@@ -195,9 +204,11 @@ GitHub 是控制平面。Git 是協定。
 ## 架構
 
 ```
-Skills (the what)     ->  9 skills with manifests, instructions, gotchas
-Tools (the how)       ->  32 MCP tools + Claude Code native tools
-Hooks (the when)      ->  OS scheduler, git hooks, PostToolUse, Stop hooks
+Skills (the what)      ->  10 skills with manifests, instructions, gotchas
+Tools (the how)        ->  32 MCP tools + Claude Code native tools
+Hooks (the when)       ->  OS scheduler, git hooks, PostToolUse, Stop hooks
+Memory (the brain)     ->  SQLite Ledger + Git Wiki (Thin Ledger pattern)
+Operations (the cycle) ->  INGEST / QUERY / LINT (continuous knowledge lifecycle)
 ```
 
 **站在巨人肩膀上。** Clawd-Lobster 不重建 Claude Code。它用 Claude Code 原生的擴充點（MCP servers、CLAUDE.md、hooks、settings.json），完全照 Anthropic 的設計走。Claude Code 出新功能，你直接受益。模型進步，你的 agent 跟著進步。零 adapter 程式碼。
