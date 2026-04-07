@@ -119,7 +119,7 @@ chmod +x install.sh && ./install.sh
 |----------|------|------|
 | **SQLite (The Ledger)** | 意思決定、TODO、監査ログ、salience スコア、provenance | 運用上の真実 — 高速・構造化・クエリ可能 |
 | **Git Wiki (The Library)** | 相互参照されたマークダウンページ、インデックス、ジャーナル、ソース | 体系化された知識 — 人間が読める、Git 同期 |
-| **Cloud DB (optional)** | Oracle or other cloud DB for cross-machine search | Global sync — only if you need multi-machine recall |
+| **Oracle Vector DB (The Vault)** | All knowledge vectorized + cross-machine semantic search | Deep recall — find anything you have ever discussed, across all machines |
 
 すべてのナレッジレコードは **provenance** を持ちます — 誰が書いたか、どのエージェントか、確信度スコア、ライフサイクル状態（raw → synthesized → accepted → superseded）。匿名の事実はありません。
 

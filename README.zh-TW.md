@@ -118,7 +118,7 @@ chmod +x install.sh && ./install.sh
 |-----|------|------|
 | **SQLite (The Ledger)** | 決策、TODO、稽核日誌、顯著性分數、provenance | 營運真相 — 快速、結構化、可查詢 |
 | **Git Wiki (The Library)** | 交叉引用的 markdown 頁面、索引、日誌、來源 | 編譯後的知識庫 — 人類可讀、Git 同步 |
-| **Cloud DB (optional)** | Oracle or other cloud DB for cross-machine search | Global sync — only if you need multi-machine recall |
+| **Oracle Vector DB (The Vault)** | All knowledge vectorized + cross-machine semantic search | Deep recall — find anything you have ever discussed, across all machines |
 
 每筆知識記錄都帶 **provenance** — 誰寫的、哪個 agent、信心分數、生命週期狀態（raw → synthesized → accepted → superseded）。沒有匿名事實。
 

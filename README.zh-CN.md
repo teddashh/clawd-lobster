@@ -118,7 +118,7 @@ chmod +x install.sh && ./install.sh
 |-----|------|------|
 | **SQLite (The Ledger)** | 决策、TODO、审计日志、显著性分数、provenance | 运营真相 — 快速、结构化、可查询 |
 | **Git Wiki (The Library)** | 交叉引用的 markdown 页面、索引、日志、来源 | 编译后的知识库 — 人类可读、Git 同步 |
-| **Cloud DB (optional)** | Oracle or other cloud DB for cross-machine search | Global sync — only if you need multi-machine recall |
+| **Oracle Vector DB (The Vault)** | All knowledge vectorized + cross-machine semantic search | Deep recall — find anything you have ever discussed, across all machines |
 
 每笔知识记录都带 **provenance** — 谁写的、哪个 agent、信心分数、生命周期状态（raw → synthesized → accepted → superseded）。没有匿名事实。
 
