@@ -61,30 +61,37 @@ See `skills/gemini-bridge/SKILL.md` for the full two-checkpoint workflow.
 
 ## Agent Call Template
 
-When calling Codex, ALWAYS append the exit protocol to the prompt:
+When calling Codex, ALWAYS append the exit protocol to the prompt.
+
+**Important:** Codex sandbox blocks file writes. The exit protocol uses
+**stdout JSON output** instead. Claude captures and stores it.
 
 ```bash
-codex exec "
+codex exec --full-auto "
 [your actual task prompt here]
 
 EXIT PROTOCOL (MANDATORY):
-Before you finish, create .agent-audit/ directory if needed, then write
-your findings to .agent-audit/codex-$(date +%Y%m%d-%H%M%S).json with this schema:
+At the very end of your response, output your findings as a JSON code block:
+
+\`\`\`json
 {
   \"agent\": \"codex\",
   \"role\": \"reviewer\",
-  \"timestamp\": \"$(date -Iseconds)\",
   \"task\": \"[what you were asked]\",
   \"findings\": [{\"type\": \"blocker|risk|suggestion\", \"description\": \"...\", \"file\": \"...\"}],
   \"summary\": \"one paragraph\",
   \"disagreements\": []
 }
-If no findings, write empty findings array. DO NOT SKIP THIS STEP.
+\`\`\`
+
+If no findings, use empty array. DO NOT SKIP the JSON block.
 "
 ```
 
-After Codex finishes, read `.agent-audit/codex-*.json` and store important
-findings via `memory_record_knowledge` or `memory_log_action`.
+After Codex finishes, Claude:
+1. Parses the JSON from Codex's stdout
+2. Writes it to `.agent-audit/codex-<timestamp>.json`
+3. Stores important findings via `memory_record_knowledge`
 
 ---
 

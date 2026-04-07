@@ -101,21 +101,12 @@ def build_memory_guide() -> str:
 This project uses a 4-layer memory system. You do NOT need to operate it.
 Claude (the lead agent) manages memory. Your job:
 
-**Before your session ends, write your findings to a JSON file in the
-workspace you're working in:**
+**At the very end of your response, output your findings as a JSON code block:**
 
-```
-<current-working-directory>/.agent-audit/<your-role>-<timestamp>.json
-```
-
-If you're unsure of the workspace path, use your current working directory.
-
-Schema:
 ```json
 {
   "agent": "codex|gemini|claude-p",
   "role": "reviewer|consultant|worker",
-  "timestamp": "ISO-8601",
   "task": "what you were asked to do",
   "findings": [
     {"type": "blocker|risk|suggestion|decision", "description": "...", "file": "path or null"}
@@ -125,12 +116,12 @@ Schema:
 }
 ```
 
-Claude will read this file after your session and store important items
-in the project's persistent memory. This is your ONLY way to persist
-knowledge — your own session state disappears when you exit.
+Claude (the lead agent) will parse this JSON from your stdout and store
+important items in the project's persistent memory. Your session state
+disappears when you exit — this JSON block is your ONLY way to persist.
 
-**DO NOT skip this step.** If you found nothing, write an empty findings array.
-The file itself serves as proof you completed your review.
+**DO NOT skip the JSON block.** If you found nothing, output empty findings.
+The block itself proves you completed your review.
 """
 
 

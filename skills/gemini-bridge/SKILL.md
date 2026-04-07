@@ -131,26 +131,30 @@ gemini -p "
 [your actual task prompt here]
 
 EXIT PROTOCOL (MANDATORY):
-Before you finish, create .agent-audit/ directory if needed, then write
-your findings to .agent-audit/gemini-TIMESTAMP.json with this schema:
+At the very end of your response, output your findings as a JSON code block:
+
+\`\`\`json
 {
   \"agent\": \"gemini\",
   \"role\": \"consultant\",
-  \"timestamp\": \"ISO-8601\",
   \"task\": \"what you were asked\",
   \"findings\": [{\"type\": \"blocker|risk|suggestion\", \"description\": \"...\", \"file\": \"...\"}],
   \"summary\": \"one paragraph\",
   \"disagreements\": []
 }
-If no findings, write empty array. DO NOT SKIP.
+\`\`\`
+
+If no findings, use empty array. DO NOT SKIP the JSON block.
 "
 ```
 
-After Gemini finishes, read `.agent-audit/gemini-*.json` and store important
-findings via `memory_record_knowledge` or `memory_log_action`.
+After agent finishes, Claude:
+1. Parses the JSON from the agent's stdout
+2. Writes it to `.agent-audit/<agent>-<timestamp>.json`
+3. Stores important findings via `memory_record_knowledge`
 
-**Same applies to claude -p calls:** append the exit protocol, read the
-audit JSON after the subprocess finishes.
+**Same pattern for claude -p calls** — append the exit protocol, parse
+JSON from stdout after the subprocess finishes.
 
 ---
 
