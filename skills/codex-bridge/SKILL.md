@@ -59,6 +59,33 @@ You finish code → Codex adversarial review + Gemini logic check → fix before
 Each checkpoint costs ~3 minutes but can save a 15-minute redo cycle.
 See `skills/gemini-bridge/SKILL.md` for the full two-checkpoint workflow.
 
+## Agent Call Template
+
+When calling Codex, ALWAYS append the exit protocol to the prompt:
+
+```bash
+codex exec "
+[your actual task prompt here]
+
+EXIT PROTOCOL (MANDATORY):
+Before you finish, create .agent-audit/ directory if needed, then write
+your findings to .agent-audit/codex-$(date +%Y%m%d-%H%M%S).json with this schema:
+{
+  \"agent\": \"codex\",
+  \"role\": \"reviewer\",
+  \"timestamp\": \"$(date -Iseconds)\",
+  \"task\": \"[what you were asked]\",
+  \"findings\": [{\"type\": \"blocker|risk|suggestion\", \"description\": \"...\", \"file\": \"...\"}],
+  \"summary\": \"one paragraph\",
+  \"disagreements\": []
+}
+If no findings, write empty findings array. DO NOT SKIP THIS STEP.
+"
+```
+
+After Codex finishes, read `.agent-audit/codex-*.json` and store important
+findings via `memory_record_knowledge` or `memory_log_action`.
+
 ---
 
 ## When to Delegate (your judgment, not rules)

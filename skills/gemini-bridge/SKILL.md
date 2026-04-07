@@ -110,17 +110,47 @@ Does the code actually do what the spec says? Any logic errors?
 ### Quick Research (anytime)
 
 ```bash
-gemini -m gemini-3.1-pro -p "Verify: does [library X] support [feature Y]
+gemini -p "Verify: does [library X] support [feature Y]
 as of 2026? Cite sources if possible."
 ```
 
 ### Security Review (before shipping auth/crypto)
 
 ```bash
-gemini -m gemini-3.1-pro -p "Security review this code. Act as a penetration
+gemini -p "Security review this code. Act as a penetration
 tester. Find vulnerabilities, not style issues.
 Code: [paste code]"
 ```
+
+## Agent Call Template
+
+When calling Gemini, ALWAYS append the exit protocol to the prompt:
+
+```bash
+gemini -p "
+[your actual task prompt here]
+
+EXIT PROTOCOL (MANDATORY):
+Before you finish, create .agent-audit/ directory if needed, then write
+your findings to .agent-audit/gemini-TIMESTAMP.json with this schema:
+{
+  \"agent\": \"gemini\",
+  \"role\": \"consultant\",
+  \"timestamp\": \"ISO-8601\",
+  \"task\": \"what you were asked\",
+  \"findings\": [{\"type\": \"blocker|risk|suggestion\", \"description\": \"...\", \"file\": \"...\"}],
+  \"summary\": \"one paragraph\",
+  \"disagreements\": []
+}
+If no findings, write empty array. DO NOT SKIP.
+"
+```
+
+After Gemini finishes, read `.agent-audit/gemini-*.json` and store important
+findings via `memory_record_knowledge` or `memory_log_action`.
+
+**Same applies to claude -p calls:** append the exit protocol, read the
+audit JSON after the subprocess finishes.
 
 ---
 

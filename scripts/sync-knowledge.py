@@ -1,37 +1,31 @@
 #!/usr/bin/env python3
 """
-sync-knowledge.py — Unified knowledge sync: Claude → Codex (AGENTS.md) + Gemini (GEMINI.md)
+sync-knowledge.py — Unified knowledge sync for all agents.
 
-Generates a standardized knowledge package from Claude Code's state and
-outputs it in each agent's native format. All agents enter with the same
-understanding of the system, the project, and recent decisions.
+Generates knowledge files that any agent (Claude -p, Codex, Gemini) reads
+before starting work. Designed so agents know:
+  1. WHERE to find things (skill directory, not full content)
+  2. WHAT the project is doing (CLAUDE.md context + global config)
+  3. WHAT to do when done (exit protocol: write audit JSON)
 
-Knowledge Package:
-  1. System capabilities (skills, tools, memory architecture)
-  2. Project context (CLAUDE.md)
-  3. Recent decisions and learnings (from auto-memory)
-  4. Current spec state (if any)
-  5. Role definition (per target agent)
-
-Targets:
-  AGENTS.md  → Codex (project root + ~/.codex/)
-  GEMINI.md  → Gemini (project root + ~/.gemini/)
+Outputs:
+  AGENTS.md  → Codex reads on startup
+  GEMINI.md  → Gemini reads on startup
+  .claude-agent-context.md → claude -p reads via --system-prompt-file
 
 Usage:
     python sync-knowledge.py                         # sync current workspace
     python sync-knowledge.py -w <workspace>          # specific workspace
     python sync-knowledge.py --target codex          # codex only
-    python sync-knowledge.py --target gemini         # gemini only
     python sync-knowledge.py --dry-run               # preview
 
-Designed to run as a cron job (every 30 minutes).
+Run via cron every 30 minutes, or before each agent invocation.
 No external dependencies — stdlib only.
 """
 
 import argparse
 import json
 import os
-import platform
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -47,21 +41,10 @@ REPO_DIR = Path(__file__).resolve().parent.parent
 # ── Utilities ────────────────────────────────────────────────────────────────
 
 def read_file(path: Path) -> str:
-    if path.exists():
-        try:
-            return path.read_text(encoding="utf-8")
-        except OSError:
-            return ""
-    return ""
-
-
-def read_json(path: Path) -> dict:
-    if path.exists():
-        try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return {}
-    return {}
+    try:
+        return path.read_text(encoding="utf-8") if path.exists() else ""
+    except OSError:
+        return ""
 
 
 def write_file(path: Path, content: str, dry_run: bool = False) -> bool:
@@ -76,56 +59,82 @@ def write_file(path: Path, content: str, dry_run: bool = False) -> bool:
     return True
 
 
-# ── Knowledge Package Builder ────────────────────────────────────────────────
+# ── Knowledge Sections ───────────────────────────────────────────────────────
 
-def build_system_knowledge() -> str:
-    """Build the system capabilities section — same for all agents."""
-    return """## System: Clawd-Lobster
+def build_skill_directory() -> str:
+    """Skill DIRECTORY — not full content. Just what exists and where to look."""
+    skills_dir = REPO_DIR / "skills"
+    if not skills_dir.exists():
+        return ""
 
-Clawd-Lobster is a hardened skill framework for Claude Code.
-~9,000 lines of code, 10 skills, 32 MCP tools. Runs on Claude subscription.
+    lines = ["## Skill Library (directory)\n"]
+    lines.append("These skills are available. Read the SKILL.md in each directory for details.\n")
+    lines.append("| Skill | Type | What It Does | Details |")
+    lines.append("|-------|------|-------------|---------|")
 
-### 10 Skills
-| Skill | Purpose |
-|-------|---------|
-| memory-server | 4-layer persistent memory (SQLite + MCP, 26 tools) |
-| spec | Spec-driven development: discovery → spec → adversarial review → build → test |
-| evolve | Extract reusable patterns from completed work (auto, every 2h) |
-| absorb | Learn from repos, URLs, or folders |
-| heartbeat | OS-native session keep-alive (Task Scheduler / cron / launchd) |
-| migrate | One-time import from other AI setups |
-| codex-bridge | Delegate to OpenAI Codex (worker + critic) |
-| gemini-bridge | Consult Google Gemini (research + validation + debate) |
-| connect-odoo | Bidirectional Odoo ERP integration (XML-RPC + MCP, 6 tools) |
-| notebooklm-bridge | Google NotebookLM sync + watermark removal |
+    for sd in sorted(skills_dir.iterdir()):
+        sj = sd / "skill.json"
+        if not sj.exists():
+            continue
+        try:
+            data = json.loads(sj.read_text(encoding="utf-8"))
+            name = data.get("id", sd.name)
+            kind = data.get("kind", "unknown")
+            # First sentence of description only
+            desc = data.get("description", "")
+            first_sentence = desc.split(".")[0].split("—")[0].strip()
+            if len(first_sentence) > 80:
+                first_sentence = first_sentence[:77] + "..."
+            lines.append(f"| {name} | {kind} | {first_sentence} | `skills/{name}/SKILL.md` |")
+        except (json.JSONDecodeError, OSError):
+            continue
 
-### 4-Layer Memory Architecture
-| Layer | Speed | Storage | Scope |
-|-------|-------|---------|-------|
-| L1.5 | Instant | Claude Code native auto-memory | Session |
-| L2 | ~1ms | SQLite + MCP (per-workspace) | Workspace |
-| L3 | ~10ms | Markdown + Git (synced) | Cross-machine |
-| L4 | ~100ms | Cloud DB (optional) | Global |
+    return "\n".join(lines)
 
-Salience engine: access +5%, reinforce +20%, 30-day decay -5%/day.
-Important knowledge floats up. Noise sinks away. Automatic.
 
-### Key Conventions
-- Learnings = mistakes to avoid (memory_store type="learning")
-- Skills = patterns to follow (memory_learn_skill)
-- Action logging: TASK_START → SPEC → REVIEW → COMMIT → TASK_DONE
-- Spec-driven: 3W1H framework, DAG order (project → proposal → design → specs → tasks)
-- Never cross-read another workspace's memory
+def build_memory_guide() -> str:
+    """What agents need to know about memory — just the write-back part."""
+    return """## Memory System (what you need to know)
+
+This project uses a 4-layer memory system. You do NOT need to operate it.
+Claude (the lead agent) manages memory. Your job:
+
+**Before your session ends, write your findings to a JSON file:**
+
+```
+<workspace>/.agent-audit/<your-role>-<timestamp>.json
+```
+
+Schema:
+```json
+{
+  "agent": "codex|gemini|claude-p",
+  "role": "reviewer|consultant|worker",
+  "timestamp": "ISO-8601",
+  "task": "what you were asked to do",
+  "findings": [
+    {"type": "blocker|risk|suggestion|decision", "description": "...", "file": "path or null"}
+  ],
+  "summary": "one paragraph summary of your work",
+  "disagreements": ["anything you disagree with in the current approach"]
+}
+```
+
+Claude will read this file after your session and store important items
+in the project's persistent memory. This is your ONLY way to persist
+knowledge — your own session state disappears when you exit.
+
+**DO NOT skip this step.** If you found nothing, write an empty findings array.
+The file itself serves as proof you completed your review.
 """
 
 
 def build_project_context(workspace: Path) -> str:
-    """Read CLAUDE.md from workspace."""
+    """Current project context from CLAUDE.md — stripped of internal sections."""
     claude_md = read_file(workspace / "CLAUDE.md")
     if not claude_md:
         return ""
 
-    # Strip Claude-internal sections but keep content accurate
     lines = claude_md.split("\n")
     output = []
     skip = False
@@ -140,11 +149,24 @@ def build_project_context(workspace: Path) -> str:
         if not skip:
             output.append(line)
 
-    return "\n## Project Context (from CLAUDE.md)\n\n" + "\n".join(output)
+    return "\n## Project Context\n\n" + "\n".join(output)
 
 
-def build_memory_context(workspace: Path) -> str:
-    """Extract key decisions and learnings from Claude auto-memory."""
+def build_global_config() -> str:
+    """Global conventions that all agents should follow."""
+    return """## Global Conventions
+
+- Never commit secrets, API keys, tokens, or credentials
+- Never include personal names, hardcoded user paths, or machine-specific info
+- Learnings = mistakes to avoid. Skills = patterns to follow. Don't confuse them.
+- Spec-driven development: 3W1H framework, DAG order (project → proposal → design → specs → tasks)
+- Action logging: TASK_START → SPEC → REVIEW → COMMIT → TASK_DONE
+- Always review diffs before committing
+"""
+
+
+def build_recent_context(workspace: Path) -> str:
+    """Recent decisions from Claude memory (top 10 only)."""
     projects_dir = CLAUDE_DIR / "projects"
     if not projects_dir.exists():
         return ""
@@ -155,170 +177,164 @@ def build_memory_context(workspace: Path) -> str:
         ws_parts = [p for p in workspace.parts[-2:] if len(p) > 2]
         if all(p.lower() in proj_dir.name.lower() for p in ws_parts):
             memory_dir = proj_dir / "memory"
-            if memory_dir.exists():
-                return _extract_memory(memory_dir)
+            index = read_file(memory_dir / "MEMORY.md") if memory_dir.exists() else ""
+            if not index:
+                continue
+
+            items = []
+            for line in index.split("\n"):
+                if line.strip().startswith("- [") and "—" in line:
+                    desc = line.split("—", 1)[1].strip()
+                    items.append(f"- {desc}")
+            if items:
+                return "\n## Recent Decisions & Learnings\n\n" + "\n".join(items[:10])
     return ""
 
 
-def _extract_memory(memory_dir: Path) -> str:
-    index = read_file(memory_dir / "MEMORY.md")
-    if not index:
-        return ""
-
-    lines = []
-    for line in index.split("\n"):
-        if not line.strip().startswith("- ["):
-            continue
-        lower = line.lower()
-        if any(x in lower for x in ["feedback_", "project_claw", "project_agent",
-                                      "reference_arp", "project_status"]):
-            if "—" in line:
-                desc = line.split("—", 1)[1].strip()
-                lines.append(f"- {desc}")
-
-    if not lines:
-        return ""
-    return "\n## Recent Decisions & Context (from Claude Memory)\n\n" + "\n".join(lines[:15])
-
-
 def build_spec_state(workspace: Path) -> str:
-    """Check current spec progress."""
-    tasks_file = None
+    """Current spec progress if any."""
     changes_dir = workspace / "openspec" / "changes"
-    if changes_dir.exists():
-        for change_dir in sorted(changes_dir.iterdir(), reverse=True):
-            tf = change_dir / "tasks.md"
-            if tf.exists():
-                tasks_file = tf
-                break
-
-    if not tasks_file:
+    if not changes_dir.exists():
         return ""
 
-    content = read_file(tasks_file)
-    total = content.count("- [ ]") + content.count("- [x]")
-    done = content.count("- [x]")
+    for change_dir in sorted(changes_dir.iterdir(), reverse=True):
+        tf = change_dir / "tasks.md"
+        if tf.exists():
+            content = read_file(tf)
+            total = content.count("- [ ]") + content.count("- [x]")
+            done = content.count("- [x]")
+            if total == 0:
+                continue
+            blitz = (workspace / ".blitz-active").exists()
+            status = "BLITZ IN PROGRESS" if blitz else f"{done}/{total} tasks ({done*100//total}%)"
+            return f"\n## Current Spec: {status}\n"
+    return ""
 
-    if total == 0:
-        return ""
 
-    blitz = (workspace / ".blitz-active").exists()
-    status = "BLITZ IN PROGRESS" if blitz else f"{done}/{total} tasks ({done*100//total}%)"
+# ── Exit Protocol (hardcoded in every agent call) ────────────────────────────
 
-    return f"\n## Current Spec State\n\nSpec progress: {status}\n"
+EXIT_PROTOCOL = """## EXIT PROTOCOL (MANDATORY)
 
+Before your session ends, you MUST:
 
-def build_learned_skills(workspace: Path) -> str:
-    """List learned skills."""
-    skills_dir = workspace / "skills" / "learned"
-    if not skills_dir.exists():
-        return ""
+1. Create directory if needed: `<workspace>/.agent-audit/`
+2. Write your findings to: `.agent-audit/<role>-<YYYYMMDD-HHMMSS>.json`
+3. Use the JSON schema described in the Memory System section above
+4. If you found nothing, write `{"findings": [], "summary": "No issues found"}`
 
-    skills = []
-    for f in skills_dir.glob("*.md"):
-        content = read_file(f)
-        first_line = content.split("\n")[0].strip("# ").strip() if content else f.stem
-        skills.append(f"- **{f.stem}**: {first_line}")
-
-    if not skills:
-        return ""
-    return "\n## Learned Skills\n\n" + "\n".join(skills)
+This is NOT optional. Claude depends on this file to integrate your work.
+If you skip it, your findings are lost forever.
+"""
 
 
 # ── Format-specific output ───────────────────────────────────────────────────
 
-def format_agents_md(knowledge: str, timestamp: str) -> str:
-    """Format for Codex AGENTS.md."""
-    header = f"""# Project Knowledge (synced from Claude Code)
+def build_knowledge(workspace: Path | None) -> str:
+    """Build the unified knowledge package."""
+    parts = [build_skill_directory(), build_memory_guide(), build_global_config()]
+    if workspace:
+        ctx = build_project_context(workspace)
+        if ctx:
+            parts.append(ctx)
+        recent = build_recent_context(workspace)
+        if recent:
+            parts.append(recent)
+        spec = build_spec_state(workspace)
+        if spec:
+            parts.append(spec)
+    parts.append(EXIT_PROTOCOL)
+    return "\n".join(parts)
 
-> Auto-generated by `sync-knowledge.py`. Last sync: {timestamp}
-> **Do not edit manually** — changes will be overwritten.
-> Your role: Reviewer / Worker / Critic. Challenge assumptions. Find bugs.
+
+def format_for_codex(knowledge: str, timestamp: str) -> str:
+    header = f"""# Agent Briefing — Codex
+
+> Synced: {timestamp} | Source: Claude Code + clawd-lobster
+> **Role: Reviewer / Worker / Critic.** Challenge assumptions. Find bugs.
+> **Do not edit** — auto-generated by sync-knowledge.py
 
 ---
 
 """
-    footer = f"\n\n---\n*Synced: {timestamp} | Source: Claude Code + clawd-lobster*\n"
-
-    content = header + knowledge + footer
-    # Enforce 32 KiB limit
+    content = header + knowledge
     if len(content.encode("utf-8")) > 32 * 1024:
-        content = content[:32 * 1024 - 200] + "\n\n> **Truncated** — exceeded 32 KiB limit.\n"
+        content = content[:32 * 1024 - 200] + "\n\n> Truncated (32 KiB limit)\n"
     return content
 
 
-def format_gemini_md(knowledge: str, timestamp: str) -> str:
-    """Format for Gemini GEMINI.md."""
-    header = f"""# Project Knowledge (synced from Claude Code)
+def format_for_gemini(knowledge: str, timestamp: str) -> str:
+    return f"""# Agent Briefing — Gemini
 
-> Auto-generated by `sync-knowledge.py`. Last sync: {timestamp}
-> **Do not edit manually** — changes will be overwritten.
-> Your role: Consultant / Validator / Researcher. Provide independent perspective.
-> You are part of a three-agent system: Claude (lead), Codex (worker/critic), Gemini (you — consultant).
+> Synced: {timestamp} | Source: Claude Code + clawd-lobster
+> **Role: Consultant / Validator / Researcher.** Provide independent perspective.
+> You are part of a three-agent system: Claude (lead), Codex (worker/critic), Gemini (you).
+> **Do not edit** — auto-generated by sync-knowledge.py
 
 ---
 
+{knowledge}
 """
-    footer = f"\n\n---\n*Synced: {timestamp} | Source: Claude Code + clawd-lobster*\n"
-    return header + knowledge + footer
 
 
-# ── Main sync logic ─────────────────────────────────────────────────────────
+def format_for_claude_p(knowledge: str, timestamp: str) -> str:
+    return f"""# Agent Briefing — Claude (subprocess)
+
+> Synced: {timestamp} | Source: parent Claude session
+> **Role: Delegated task executor.** You are a claude -p subprocess.
+> Write findings to .agent-audit/ before exiting.
+
+---
+
+{knowledge}
+"""
+
+
+# ── Sync logic ───────────────────────────────────────────────────────────────
 
 def sync_workspace(workspace: Path, targets: list[str], dry_run: bool = False) -> dict:
-    """Sync a workspace to all target agents."""
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     summary = {"files_written": []}
+    knowledge = build_knowledge(workspace)
 
-    # Build unified knowledge package
-    parts = [build_system_knowledge()]
-    project_ctx = build_project_context(workspace)
-    if project_ctx:
-        parts.append(project_ctx)
-    memory_ctx = build_memory_context(workspace)
-    if memory_ctx:
-        parts.append(memory_ctx)
-    spec_state = build_spec_state(workspace)
-    if spec_state:
-        parts.append(spec_state)
-    skills_ctx = build_learned_skills(workspace)
-    if skills_ctx:
-        parts.append(skills_ctx)
-
-    knowledge = "\n".join(parts)
-
-    # Output to each target
     if "codex" in targets:
-        agents_md = format_agents_md(knowledge, timestamp)
         path = workspace / "AGENTS.md"
-        if write_file(path, agents_md, dry_run):
+        if write_file(path, format_for_codex(knowledge, timestamp), dry_run):
             summary["files_written"].append(str(path))
 
     if "gemini" in targets:
-        gemini_md = format_gemini_md(knowledge, timestamp)
         path = workspace / "GEMINI.md"
-        if write_file(path, gemini_md, dry_run):
+        if write_file(path, format_for_gemini(knowledge, timestamp), dry_run):
             summary["files_written"].append(str(path))
+
+    if "claude-p" in targets:
+        path = workspace / ".claude-agent-context.md"
+        if write_file(path, format_for_claude_p(knowledge, timestamp), dry_run):
+            summary["files_written"].append(str(path))
+
+    # Ensure .agent-audit directory exists
+    audit_dir = workspace / ".agent-audit"
+    if not dry_run:
+        audit_dir.mkdir(exist_ok=True)
+        gitignore = audit_dir / ".gitignore"
+        if not gitignore.exists():
+            gitignore.write_text("*\n!.gitignore\n", encoding="utf-8")
 
     return summary
 
 
 def sync_global(targets: list[str], dry_run: bool = False) -> dict:
-    """Sync global knowledge to agent config dirs."""
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     summary = {"files_written": []}
-    knowledge = build_system_knowledge()
+    knowledge = build_knowledge(None)
 
     if "codex" in targets:
-        content = format_agents_md(knowledge, timestamp)
         path = CODEX_DIR / "AGENTS.md"
-        if write_file(path, content, dry_run):
+        if write_file(path, format_for_codex(knowledge, timestamp), dry_run):
             summary["files_written"].append(str(path))
 
     if "gemini" in targets:
-        content = format_gemini_md(knowledge, timestamp)
         path = GEMINI_DIR / "GEMINI.md"
-        if write_file(path, content, dry_run):
+        if write_file(path, format_for_gemini(knowledge, timestamp), dry_run):
             summary["files_written"].append(str(path))
 
     return summary
@@ -328,29 +344,26 @@ def sync_global(targets: list[str], dry_run: bool = False) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Sync Claude Code knowledge → Codex (AGENTS.md) + Gemini (GEMINI.md)",
+        description="Sync knowledge to Codex (AGENTS.md), Gemini (GEMINI.md), claude -p",
     )
-    parser.add_argument("-w", "--workspace", help="Workspace path to sync")
+    parser.add_argument("-w", "--workspace", help="Workspace path")
     parser.add_argument("-g", "--global-only", dest="global_only", action="store_true")
-    parser.add_argument("--target", choices=["codex", "gemini", "all"], default="all",
-                        help="Which agents to sync to (default: all)")
+    parser.add_argument("--target", choices=["codex", "gemini", "claude-p", "all"], default="all")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("-q", "--quiet", action="store_true")
     args = parser.parse_args()
 
-    targets = ["codex", "gemini"] if args.target == "all" else [args.target]
+    targets = ["codex", "gemini", "claude-p"] if args.target == "all" else [args.target]
     results = []
 
-    # Global sync
     if args.global_only or not args.workspace:
         result = sync_global(targets, dry_run=args.dry_run)
         results.append(("global", result))
 
-    # Workspace sync
     if args.workspace:
         ws = Path(args.workspace).resolve()
         if not ws.exists():
-            print(f"Error: workspace not found: {ws}", file=sys.stderr)
+            print(f"Error: {ws}", file=sys.stderr)
             return 1
         result = sync_workspace(ws, targets, dry_run=args.dry_run)
         results.append((str(ws), result))
@@ -369,7 +382,6 @@ def main():
                     print(f"  -> {f}")
             else:
                 print(f"No changes ({name})")
-
     return 0
 
 
