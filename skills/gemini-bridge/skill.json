@@ -44,7 +44,7 @@
     }
   },
   "configDefaults": {
-    "preferred_model": "gemini-2.5-pro",
+    "preferred_model": "gemini-3.1-pro",
     "auto_consult": false,
     "timeout": 120
   },

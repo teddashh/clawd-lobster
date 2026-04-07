@@ -11,18 +11,28 @@ different brain — not a faster one, not a cheaper one, a **different** one.
 
 1. **Install Gemini CLI:**
    ```bash
-   npm install -g @anthropic-ai/gemini  # or follow Google's install guide
+   npm install -g @google/gemini-cli
    ```
 
-2. **Authenticate:**
+2. **Authenticate (OAuth — uses your Google One AI Pro/Ultra subscription):**
    ```bash
-   gemini  # interactive login via OAuth
+   gemini  # opens browser for Google OAuth login
    ```
+   After login, Gemini CLI uses your subscription quota. No API keys needed.
 
 3. **Verify:**
    ```bash
    gemini --version && gemini -p "hello"
    ```
+
+**Important:** If you have `GEMINI_API_KEY` or `GOOGLE_API_KEY` environment
+variables set, the CLI will use those instead of OAuth. Remove them to use
+your subscription:
+```powershell
+# Windows
+[System.Environment]::SetEnvironmentVariable('GEMINI_API_KEY', $null, 'User')
+[System.Environment]::SetEnvironmentVariable('GOOGLE_API_KEY', $null, 'User')
+```
 
 ---
 
@@ -78,7 +88,7 @@ Deliver to user — first time right
 # Ask both in parallel — compare their concerns
 codex exec "I'm about to [task]. My plan: [plan]. What's wrong with this?"
 
-gemini -m gemini-2.5-pro -p "I'm about to [task]. My plan: [plan].
+gemini -m gemini-3.1-pro -p "I'm about to [task]. My plan: [plan].
 What am I missing? What assumptions am I making?"
 ```
 
@@ -92,7 +102,7 @@ address it before coding.
 codex exec review
 
 # Gemini: logical (verify the approach is sound)
-gemini -m gemini-2.5-pro -p "Review this implementation against its spec.
+gemini -m gemini-3.1-pro -p "Review this implementation against its spec.
 Does the code actually do what the spec says? Any logic errors?
 [paste key code or point to files]"
 ```
@@ -100,14 +110,14 @@ Does the code actually do what the spec says? Any logic errors?
 ### Quick Research (anytime)
 
 ```bash
-gemini -m gemini-2.5-pro -p "Verify: does [library X] support [feature Y]
+gemini -m gemini-3.1-pro -p "Verify: does [library X] support [feature Y]
 as of 2026? Cite sources if possible."
 ```
 
 ### Security Review (before shipping auth/crypto)
 
 ```bash
-gemini -m gemini-2.5-pro -p "Security review this code. Act as a penetration
+gemini -m gemini-3.1-pro -p "Security review this code. Act as a penetration
 tester. Find vulnerabilities, not style issues.
 Code: [paste code]"
 ```
@@ -118,13 +128,13 @@ Code: [paste code]"
 
 **Non-interactive (use this in automation):**
 ```bash
-gemini -m gemini-2.5-pro -p "Your prompt here"
+gemini -m gemini-3.1-pro -p "Your prompt here"
 ```
 
 **With specific model:**
 ```bash
-gemini -m gemini-2.5-flash -p "Quick question: ..."   # fast, cheap
-gemini -m gemini-2.5-pro -p "Deep analysis: ..."       # thorough
+gemini -m gemini-3-flash -p "Quick question: ..."      # fast, simple queries
+gemini -m gemini-3.1-pro -p "Deep analysis: ..."       # thorough, complex reasoning
 ```
 
 **IMPORTANT syntax notes:**
@@ -142,7 +152,7 @@ For critical decisions, consult **both** Codex and Gemini, then synthesize:
 ```
 1. Claude forms initial opinion
 2. Ask Codex:  codex exec "Given [context], what's your take on [question]?"
-3. Ask Gemini: gemini -m gemini-2.5-pro -p "Given [context], what's your take on [question]?"
+3. Ask Gemini: gemini -m gemini-3.1-pro -p "Given [context], what's your take on [question]?"
 4. Claude synthesizes all three perspectives
 5. Present the consensus (or the disagreement) to the user
 ```
@@ -167,7 +177,7 @@ consultation, prepare a context block:
 
 ```bash
 # Quick context dump for Gemini
-gemini -m gemini-2.5-pro -p "
+gemini -m gemini-3.1-pro -p "
 Project context:
 $(cat CLAUDE.md 2>/dev/null | head -50)
 
@@ -189,8 +199,8 @@ Gemini can reference.
 **The gate is relative, not absolute.** What matters is the consultant's
 capability *relative to the lead model*, not an absolute tier list.
 
-| You (Lead) | Gemini 2.5 Pro | Gemini Flash | GPT-5.4 Codex |
-|-----------|---------------|-------------|--------------|
+| You (Lead) | Gemini 3.1 Pro | Gemini 3 Flash | GPT-5.4 Codex |
+|-----------|---------------|---------------|--------------|
 | Opus 4.6 | Peer — different perspective | Quick research only | Peer — different perspective |
 | Sonnet 4.6 | **Upgrade** — stronger brain | Peer | **Upgrade** — stronger brain |
 

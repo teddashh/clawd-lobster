@@ -15,9 +15,9 @@ research validation, and architecture debates.
 
 ```bash
 # Install Gemini CLI
-npm install -g @anthropic-ai/gemini
+npm install -g @google/gemini-cli
 
-# Authenticate
+# Authenticate (opens browser for Google OAuth)
 gemini
 
 # Verify
@@ -40,8 +40,9 @@ gemini -m gemini-2.5-pro -p "Review this auth code for vulnerabilities: ..."
 ## Version
 
 - Skill: 0.1.0
-- Requires: Gemini CLI (npm package)
-- Auth: Google OAuth (free tier available)
+- Requires: `@google/gemini-cli` (npm)
+- Auth: Google OAuth (Google One AI Pro/Ultra subscription recommended)
+- Default model: Auto (Gemini 3 — intelligent routing Pro/Flash)
 
 ## See Also
 
