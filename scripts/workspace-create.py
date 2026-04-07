@@ -220,8 +220,14 @@ def create_directory_structure(workspace_path: Path, dry_run: bool = False) -> l
         workspace_path / ".claude" / "rules",
         workspace_path / ".claude" / "hooks",
         workspace_path / "knowledge",
-        workspace_path / "knowledge" / "decisions",
-        workspace_path / "knowledge" / "learnings",
+        workspace_path / "knowledge" / "raw",
+        workspace_path / "knowledge" / "wiki",
+        workspace_path / "knowledge" / "wiki" / "architecture",
+        workspace_path / "knowledge" / "wiki" / "conventions",
+        workspace_path / "knowledge" / "wiki" / "decisions",
+        workspace_path / "knowledge" / "wiki" / "learnings",
+        workspace_path / "knowledge" / "wiki" / "skills",
+        workspace_path / "knowledge" / ".pending",
         workspace_path / "skills",
         workspace_path / "skills" / "learned",
         workspace_path / "openspec",
@@ -243,11 +249,22 @@ def create_knowledge_index(workspace_path: Path, name: str, dry_run: bool = Fals
     """Create knowledge/INDEX.md with starter content."""
     content = f"""# {name} — Knowledge Index
 
-## Decisions
-Architectural and design decisions are stored in `decisions/`.
+## Wiki
+Cross-referenced knowledge pages organized by topic:
+- `wiki/architecture/` — system design decisions
+- `wiki/conventions/` — coding standards, patterns
+- `wiki/decisions/` — why we chose X over Y (with provenance)
+- `wiki/learnings/` — mistakes and lessons
+- `wiki/skills/` — reusable patterns
 
-## Learnings
-Insights and patterns discovered during development are stored in `learnings/`.
+## Raw Sources
+Immutable source materials in `raw/`.
+
+## Pending Corrections
+Proposed wiki edits awaiting review in `.pending/`.
+
+## Log
+Append-only journal of knowledge operations in `log.md`.
 """
     index_path = workspace_path / "knowledge" / "INDEX.md"
     if not dry_run:

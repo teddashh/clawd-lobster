@@ -513,7 +513,75 @@ def run_salience_decay(db_list: list, dry_run: bool = False) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Phase 4: Sync learnings to Hub
+# Phase 4: LINT wiki health (Karpathy pattern)
+# ---------------------------------------------------------------------------
+
+def lint_wiki(db_list: list, dry_run: bool = False) -> int:
+    """
+    Check wiki health: broken links, orphan pages, stale claims, contradictions.
+    Absorbed from Karpathy's LLM Wiki LINT operation.
+    Returns number of issues found.
+    """
+    issues = 0
+    repo = _repo_root()
+    wiki_dir = repo / "knowledge" / "wiki"
+    index_file = repo / "knowledge" / "index.md"
+
+    if not wiki_dir.exists():
+        return 0
+
+    # Collect all wiki pages
+    wiki_pages = set()
+    for md in wiki_dir.rglob("*.md"):
+        wiki_pages.add(md.relative_to(repo).as_posix())
+
+    # Check index.md references
+    if index_file.exists():
+        index_content = index_file.read_text(encoding="utf-8", errors="ignore")
+        import re
+        links = re.findall(r'\[.*?\]\((.*?\.md)\)', index_content)
+        for link in links:
+            target = repo / link
+            if not target.exists():
+                issues += 1
+                if not dry_run:
+                    print(f"[lint] Broken link in index.md: {link}")
+
+    # Check for orphan pages (in wiki/ but not linked from index.md)
+    if index_file.exists():
+        for page in wiki_pages:
+            if page not in index_content and "index.md" not in page:
+                issues += 1
+                if not dry_run:
+                    print(f"[lint] Orphan page: {page}")
+
+    # Check for stale wiki pages (modified > 90 days ago)
+    import time
+    now = time.time()
+    for md in wiki_dir.rglob("*.md"):
+        age_days = (now - md.stat().st_mtime) / 86400
+        if age_days > 90:
+            issues += 1
+            if not dry_run:
+                print(f"[lint] Stale page ({age_days:.0f} days): {md.name}")
+
+    # Check .pending/ corrections
+    pending_dir = repo / "knowledge" / ".pending"
+    if pending_dir.exists():
+        pending = list(pending_dir.glob("*.md"))
+        if pending:
+            issues += len(pending)
+            if not dry_run:
+                print(f"[lint] {len(pending)} pending corrections need review")
+
+    if issues:
+        action = "Would report" if dry_run else "Found"
+        print(f"[lint] {action} {issues} wiki health issue(s)")
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: Sync learnings to Hub
 # ---------------------------------------------------------------------------
 
 def sync_to_hub(db_list: list, dry_run: bool = False):
@@ -648,6 +716,9 @@ def main():
 
     # 7. Salience decay
     decayed = run_salience_decay(db_list, dry_run)
+
+    # 8. LINT wiki health (Karpathy pattern)
+    lint_issues = lint_wiki(db_list, dry_run)
 
     # 8. Sync to Hub (knowledge + proposals)
     sync_to_hub(db_list, dry_run)
