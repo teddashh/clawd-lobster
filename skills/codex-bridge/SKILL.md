@@ -261,6 +261,23 @@ The final decision is always yours. Tags are hints, not orders.
 
 ---
 
+## Model Quality Gate
+
+Only consult top-tier Codex models. Asking GPT-4o-mini for a code review
+when you're running on Opus 4.6 is like asking an intern to review a
+principal engineer's architecture.
+
+| Model | Worth It? | Use For |
+|-------|-----------|---------|
+| GPT-5.4 Codex | Yes | Everything — review, debate, bulk work |
+| GPT-4o | Maybe | Simple code review only |
+| GPT-4o-mini | No | Skip — decide yourself |
+
+If the user's Codex quota is exhausted and would fall back to a weaker model,
+don't silently downgrade. Tell the user and handle it yourself.
+
+---
+
 ## Cost Model
 
 Codex runs on the user's own account:

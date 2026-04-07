@@ -138,6 +138,37 @@ Gemini can reference.
 
 ---
 
+## Model Quality Gate
+
+**Only consult top-tier models.** The value of cross-model consultation is a
+*different perspective from an equally capable brain* — not a cheaper or faster
+answer from a weaker one.
+
+| Model | Worth Consulting? | Why |
+|-------|-------------------|-----|
+| Gemini 2.5 Pro | Yes | Comparable reasoning to Opus 4.6 |
+| Gemini 2.5 Flash | Maybe | Fast research/fact-check only, not architecture |
+| Gemini 2.0 Flash | No | Too weak for meaningful debate with Opus |
+| Anything older | No | Skip — you're better off deciding yourself |
+
+**If the top-tier model quota is exhausted:**
+- Don't fall back to a weaker model silently
+- Tell the user: "Gemini Pro quota exhausted. I'll decide this myself."
+- A wrong second opinion is worse than no second opinion
+
+Same applies to Codex Bridge:
+
+| Model | Worth Consulting? |
+|-------|-------------------|
+| GPT-5.4 Codex | Yes |
+| GPT-4o | Maybe (review only) |
+| GPT-4o-mini | No — skip |
+
+**Rule of thumb:** If you wouldn't trust the model to write production code
+on its own, don't trust its opinion on your production code.
+
+---
+
 ## Cost Model
 
 - **Gemini CLI (Google AI Studio)** — generous free tier, pay-per-token after
