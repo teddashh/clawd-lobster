@@ -157,7 +157,7 @@ Skills have effectiveness scores. Proven patterns get reinforced. Stale skills d
 
 ## Skills
 
-9 curated skills. Each does one thing well. Click the name for full documentation.
+10 curated skills. Each does one thing well. Click the name for full documentation.
 
 ### [memory-server](skills/memory-server/README.md) — The Foundation
 26 MCP tools for persistent memory across sessions. 4-layer architecture from instant local cache to cloud sync. Salience engine that surfaces important knowledge and lets noise decay. CJK-aware token estimation. This is the skill that makes Claude Code stop forgetting.
@@ -177,8 +177,11 @@ OS-native keep-alive (Task Scheduler / cron / launchd). Checks every 30 minutes.
 ### [migrate](skills/migrate/README.md) — One-Time Import
 Detects existing AI setups (`~/.claude/`, `~/.openclaw/`, `~/.hermes/`, `~/Documents/claude-setup/`) and imports memories, configs, and knowledge. Run once during onboarding, never again.
 
-### [codex-bridge](skills/codex-bridge/README.md) — Second Brain
+### [codex-bridge](skills/codex-bridge/README.md) — The Worker
 Delegate bulk work to OpenAI Codex (runs on your ChatGPT Plus). Use it as a **worker** (parallel tasks, boilerplate, test generation) or as a **critic** (adversarial security review, architecture debate, code review). Claude decides when to delegate. Also syncs Claude's knowledge to Codex via AGENTS.md.
+
+### [gemini-bridge](skills/gemini-bridge/README.md) — The Consultant
+Call Google Gemini for a different perspective. Use it when you're **uncertain** (fact-checking, research validation), facing **complex decisions** (architecture trade-offs, tech stack choices), or need a **security review** from an independent brain. Supports three-way debate: Claude forms opinion → Codex reviews → Gemini validates → consensus.
 
 ### [connect-odoo](skills/connect-odoo/README.md) — ERP Integration
 Bidirectional Odoo ERP connection via XML-RPC + MCP. 6 specialized tools for reading/writing Odoo data. Real-time polling for changes. Use it when your AI workflow needs to interact with business processes.
@@ -195,7 +198,7 @@ Every skill has a **trigger description** (Claude knows when to activate), a **G
 ## Architecture
 
 ```
-Skills (the what)     ->  9 skills with manifests, instructions, gotchas
+Skills (the what)     ->  10 skills with manifests, instructions, gotchas
 Tools (the how)       ->  32 MCP tools + Claude Code native tools
 Hooks (the when)      ->  OS scheduler, git hooks, PostToolUse, Stop hooks
 ```

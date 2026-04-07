@@ -1,0 +1,64 @@
+{
+  "id": "gemini-bridge",
+  "name": "Gemini Bridge",
+  "description": "Use when you need a second opinion, are uncertain about an approach, or face a complex decision — triggers on /gemini, 'ask Gemini', 'get another perspective', 'I'm not sure about this', or when comparing architectural alternatives.",
+  "version": "0.1.0",
+  "category": "integration",
+  "tags": ["gemini", "google", "second-opinion", "validation", "cross-model"],
+  "kind": "prompt-pattern",
+  "icon": "💎",
+  "alwaysOn": false,
+  "defaultEnabled": false,
+
+  "permissions": {
+    "allow": []
+  },
+
+  "credentials": [
+    {
+      "id": "gemini-auth",
+      "label": "Google Gemini Authentication",
+      "required": true,
+      "fields": [
+        {"key": "auth_method", "label": "Auth Method", "type": "string", "placeholder": "gemini CLI (OAuth) or API key", "sensitive": false},
+        {"key": "status", "label": "Auth Status", "type": "string", "placeholder": "verified after gemini auth", "sensitive": false}
+      ]
+    }
+  ],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "preferred_model": {
+        "type": "string",
+        "description": "Gemini model to use (e.g. gemini-2.5-pro, gemini-2.5-flash)"
+      },
+      "auto_consult": {
+        "type": "boolean",
+        "description": "Automatically consult Gemini on uncertainty, complex decisions, and security topics"
+      },
+      "timeout": {
+        "type": "integer",
+        "description": "Timeout in seconds for Gemini CLI calls"
+      }
+    }
+  },
+  "configDefaults": {
+    "preferred_model": "gemini-2.5-pro",
+    "auto_consult": false,
+    "timeout": 120
+  },
+
+  "healthCheck": {
+    "type": "command",
+    "target": "gemini --version",
+    "intervalSeconds": 3600,
+    "timeoutSeconds": 5
+  },
+
+  "dependencies": {
+    "skills": [],
+    "system": ["node>=18"],
+    "python": []
+  }
+}
