@@ -8,13 +8,14 @@ Evolve runs every 2 hours to review completed work, extract patterns worth remem
 
 ## How It Works
 
-The main script `scripts/evolve-tick.py` executes a 5-phase cycle:
+The main script `scripts/evolve-tick.py` executes a 6-phase cycle:
 
 1. **Scan** -- review recently completed work and session logs.
 2. **Extract** -- identify reusable patterns and skill-worthy behaviors.
 3. **Decay** -- apply salience decay to existing memories (keeps the knowledge base fresh).
-4. **Sync** -- push consolidated knowledge to Hub for cross-machine availability.
-5. **Log** -- record what was learned and proposed.
+4. **LINT** -- wiki health check: broken links, orphan pages, stale claims (>90 days), pending corrections, DB/wiki drift. *(Karpathy pattern)*
+5. **Sync** -- push consolidated knowledge to Hub for cross-machine availability.
+6. **Log** -- record what was learned, proposed, and lint issues found.
 
 **Key behaviors:**
 - Respects `.blitz-active` marker file -- pauses evolution during active blitz sessions.
@@ -52,4 +53,6 @@ None required.
 - Monitor the git-synced proposal files to ensure they are being reviewed and not piling up.
 - No health check is configured; failures surface in cron logs.
 
-**Version:** 0.4.0 | **Kind:** cron | **Category:** intelligence
+*LINT phase absorbed from [Karpathy's LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). See `openspec/MEMORY-ARCHITECTURE.md` for the full Thin Ledger design.*
+
+**Version:** 0.5.0 | **Kind:** cron | **Category:** intelligence

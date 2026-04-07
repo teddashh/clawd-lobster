@@ -4,7 +4,7 @@
 
 ## What It Does
 
-Absorb ingests external sources and distills them into structured memory entries. Point it at a codebase, a repository, or a URL, and it will extract decisions, knowledge patterns, learnable skills, and actionable TODO items. It writes everything through the memory-server, keeping your knowledge base growing automatically.
+Absorb is the **INGEST** operation of the Thin Ledger pattern. Point it at a codebase, repo, or URL, and it extracts decisions, knowledge, skills, and TODOs — storing them with full provenance (source agent, confidence, lifecycle state). Raw sources go to `knowledge/raw/`, synthesized knowledge becomes wiki pages in `knowledge/wiki/`, and structured records land in SQLite.
 
 ## How It Works
 
@@ -49,4 +49,6 @@ None required.
 - For large repos, prefer `depth: "normal"` to avoid excessive token usage.
 - Review absorbed content periodically to ensure quality -- automated extraction can be noisy.
 
-**Version:** 0.1.0 | **Kind:** prompt-pattern | **Category:** intelligence
+*Absorb implements the INGEST operation from the [Thin Ledger pattern](../../openspec/MEMORY-ARCHITECTURE.md).*
+
+**Version:** 0.2.0 | **Kind:** prompt-pattern | **Category:** intelligence
