@@ -154,8 +154,11 @@ def memory_record_question(question: str, context: str = "", tags: str = "", pri
 
 
 @mcp.tool()
-def memory_record_knowledge(title: str, content: str = "", tags: str = "") -> str:
-    """Record a knowledge item. Use tags='learning' for lessons/pitfalls/mistakes."""
+def memory_record_knowledge(title: str, content: str = "", tags: str = "",
+                             source_agent: str = "claude", confidence: float = 1.0,
+                             lifecycle: str = "accepted") -> str:
+    """Record a knowledge item with provenance. Use tags='learning' for lessons/pitfalls/mistakes.
+    lifecycle: raw | extracted | synthesized | accepted | superseded"""
     if len(content) > _MAX_CONTENT_LEN:
         return f"Content too large (max {_MAX_CONTENT_LEN} chars)"
     conn = get_sqlite()
@@ -163,11 +166,57 @@ def memory_record_knowledge(title: str, content: str = "", tags: str = "") -> st
         rid = new_id()
         mid = _get_machine_id()
         conn.execute(
-            "INSERT INTO knowledge_items (id, title, content, tags, written_to_obsidian, machine_id) VALUES (?, ?, ?, ?, 0, ?)",
-            (rid, title, content, tags_to_json(tags), mid),
+            "INSERT INTO knowledge_items (id, title, content, tags, written_to_obsidian, machine_id, source_agent, confidence, lifecycle) "
+            "VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)",
+            (rid, title, content, tags_to_json(tags), mid, source_agent, confidence, lifecycle),
         )
         conn.commit()
-        return f"Knowledge recorded [{detect_workspace()}@{mid}]: {title[:60]} (id: {rid})"
+        return f"Knowledge recorded [{detect_workspace()}@{mid}]: {title[:60]} (id: {rid}, agent: {source_agent})"
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def memory_propose_correction(wiki_page: str, issue: str, evidence: str = "",
+                               proposed_fix: str = "", severity: str = "medium") -> str:
+    """Propose a correction to a wiki page. Creates a claim_challenge record.
+    Agents cannot directly edit wiki — they propose corrections for review.
+    severity: low | medium | high | critical"""
+    conn = get_sqlite()
+    try:
+        rid = new_id()
+        mid = _get_machine_id()
+        conn.execute(
+            "INSERT INTO claim_challenges (id, wiki_page, issue, evidence, proposed_fix, severity, filed_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (rid, wiki_page, issue, evidence, proposed_fix, severity, mid),
+        )
+        conn.commit()
+
+        # Also write to .pending/ directory if it exists
+        import pathlib
+        ws = detect_workspace()
+        pending_dir = pathlib.Path.cwd() / "knowledge" / ".pending"
+        if pending_dir.exists():
+            pending_file = pending_dir / f"{wiki_page.replace('/', '_')}-{rid[:8]}.md"
+            pending_content = f"""# Correction Proposal: {wiki_page}
+
+**Severity:** {severity}
+**Filed by:** {mid}
+**Issue:** {issue}
+
+## Evidence
+{evidence}
+
+## Proposed Fix
+{proposed_fix}
+"""
+            try:
+                pending_file.write_text(pending_content, encoding="utf-8")
+            except OSError:
+                pass
+
+        return f"Correction proposed [{ws}]: {wiki_page} — {issue[:60]} (id: {rid})"
     finally:
         conn.close()
 

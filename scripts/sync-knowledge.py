@@ -234,19 +234,73 @@ DO NOT SKIP. If no findings, use empty array.
 
 # ── Format-specific output ───────────────────────────────────────────────────
 
-def build_knowledge(workspace: Path | None) -> str:
-    """Build the unified knowledge package."""
+def build_wiki_summary(workspace: Path) -> str:
+    """Summarize wiki pages for agents that need strategic context."""
+    wiki_dir = workspace / "knowledge" / "wiki"
+    if not wiki_dir.exists():
+        return ""
+    pages = list(wiki_dir.rglob("*.md"))
+    if not pages:
+        return ""
+    lines = ["\n## Wiki Pages (knowledge/wiki/)\n"]
+    for p in sorted(pages)[:20]:
+        rel = p.relative_to(workspace).as_posix()
+        first_line = p.read_text(encoding="utf-8", errors="ignore").split("\n")[0].strip("# ").strip()
+        lines.append(f"- `{rel}` — {first_line[:80]}")
+    return "\n".join(lines)
+
+
+def build_pending_corrections(workspace: Path) -> str:
+    """List pending correction proposals for consultant agents."""
+    pending_dir = workspace / "knowledge" / ".pending"
+    if not pending_dir.exists():
+        return ""
+    pending = list(pending_dir.glob("*.md"))
+    if not pending:
+        return ""
+    lines = ["\n## Open Corrections (.pending/)\n"]
+    for p in pending:
+        lines.append(f"- `{p.name}`")
+    return "\n".join(lines)
+
+
+def build_knowledge(workspace: Path | None, role: str = "all") -> str:
+    """Build knowledge package filtered by agent role.
+
+    Roles:
+      lead (Claude): full context — wiki + decisions + spec + recent
+      worker (Codex): task focus — skill dir + project context + spec
+      consultant (Gemini): strategic — wiki + pending corrections + recent decisions
+      all: everything (for claude -p)
+    """
     parts = [build_skill_directory(), build_memory_guide(), build_global_config()]
+
     if workspace:
         ctx = build_project_context(workspace)
         if ctx:
             parts.append(ctx)
-        recent = build_recent_context(workspace)
-        if recent:
-            parts.append(recent)
-        spec = build_spec_state(workspace)
-        if spec:
-            parts.append(spec)
+
+        # Role-specific content
+        if role in ("lead", "consultant", "all"):
+            wiki = build_wiki_summary(workspace)
+            if wiki:
+                parts.append(wiki)
+
+        if role in ("lead", "all"):
+            recent = build_recent_context(workspace)
+            if recent:
+                parts.append(recent)
+
+        if role in ("consultant", "all"):
+            pending = build_pending_corrections(workspace)
+            if pending:
+                parts.append(pending)
+
+        if role in ("worker", "lead", "all"):
+            spec = build_spec_state(workspace)
+            if spec:
+                parts.append(spec)
+
     parts.append(EXIT_PROTOCOL)
     return "\n".join(parts)
 
@@ -311,19 +365,21 @@ def format_for_claude_p(knowledge: str, timestamp: str) -> str:
 def sync_workspace(workspace: Path, targets: list[str], dry_run: bool = False) -> dict:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     summary = {"files_written": []}
-    knowledge = build_knowledge(workspace)
 
     if "codex" in targets:
+        knowledge = build_knowledge(workspace, role="worker")
         path = workspace / "AGENTS.md"
         if write_file(path, format_for_codex(knowledge, timestamp), dry_run):
             summary["files_written"].append(str(path))
 
     if "gemini" in targets:
+        knowledge = build_knowledge(workspace, role="consultant")
         path = workspace / "GEMINI.md"
         if write_file(path, format_for_gemini(knowledge, timestamp), dry_run):
             summary["files_written"].append(str(path))
 
     if "claude-p" in targets:
+        knowledge = build_knowledge(workspace, role="all")
         path = workspace / ".claude-agent-context.md"
         if write_file(path, format_for_claude_p(knowledge, timestamp), dry_run):
             summary["files_written"].append(str(path))

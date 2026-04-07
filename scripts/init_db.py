@@ -75,6 +75,33 @@ def init_db(db_path):
         tokens INTEGER DEFAULT 0,
         workspace TEXT DEFAULT '')""")
 
+    # Claim challenges (correction workflow — Thin Ledger pattern)
+    c.execute("""CREATE TABLE IF NOT EXISTS claim_challenges (
+        id TEXT PRIMARY KEY,
+        wiki_page TEXT NOT NULL,
+        issue TEXT NOT NULL,
+        evidence TEXT DEFAULT '',
+        proposed_fix TEXT DEFAULT '',
+        severity TEXT DEFAULT 'medium',
+        status TEXT DEFAULT 'pending',
+        filed_by TEXT DEFAULT '',
+        reviewed_by TEXT DEFAULT '',
+        resolution TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        resolved_at TEXT)""")
+
+    # Provenance columns on knowledge_items (safe to re-run)
+    for col, coltype, default in [
+        ('source_agent', 'TEXT', "''"),
+        ('confidence', 'REAL', '1.0'),
+        ('upstream_ids', 'TEXT', "'[]'"),
+        ('lifecycle', 'TEXT', "'accepted'"),
+    ]:
+        try:
+            c.execute(f"ALTER TABLE knowledge_items ADD COLUMN {col} {coltype} DEFAULT {default}")
+        except sqlite3.OperationalError:
+            pass
+
     # Salience tracking columns (safe to re-run)
     for table in ['decisions', 'resolved', 'open_questions', 'knowledge_items']:
         for col, coltype, default in [
