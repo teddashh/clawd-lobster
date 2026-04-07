@@ -263,18 +263,17 @@ The final decision is always yours. Tags are hints, not orders.
 
 ## Model Quality Gate
 
-Only consult top-tier Codex models. Asking GPT-4o-mini for a code review
-when you're running on Opus 4.6 is like asking an intern to review a
-principal engineer's architecture.
+The gate is relative — what matters is Codex's capability *relative to yours*.
 
-| Model | Worth It? | Use For |
-|-------|-----------|---------|
-| GPT-5.4 Codex | Yes | Everything — review, debate, bulk work |
-| GPT-4o | Maybe | Simple code review only |
-| GPT-4o-mini | No | Skip — decide yourself |
+| You (Lead) | GPT-5.4 Codex | GPT-4o | GPT-4o-mini |
+|-----------|--------------|--------|------------|
+| Opus 4.6 | Peer | Review only | Skip |
+| Sonnet 4.6 | **Upgrade** | Peer | Skip |
 
-If the user's Codex quota is exhausted and would fall back to a weaker model,
-don't silently downgrade. Tell the user and handle it yourself.
+If running as Sonnet, Codex becomes an upgrade path — not just
+a second opinion, but a *stronger* brain to consult. Always use the best
+available model. If quota is exhausted and only weaker models remain,
+tell the user and handle it yourself.
 
 ---
 

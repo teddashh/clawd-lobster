@@ -140,32 +140,20 @@ Gemini can reference.
 
 ## Model Quality Gate
 
-**Only consult top-tier models.** The value of cross-model consultation is a
-*different perspective from an equally capable brain* — not a cheaper or faster
-answer from a weaker one.
+**The gate is relative, not absolute.** What matters is the consultant's
+capability *relative to the lead model*, not an absolute tier list.
 
-| Model | Worth Consulting? | Why |
-|-------|-------------------|-----|
-| Gemini 2.5 Pro | Yes | Comparable reasoning to Opus 4.6 |
-| Gemini 2.5 Flash | Maybe | Fast research/fact-check only, not architecture |
-| Gemini 2.0 Flash | No | Too weak for meaningful debate with Opus |
-| Anything older | No | Skip — you're better off deciding yourself |
+| You (Lead) | Gemini 2.5 Pro | Gemini Flash | GPT-5.4 Codex |
+|-----------|---------------|-------------|--------------|
+| Opus 4.6 | Peer — different perspective | Quick research only | Peer — different perspective |
+| Sonnet 4.6 | **Upgrade** — stronger brain | Peer | **Upgrade** — stronger brain |
 
-**If the top-tier model quota is exhausted:**
-- Don't fall back to a weaker model silently
-- Tell the user: "Gemini Pro quota exhausted. I'll decide this myself."
-- A wrong second opinion is worse than no second opinion
-
-Same applies to Codex Bridge:
-
-| Model | Worth Consulting? |
-|-------|-------------------|
-| GPT-5.4 Codex | Yes |
-| GPT-4o | Maybe (review only) |
-| GPT-4o-mini | No — skip |
-
-**Rule of thumb:** If you wouldn't trust the model to write production code
-on its own, don't trust its opinion on your production code.
+**Rules:**
+- Always consult models at your level or above
+- Never consult models significantly weaker than yourself
+- If the top-tier quota is exhausted and only weaker models remain:
+  don't silently downgrade — tell the user and decide yourself
+- A wrong second opinion from a weak model is worse than no opinion
 
 ---
 
