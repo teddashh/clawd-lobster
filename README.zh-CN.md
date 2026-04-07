@@ -167,7 +167,7 @@ GitHub 是控制面。Git 是协议。
 
 ## Skills
 
-9 个精选 skill。每个只做好一件事。点名称看完整文档。
+10 个精选 skill。每个只做好一件事。点名称看完整文档。
 
 ### [memory-server](skills/memory-server/README.md) — 根基
 26 个 MCP 工具，跨 session 持久记忆。4 层架构，从即时本地缓存到云端同步。显著性引擎自动浮现重要知识、让噪音沉淀。支持 CJK token 估算。这就是让 Claude Code 不再失忆的 skill。
@@ -187,8 +187,11 @@ GitHub 是控制面。Git 是协议。
 ### [migrate](skills/migrate/README.md) — 一次性导入
 检测现有的 AI 设置（`~/.claude/`、`~/.openclaw/`、`~/.hermes/`、`~/Documents/claude-setup/`）并导入记忆、配置和知识。上线时跑一次，之后不用再跑。
 
-### [codex-bridge](skills/codex-bridge/README.md) — 第二大脑
+### [codex-bridge](skills/codex-bridge/README.md) — The Worker
 把大量工作委派给 OpenAI Codex（跑在你的 ChatGPT Plus 上）。当**工人**用（并行任务、样板代码、测试生成）或当**评审**用（对抗式安全审查、架构辩论、code review）。Claude 自行判断何时委派。也能通过 AGENTS.md 把 Claude 的知识同步给 Codex。
+
+### [gemini-bridge](skills/gemini-bridge/README.md) — The Consultant
+调用 Google Gemini 获取不同观点。适合在你**不确定**时使用（事实核查、研究验证）、面对**复杂决策**时（架构取舍、技术栈选择）、或需要来自独立大脑的**安全审查**。支持三方辩论：Claude 形成观点 → Codex 审查 → Gemini 验证 → 达成共识。
 
 ### [connect-odoo](skills/connect-odoo/README.md) — ERP 集成
 通过 XML-RPC + MCP 双向连接 Odoo ERP。6 个专用工具读写 Odoo 数据。实时 polling 检测变更。适合 AI 工作流需要与业务流程交互时使用。
