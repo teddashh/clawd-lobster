@@ -68,9 +68,10 @@ def build_skill_directory() -> str:
         return ""
 
     lines = ["## Skill Library (directory)\n"]
-    lines.append("These skills are available. Read the SKILL.md in each directory for details.\n")
-    lines.append("| Skill | Type | What It Does | Details |")
-    lines.append("|-------|------|-------------|---------|")
+    lines.append(f"Clawd-Lobster is installed at: `{REPO_DIR}`\n")
+    lines.append("These skills are available. Read the SKILL.md in each directory for full docs.\n")
+    lines.append("| Skill | Type | What It Does | Full Docs |")
+    lines.append("|-------|------|-------------|-----------|")
 
     for sd in sorted(skills_dir.iterdir()):
         sj = sd / "skill.json"
@@ -85,7 +86,8 @@ def build_skill_directory() -> str:
             first_sentence = desc.split(".")[0].split("—")[0].strip()
             if len(first_sentence) > 80:
                 first_sentence = first_sentence[:77] + "..."
-            lines.append(f"| {name} | {kind} | {first_sentence} | `skills/{name}/SKILL.md` |")
+            full_path = REPO_DIR / "skills" / name / "SKILL.md"
+            lines.append(f"| {name} | {kind} | {first_sentence} | `{full_path}` |")
         except (json.JSONDecodeError, OSError):
             continue
 
@@ -99,11 +101,14 @@ def build_memory_guide() -> str:
 This project uses a 4-layer memory system. You do NOT need to operate it.
 Claude (the lead agent) manages memory. Your job:
 
-**Before your session ends, write your findings to a JSON file:**
+**Before your session ends, write your findings to a JSON file in the
+workspace you're working in:**
 
 ```
-<workspace>/.agent-audit/<your-role>-<timestamp>.json
+<current-working-directory>/.agent-audit/<your-role>-<timestamp>.json
 ```
+
+If you're unsure of the workspace path, use your current working directory.
 
 Schema:
 ```json
