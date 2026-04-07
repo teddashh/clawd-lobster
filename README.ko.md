@@ -119,6 +119,7 @@ chmod +x install.sh && ./install.sh
 |--------|------|------|
 | **SQLite (The Ledger)** | 의사결정, TODO, 감사 로그, salience 점수, provenance | 운영상의 진실 — 빠르고, 구조화되고, 쿼리 가능 |
 | **Git Wiki (The Library)** | 상호 참조된 마크다운 페이지, 인덱스, 저널, 소스 | 체계화된 지식 — 사람이 읽을 수 있고, Git 동기화 |
+| **Cloud DB (optional)** | Oracle or other cloud DB for cross-machine search | Global sync — only if you need multi-machine recall |
 
 모든 지식 레코드는 **provenance**를 가집니다 — 누가 작성했는지, 어떤 에이전트인지, 확신도 점수, 라이프사이클 상태(raw → synthesized → accepted → superseded). 익명의 사실은 없습니다.
 
