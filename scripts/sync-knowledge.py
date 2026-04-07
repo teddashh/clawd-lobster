@@ -211,15 +211,24 @@ def build_spec_state(workspace: Path) -> str:
 
 EXIT_PROTOCOL = """## EXIT PROTOCOL (MANDATORY)
 
-Before your session ends, you MUST:
+At the very end of your response, output your findings as a JSON code block:
 
-1. Create directory if needed: `<workspace>/.agent-audit/`
-2. Write your findings to: `.agent-audit/<role>-<YYYYMMDD-HHMMSS>.json`
-3. Use the JSON schema described in the Memory System section above
-4. If you found nothing, write `{"findings": [], "summary": "No issues found"}`
+```json
+{
+  "agent": "codex|gemini|claude-p",
+  "role": "reviewer|consultant|worker",
+  "task": "what you were asked to do",
+  "findings": [
+    {"type": "blocker|risk|suggestion", "description": "...", "file": "path or null"}
+  ],
+  "summary": "one paragraph summary",
+  "disagreements": ["anything you disagree with"]
+}
+```
 
-This is NOT optional. Claude depends on this file to integrate your work.
-If you skip it, your findings are lost forever.
+Claude (the lead) will parse this JSON from your stdout and store it.
+Your session state disappears when you exit — this JSON is your ONLY persistence.
+DO NOT SKIP. If no findings, use empty array.
 """
 
 

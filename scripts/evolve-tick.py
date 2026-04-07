@@ -523,56 +523,70 @@ def lint_wiki(db_list: list, dry_run: bool = False) -> int:
     Returns number of issues found.
     """
     issues = 0
+    # Lint both repo-level AND workspace-level wiki
+    all_wiki_dirs = []
     repo = _repo_root()
-    wiki_dir = repo / "knowledge" / "wiki"
-    index_file = repo / "knowledge" / "index.md"
+    repo_wiki = repo / "knowledge" / "wiki"
+    if repo_wiki.exists():
+        all_wiki_dirs.append((repo, repo_wiki))
+    for ws_name, db_path, ws_path in db_list:
+        ws_wiki = Path(ws_path) / "knowledge" / "wiki"
+        if ws_wiki.exists():
+            all_wiki_dirs.append((Path(ws_path), ws_wiki))
 
-    if not wiki_dir.exists():
+    if not all_wiki_dirs:
         return 0
 
-    # Collect all wiki pages
-    wiki_pages = set()
-    for md in wiki_dir.rglob("*.md"):
-        wiki_pages.add(md.relative_to(repo).as_posix())
+    for base_dir, wiki_dir in all_wiki_dirs:
+        # Try both INDEX.md and index.md (case-insensitive match)
+        index_file = None
+        for candidate in [base_dir / "knowledge" / "index.md", base_dir / "knowledge" / "INDEX.md"]:
+            if candidate.exists():
+                index_file = candidate
+                break
 
-    # Check index.md references
-    if index_file.exists():
-        index_content = index_file.read_text(encoding="utf-8", errors="ignore")
-        import re
-        links = re.findall(r'\[.*?\]\((.*?\.md)\)', index_content)
-        for link in links:
-            target = repo / link
-            if not target.exists():
+        # Collect all wiki pages
+        wiki_pages = set()
+        for md in wiki_dir.rglob("*.md"):
+            wiki_pages.add(md.relative_to(base_dir).as_posix())
+
+        # Check index references
+        if index_file:
+            index_content = index_file.read_text(encoding="utf-8", errors="ignore")
+            import re
+            links = re.findall(r'\[.*?\]\((.*?\.md)\)', index_content)
+            for link in links:
+                target = base_dir / link
+                if not target.exists():
+                    issues += 1
+                    if not dry_run:
+                        print(f"[lint] Broken link in {index_file.name}: {link}")
+
+            # Check for orphan pages
+            for page in wiki_pages:
+                if page not in index_content and "index" not in page.lower():
+                    issues += 1
+                    if not dry_run:
+                        print(f"[lint] Orphan page: {page}")
+
+        # Check for stale wiki pages (modified > 90 days ago)
+        import time
+        now = time.time()
+        for md in wiki_dir.rglob("*.md"):
+            age_days = (now - md.stat().st_mtime) / 86400
+            if age_days > 90:
                 issues += 1
                 if not dry_run:
-                    print(f"[lint] Broken link in index.md: {link}")
+                    print(f"[lint] Stale page ({age_days:.0f} days): {md.name}")
 
-    # Check for orphan pages (in wiki/ but not linked from index.md)
-    if index_file.exists():
-        for page in wiki_pages:
-            if page not in index_content and "index.md" not in page:
-                issues += 1
+        # Check .pending/ corrections
+        pending_dir = base_dir / "knowledge" / ".pending"
+        if pending_dir.exists():
+            pending = list(pending_dir.glob("*.md"))
+            if pending:
+                issues += len(pending)
                 if not dry_run:
-                    print(f"[lint] Orphan page: {page}")
-
-    # Check for stale wiki pages (modified > 90 days ago)
-    import time
-    now = time.time()
-    for md in wiki_dir.rglob("*.md"):
-        age_days = (now - md.stat().st_mtime) / 86400
-        if age_days > 90:
-            issues += 1
-            if not dry_run:
-                print(f"[lint] Stale page ({age_days:.0f} days): {md.name}")
-
-    # Check .pending/ corrections
-    pending_dir = repo / "knowledge" / ".pending"
-    if pending_dir.exists():
-        pending = list(pending_dir.glob("*.md"))
-        if pending:
-            issues += len(pending)
-            if not dry_run:
-                print(f"[lint] {len(pending)} pending corrections need review")
+                    print(f"[lint] {len(pending)} pending corrections need review")
 
     if issues:
         action = "Would report" if dry_run else "Found"
@@ -727,7 +741,7 @@ def main():
     if not dry_run:
         log_evolve_cycle(db_list, patterns, proposals, decayed)
 
-    print(f"[evolve] Cycle complete: {patterns} learned, {proposals} proposals, {decayed} decayed")
+    print(f"[evolve] Cycle complete: {patterns} learned, {proposals} proposals, {decayed} decayed, {lint_issues} lint issues")
 
 
 if __name__ == "__main__":

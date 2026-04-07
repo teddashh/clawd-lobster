@@ -1,4 +1,8 @@
-# Memory Architecture v2 — The Thin Ledger Pattern
+# Memory Architecture v2 — The Thin Ledger Pattern (PROPOSED)
+
+> **Status: PARTIALLY IMPLEMENTED.** Wiki structure, LINT phase, and role-based
+> briefings are implemented. claim_challenge, provenance fields, QUERY feedback,
+> and full LINT (contradictions, DB/wiki drift) are designed but not yet coded.
 
 Synthesized from 5-round spiral roundtable (Claude + Codex GPT-5.4 + Gemini 3).
 Incorporating concepts from: MemPalace (spatial structure + AAAK), Karpathy LLM Wiki (INGEST/QUERY/LINT).

@@ -270,6 +270,11 @@ Append-only journal of knowledge operations in `log.md`.
     if not dry_run:
         index_path.write_text(content, encoding="utf-8")
 
+    # Create log.md (append-only journal, Karpathy pattern)
+    log_path = workspace_path / "knowledge" / "log.md"
+    if not dry_run and not log_path.exists():
+        log_path.write_text(f"# {name} — Knowledge Log\n\nAppend-only journal of knowledge operations.\n", encoding="utf-8")
+
 
 def create_openspec_project(workspace_path: Path, name: str, description: str = "",
                             dry_run: bool = False) -> None:
