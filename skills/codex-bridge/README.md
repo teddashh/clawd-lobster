@@ -1,73 +1,59 @@
-# Codex Bridge
+# Codex Bridge — The Worker
 
-> Delegate parallelizable work and security audits to OpenAI Codex.
+> Delegate bulk work, get adversarial reviews, and run two-checkpoint debates with Codex GPT-5.4.
 
 ## What It Does
 
-Codex Bridge connects Claude Code to an OpenAI Codex subprocess, enabling two
-distinct roles: **worker** (parallel tasks, boilerplate generation) and
-**critic** (security audits, code review). This lets you offload grunt work
-while keeping Claude as the decision-maker.
+Codex Bridge connects Claude Code to OpenAI Codex for two roles:
+- **Worker** — parallel tasks, boilerplate, test generation, bulk refactoring
+- **Critic** — adversarial security review, architecture debate, code review
 
-## How It Works
+Part of the **three-agent system**: Claude (lead) + Codex (worker/critic) + Gemini (consultant). See also [gemini-bridge](../gemini-bridge/README.md).
 
-The skill exposes plugin commands and a direct CLI mode:
+## Two-Checkpoint Pattern
+
+For important tasks, Claude consults both Codex and Gemini at two checkpoints:
+
+1. **Plan Review** (before building) — "Here's my plan. What's wrong?"
+2. **Code Review** (before delivering) — "Here's the code. What breaks?"
+
+Each checkpoint costs ~3 minutes but can save a 15-minute redo cycle.
+
+## Model Quality Gate
+
+| You (Lead) | GPT-5.4 Codex | GPT-4o |
+|-----------|--------------|--------|
+| Opus 4.6 | Peer | Review only |
+| Sonnet 4.6 | **Upgrade** | Peer |
+
+## Claude→Codex Knowledge Sync
+
+`scripts/sync-knowledge.py` generates `AGENTS.md` with role-based briefing:
+- Skill library directory (where to find SKILL.md files)
+- Project context + recent decisions
+- Exit protocol (output JSON findings to stdout)
+
+Codex enters every session knowing what Claude knows.
+
+## Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/codex:review` | Standard code review against local git state |
-| `/codex:adversarial-review` | Challenge implementation approach and design |
-| `/codex:rescue` | Delegate investigation or fix to Codex |
-| `/codex:status` | Check running Codex task status |
-| `/codex:result` | Retrieve completed task output |
-| `/codex:cancel` | Cancel a running Codex task |
-
-Direct CLI usage is also supported:
-
-```bash
-codex exec "your prompt here"
-```
+| `/codex:review` | Code review against local git state |
+| `/codex:adversarial-review` | Challenge implementation approach |
+| `/codex:rescue` | Delegate investigation or fix |
+| `codex exec "prompt"` | Direct CLI |
 
 ## Configuration
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `auto_delegate` | boolean | `false` | Auto-delegate eligible tasks to Codex |
-| `preferred_model` | string | `gpt-5.3-codex` | Model used for Codex tasks |
-| `default_effort` | string | `none` | Effort level: `none`, `low`, `medium`, `high`, `xhigh` |
+| `auto_delegate` | boolean | `false` | Auto-delegate eligible tasks |
+| `preferred_model` | string | `gpt-5.3-codex` | Model for Codex tasks |
+| `default_effort` | string | `none` | Effort: none/low/medium/high/xhigh |
 
-## Dependencies
+## Auth
 
-- `node >= 18`
-- Codex CLI installed and on PATH
+ChatGPT Plus subscription ($20/mo) or OpenAI API key. Run `codex login`.
 
-## Credentials
-
-| Credential | Type | Notes |
-|------------|------|-------|
-| `codex-auth` | `chatgpt-plus` or `api-key` | ChatGPT Plus subscription or OpenAI API key |
-
-## Health Check
-
-`codex --version` is executed every 3600 seconds to verify availability.
-
-## Maintenance
-
-**Plugin patch required after updates.** The Codex plugin
-(`openai/codex-plugin-cc`) marks `/codex:review` and
-`/codex:adversarial-review` with `disable-model-invocation: true` by default,
-which prevents Claude from using them proactively. Clawd-lobster patches this
-automatically via `scripts/patch-codex-plugin.py`.
-
-After any plugin update (`claude plugin update`), run:
-
-```bash
-python scripts/patch-codex-plugin.py
-```
-
-Alternatively, let `skill-manager.py reconcile` handle it automatically. The
-patch is idempotent and safe to run multiple times.
-
----
-
-**Version:** 0.1.0 | **Kind:** prompt-pattern | **Default:** disabled (optional)
+**Version:** 0.2.0 | **Kind:** prompt-pattern | **Default:** disabled (optional)
