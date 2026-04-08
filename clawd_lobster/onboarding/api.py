@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from . import state_store, lease, intents, manifest, probes
+from . import state_store, lease, intents, manifest, probes, executor
 
 
 # ---------------------------------------------------------------------------
@@ -221,3 +221,43 @@ def verify_skill(skill_id: str) -> tuple[dict, int]:
     """POST /api/skills/<skill_id>/verify — Run probe."""
     result = probes.run_probe(skill_id)
     return {"ok": True, "skill_id": skill_id, "probe": result}, 200
+
+
+def install_skill(body: dict) -> tuple[dict, int]:
+    """POST /api/skills/<skill_id>/install — Execute full skill setup."""
+    session_id = body.get("session_id", "")
+    skill_id = body.get("skill_id", "")
+    lease_id = body.get("lease_id", "")
+    config_values = body.get("config", {})
+
+    if not session_id or not skill_id or not lease_id:
+        return {"ok": False, "error": "session_id, skill_id, and lease_id required"}, 400
+
+    result = executor.execute_skill_setup(
+        session_id, skill_id, lease_id, config_values=config_values,
+    )
+    status = 200 if result.get("ok") else 500
+    return result, status
+
+
+def register_jobs(body: dict) -> tuple[dict, int]:
+    """POST /api/jobs/register — Register OS scheduler for a skill."""
+    skill_id = body.get("skill_id", "")
+    if not skill_id:
+        return {"ok": False, "error": "skill_id required"}, 400
+
+    results = executor.register_skill_jobs(skill_id)
+    if not results:
+        return {"ok": True, "message": f"No scheduled jobs for {skill_id}", "results": []}, 200
+
+    all_ok = all(r.get("ok") for r in results)
+    return {"ok": all_ok, "results": results}, 200 if all_ok else 500
+
+
+def get_jobs_status(query: dict) -> tuple[dict, int]:
+    """GET /api/jobs/status — Check all scheduler registrations."""
+    skill_ids = ["evolve", "heartbeat"]
+    statuses = {}
+    for sid in skill_ids:
+        statuses[sid] = executor.check_scheduler(sid)
+    return {"ok": True, "jobs": statuses}, 200

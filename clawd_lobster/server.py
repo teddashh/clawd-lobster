@@ -121,6 +121,7 @@ class _Handler(BaseHTTPRequestHandler):
             "/api/onboarding/health": self._api_ob_health,
             "/api/controller": self._api_ob_controller,
             "/api/skills/catalog": self._api_skills_catalog,
+            "/api/jobs/status": self._api_jobs_status,
         }
 
         handler = routes.get(path)
@@ -165,7 +166,18 @@ class _Handler(BaseHTTPRequestHandler):
             handler()
         elif path.startswith("/api/skills/") and path.endswith("/verify"):
             skill_id = path.split("/api/skills/", 1)[1].rsplit("/verify", 1)[0]
+            body = self._read_body()
             data, status = ob_api.verify_skill(skill_id)
+            self._send_json(data, status)
+        elif path.startswith("/api/skills/") and path.endswith("/install"):
+            skill_id = path.split("/api/skills/", 1)[1].rsplit("/install", 1)[0]
+            body = self._read_body()
+            body["skill_id"] = skill_id
+            data, status = ob_api.install_skill(body)
+            self._send_json(data, status)
+        elif path == "/api/jobs/register":
+            body = self._read_body()
+            data, status = ob_api.register_jobs(body)
             self._send_json(data, status)
         else:
             self.send_error(404)
@@ -681,6 +693,10 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _api_skills_catalog(self, query: dict) -> None:
         data, status = ob_api.get_skills_catalog(query)
+        self._send_json(data, status)
+
+    def _api_jobs_status(self, query: dict) -> None:
+        data, status = ob_api.get_jobs_status(query)
         self._send_json(data, status)
 
     def _api_ob_create_session(self) -> None:
