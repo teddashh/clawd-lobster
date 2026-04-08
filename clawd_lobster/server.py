@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 from . import pages
+from . import pages_onboarding
 from . import onboarding
 from .onboarding import api as ob_api
 
@@ -106,6 +107,9 @@ class _Handler(BaseHTTPRequestHandler):
             "/": self._route_home,
             "/onboarding": self._route_onboarding,
             "/workspaces": self._route_workspaces,
+            "/skills": self._route_skills,
+            "/credentials": self._route_credentials,
+            "/settings": self._route_settings,
             "/squad": self._route_squad,
             "/api/status": self._api_status,
             "/api/workspaces": self._api_workspaces,
@@ -230,10 +234,31 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_redirect("/workspaces")
 
     def _route_onboarding(self, query: dict) -> None:
-        self._send_html(pages.ONBOARDING_PAGE)
+        self._send_html(pages_onboarding.ONBOARDING_PAGE)
 
     def _route_workspaces(self, query: dict) -> None:
         self._send_html(pages.WORKSPACES_PAGE)
+
+    def _route_skills(self, query: dict) -> None:
+        try:
+            from . import pages_dashboard
+            self._send_html(pages_dashboard.SKILLS_PAGE)
+        except (ImportError, AttributeError):
+            self._send_html("<html><body><h1>Skills page loading...</h1><p>Dashboard pages not yet built.</p></body></html>")
+
+    def _route_credentials(self, query: dict) -> None:
+        try:
+            from . import pages_dashboard
+            self._send_html(pages_dashboard.CREDENTIALS_PAGE)
+        except (ImportError, AttributeError):
+            self._send_html("<html><body><h1>Credentials page loading...</h1></body></html>")
+
+    def _route_settings(self, query: dict) -> None:
+        try:
+            from . import pages_dashboard
+            self._send_html(pages_dashboard.SETTINGS_PAGE)
+        except (ImportError, AttributeError):
+            self._send_html("<html><body><h1>Settings page loading...</h1></body></html>")
 
     def _route_squad(self, query: dict) -> None:
         self._send_html(pages.SQUAD_PAGE)
