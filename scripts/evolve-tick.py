@@ -221,14 +221,16 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
         "## Instructions\n"
         "1. Review the completed tasks and actions above.\n"
         "2. Identify any REUSABLE patterns that could help in future work.\n"
-        "3. For each pattern found, call memory_learn_skill() with:\n"
-        "   - name: short descriptive name\n"
-        "   - trigger_condition: when to use this pattern\n"
-        "   - approach: step-by-step how to apply it\n"
-        "   - tools_used: which tools are involved\n"
-        "   - category: general category\n"
-        "4. Skip patterns that duplicate already known skills.\n"
-        "5. Also call memory_record_knowledge() for any non-obvious insights.\n"
+        "3. For each pattern found, output a JSON block:\n"
+        "```json\n"
+        '{"type": "skill", "name": "short name", "trigger_condition": "when to use", '
+        '"approach": "step-by-step how", "tools_used": ["tool1"], "category": "general"}\n'
+        "```\n"
+        "4. For non-obvious insights, output:\n"
+        "```json\n"
+        '{"type": "knowledge", "title": "short title", "content": "what was learned"}\n'
+        "```\n"
+        "5. Skip patterns that duplicate already known skills.\n"
         "6. If nothing worth learning, just say 'No new patterns found.'\n\n"
         "Be selective — only extract patterns that are genuinely reusable, not one-off fixes."
     )
@@ -251,34 +253,31 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
         return 0
 
     try:
-        result = subprocess.run(
-            ["claude", "-p", prompt],
-            capture_output=True, text=True,
-            timeout=CLAUDE_TIMEOUT,
-            cwd=cwd,
+        from agent_dispatch import dispatch_sync
+        result = dispatch_sync(
+            prompt, cwd=cwd,
+            tools=["Read", "Glob", "Grep"],
+            max_turns=10,
         )
-        output = result.stdout.strip() if result.stdout else ""
 
-        if result.returncode != 0:
-            print(f"[evolve] Claude returned error: {result.stderr[:200]}")
+        if not result.ok:
+            print("[evolve] Agent returned no output.")
             return 0
 
-        # Count how many skills were learned (heuristic: count memory_learn_skill mentions)
-        learned = output.lower().count("memory_learn_skill")
-        knowledge = output.lower().count("memory_record_knowledge")
+        # Count extracted patterns from JSON blocks
+        learned = sum(1 for b in result.json_blocks if b.get("type") == "skill")
+        knowledge = sum(1 for b in result.json_blocks if b.get("type") == "knowledge")
 
         if learned > 0 or knowledge > 0:
-            print(f"[evolve] Learned {learned} skill(s), recorded {knowledge} knowledge item(s)")
+            print(f"[evolve] Extracted {learned} skill(s), {knowledge} knowledge item(s)")
+            print(f"[evolve] Agent: {len(result.tool_calls)} tool calls, {result.elapsed_seconds}s")
         else:
             print("[evolve] No new patterns found this cycle.")
 
         return learned
 
-    except subprocess.TimeoutExpired:
-        print("[evolve] Claude timed out during pattern extraction.")
-        return 0
-    except FileNotFoundError:
-        print("[evolve] claude CLI not found in PATH.")
+    except Exception as e:
+        print(f"[evolve] Agent dispatch error: {e}")
         return 0
 
 
@@ -334,25 +333,22 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
         return 0
 
     try:
-        result = subprocess.run(
-            ["claude", "-p", prompt],
-            capture_output=True, text=True,
-            timeout=CLAUDE_TIMEOUT,
-            cwd=cwd,
+        from agent_dispatch import dispatch_sync
+        result = dispatch_sync(
+            prompt, cwd=cwd,
+            tools=["Read", "Glob", "Grep"],
+            max_turns=10,
         )
-        output = result.stdout.strip() if result.stdout else ""
+        output = result.text
 
-        if result.returncode != 0 or "NO_PROPOSALS" in output:
+        if not result.ok or "NO_PROPOSALS" in output:
             return 0
 
-        # Parse JSON blocks from output
-        import re as _re
-        json_blocks = _re.findall(r'```json\s*\n(.*?)\n```', output, _re.DOTALL)
+        # Use pre-extracted JSON blocks from dispatch result
         proposals_written = 0
 
-        for block in json_blocks:
+        for proposal in result.json_blocks:
             try:
-                proposal = json.loads(block)
                 title = proposal.get("title", "untitled")
                 workspace = proposal.get("workspace", "")
 
@@ -369,7 +365,7 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
                 proposals_dir = Path(ws_path) / "openspec" / "proposals"
                 proposals_dir.mkdir(parents=True, exist_ok=True)
 
-                slug = _re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-")[:40]
+                slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-")[:40]
                 timestamp = _now()[:10]
                 filename = f"{timestamp}-{slug}.md"
                 filepath = proposals_dir / filename
@@ -410,7 +406,8 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
 
         return proposals_written
 
-    except (subprocess.TimeoutExpired, FileNotFoundError):
+    except Exception as e:
+        print(f"[evolve] Agent dispatch error in proposals: {e}")
         return 0
 
 
