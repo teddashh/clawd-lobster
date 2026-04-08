@@ -243,10 +243,10 @@ Dashboard (the eyes)   ->  Web UI at localhost:3333 (Skill Parade + 3-tab Skills
 **站在巨人肩膀上。** Clawd-Lobster 不重建 Claude Code。它用 Claude Code 原生的擴充點（MCP servers、CLAUDE.md、hooks、settings.json），完全照 Anthropic 的設計走。Claude Code 出新功能，你直接受益。模型進步，你的 agent 跟著進步。零 adapter 程式碼。
 
 ```
-Disk: ~830 KB    (code + configs)
+Disk: ~2 MB    (code + configs)
 RAM:  ~25 MB    (MCP server only)
 CPU:  0% idle   (OS scheduler, not polling)
-LOC:  ~9,000    (not 300,000)
+LOC:  ~25,000    (not 300,000)
 ```
 
 完整檔案樹和執行時期細節，請見 [ARCHITECTURE.md](ARCHITECTURE.md)。
@@ -299,7 +299,7 @@ LOC:  ~9,000    (not 300,000)
 
 |  | Heavyweight Frameworks | Raw Claude Code | Clawd-Lobster |
 |--|----------------------|----------------|---------------|
-| Codebase | 300K+ lines | 0 (built-in) | ~9,000 lines |
+| Codebase | 300K+ lines | 0 (built-in) | ~25,000 lines |
 | Setup | Hours/days | 0 | 5 minutes |
 | Memory | Session-only | Session-only | 4-layer persistent |
 | Multi-machine | Usually none | None | Git sync + Hub |

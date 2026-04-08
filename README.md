@@ -32,7 +32,7 @@ Self-hosted agent loops that bypass safety. API calls billed per token with no c
 Clawd-Lobster doesn't replace Claude Code. It **makes Claude Code remember, plan, review, build, and evolve** — using nothing but official Anthropic tools.
 
 - **100% Claude Code CLI + Agent SDK.** No wrappers, no custom agent loops, no gray area. Runs on your existing Claude subscription. No extra API costs.
-- **~9,000 lines of code.** Not 300,000. Still fits in your head. When Claude Code updates, you get the new features for free. Nothing to rewrite, nothing breaks.
+- **~25,000 lines of code.** Not 300,000. Still fits in your head. When Claude Code updates, you get the new features for free. Nothing to rewrite, nothing breaks.
 - **5 minutes to start.** Open browser. Click twice. Done. No API keys, no Docker, no PhD in YAML.
 
 ```
@@ -243,10 +243,10 @@ Dashboard (the eyes)   ->  Web UI at localhost:3333 (Skill Parade + 3-tab Skills
 **Standing on the giant's shoulders.** Clawd-Lobster doesn't rebuild Claude Code. It uses Claude Code's native extension points (MCP servers, CLAUDE.md, hooks, settings.json) exactly as Anthropic designed them. When Claude Code ships a new feature, you get it for free. When the model improves, your agent improves. Zero adapter code.
 
 ```
-Disk: ~830 KB    (code + configs)
+Disk: ~2 MB      (code + configs + docs)
 RAM:  ~25 MB    (MCP server only)
 CPU:  0% idle   (OS scheduler, not polling)
-LOC:  ~9,000    (not 300,000)
+LOC:  ~25,000   (not 300,000)
 ```
 
 For the full file tree and runtime details, see [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -299,7 +299,7 @@ First machine creates the Hub. Every machine after that joins in 2 minutes.
 
 |  | Heavyweight Frameworks | Raw Claude Code | Clawd-Lobster |
 |--|----------------------|----------------|---------------|
-| Codebase | 300K+ lines | 0 (built-in) | ~9,000 lines |
+| Codebase | 300K+ lines | 0 (built-in) | ~25,000 lines |
 | Setup | Hours/days | 0 | 5 minutes |
 | Memory | Session-only | Session-only | 4-layer persistent |
 | Multi-machine | Usually none | None | Git sync + Hub |
