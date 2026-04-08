@@ -1,11 +1,6 @@
 """
 agent_dispatch.py — Unified sub-agent dispatch using Claude Agent SDK.
 
-⚠️  DRAFT — NOT WORKING
-The claude_agent_sdk imports below use an API that has NOT been verified.
-The actual Claude Agent SDK may have a different interface.
-Do NOT rely on this module until the SDK API is confirmed and tested.
-
 Replaces subprocess.run(["claude", "-p", ...]) with native Agent SDK query().
 Provides both async and sync interfaces for backward compatibility.
 
