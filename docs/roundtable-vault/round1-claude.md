@@ -22,7 +22,7 @@ CREATE TABLE vault_documents (
     content_hash    VARCHAR2(64),            -- SHA-256 for dedup
     
     -- Source metadata (type-specific, JSON)
-    source_meta     CLOB,  -- {"from":"ted@ted-h.com","to":["david@..."],"thread_id":"...","date_sent":"2023-06-15"}
+    source_meta     CLOB,  -- {"from":"user@example.com","to":["david@..."],"thread_id":"...","date_sent":"2023-06-15"}
     source_path     VARCHAR2(1000),          -- original file path or URL
     source_system   VARCHAR2(100),           -- "outlook", "obsidian", "claude-session", "web"
     

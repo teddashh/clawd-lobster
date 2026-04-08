@@ -1,6 +1,6 @@
 # Round 6 — Universal Ingestion Stress Test
 
-> **Question from Ted**: Can this schema truly absorb EVERYTHING? Debate transcripts, desktop files, research PDFs, Facebook posts, LINE chat history, and anything else imaginable?
+> **Question from the owner**: Can this schema truly absorb EVERYTHING? Debate transcripts, desktop files, research PDFs, Facebook posts, LINE chat history, and anything else imaginable?
 
 ## The Universe Test
 
@@ -8,7 +8,7 @@ Let's throw every conceivable data type at the 11-table schema and see if it bre
 
 | # | Data Type | Example | Fits? | How? |
 |---|-----------|---------|-------|------|
-| 1 | **Work emails** | 86K from FPC | YES | vault_documents (doc_type='email') — already planned |
+| 1 | **Work emails** | 86K from ACME | YES | vault_documents (doc_type='email') — already planned |
 | 2 | **AI debate transcripts** | This very debate | YES | vault_documents (doc_type='debate_transcript'), source='clawd-lobster-roundtable' |
 | 3 | **Desktop files** | Word docs, Excel, PPT | YES | vault_documents (doc_type='file'), metadata_json has {path, size, mime_type, modified_at} |
 | 4 | **Research PDFs** | Academic papers, reports | YES | vault_documents (doc_type='pdf'), content = extracted text, vault_chunks for pages |
@@ -88,7 +88,7 @@ The Vault stores TEXT, not binaries. Where do the original files live?
 This is the correct design. A database should store structured data, not blobs.
 
 ### Challenge 3: Scale projection
-If Ted imports everything:
+If the owner imports everything:
 - 86K emails ✓ (already planned)
 - 1,865 daily reports ✓
 - ~5,000 LINE conversations (each = 1 doc + many chunks)
@@ -109,7 +109,7 @@ What if a LINE chat with a friend mentions work stuff? Or a work email has perso
 - LINE chat with friend = ownership='shared', privacy='internal'
 - Work email = ownership='work', privacy='internal'
 
-If a work email discusses Ted's personal health → the document is `ownership='work'`, but any extracted health-related facts should be tagged `ownership='self'`, `privacy='secret'`.
+If a work email discusses the owner's personal health → the document is `ownership='work'`, but any extracted health-related facts should be tagged `ownership='self'`, `privacy='secret'`.
 
 **The ownership of extracted facts can differ from the source document.** This is by design.
 
@@ -174,7 +174,7 @@ This is NOT enforced by a CHECK constraint (that would be too rigid). It's a con
 
 ## Final Verdict
 
-### Can the schema absorb everything Ted has ever created or received?
+### Can the schema absorb everything the owner has ever created or received?
 
 **YES.** Unanimously confirmed.
 

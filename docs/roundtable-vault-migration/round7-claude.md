@@ -2,7 +2,7 @@
 
 ## The Core Question
 
-Ted 要的不是「這些資料能不能放進去」— Round 6 已經證明 doc_type 模型可以。Ted 要確認的是：**放進去之後，agent 真的能用嗎？能找到嗎？能理解嗎？不會亂掉嗎？**
+the owner 要的不是「這些資料能不能放進去」— Round 6 已經證明 doc_type 模型可以。the owner 要確認的是：**放進去之後，agent 真的能用嗎？能找到嗎？能理解嗎？不會亂掉嗎？**
 
 讓我從八個面向深入分析。
 
@@ -71,7 +71,7 @@ SELECT * FROM vault_documents WHERE is_latest = 1;
 ```
 Layer 1: vault_sources
   → source_type='chat_platform', uri='line://friend/david-chen'
-  → 代表「Ted 和 David 在 LINE 上的所有對話」
+  → 代表「the owner 和 David 在 LINE 上的所有對話」
 
 Layer 2: vault_documents (per conversation segment)
   → doc_type='conversation'
@@ -142,7 +142,7 @@ vault_entity_aliases:
 - indexes + overhead：~2 GB
 - **Total estimate: ~6 GB**
 
-20 GB 夠用，但如果 Ted 真的把所有東西都灌進來（加上 LINE 百萬則、FB 多年文章），可能到 10-15 GB。仍在限制內，但要注意 embedding 是最大的空間消耗者。
+20 GB 夠用，但如果 the owner 真的把所有東西都灌進來（加上 LINE 百萬則、FB 多年文章），可能到 10-15 GB。仍在限制內，但要注意 embedding 是最大的空間消耗者。
 
 **建議**：
 - 不是每個 document 都需要 embedding（日報的 stats 不需要向量搜尋）
@@ -153,7 +153,7 @@ vault_entity_aliases:
 
 ## 6. 隱私與刪除權
 
-**問題**：如果 David 要求 Ted 刪除他的所有資料（GDPR right to erasure），怎麼辦？
+**問題**：如果 David 要求 the owner 刪除他的所有資料（GDPR right to erasure），怎麼辦？
 
 **分析**：vault_events 是 immutable 的。vault_documents 有 lifecycle。
 

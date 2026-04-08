@@ -2,17 +2,17 @@
 
 > **Date:** 2026-04-07
 > **Participants:** Claude Opus 4.6 (CIO, 0.91), Codex GPT-5.4 (Developer, 0.86), Gemini 2.5 Pro (Consultant, 0.92)
-> **Focus:** Final tooling architecture, parser specifications, remaining disputes, Ted's data inventory
+> **Focus:** Final tooling architecture, parser specifications, remaining disputes, the owner's data inventory
 
 ---
 
-## Topic A: Ted 的完整資料盤點
+## Topic A: the owner 的完整資料盤點
 
-### 三方共同確認 Ted 目前的資料來源：
+### 三方共同確認 the owner 目前的資料來源：
 
 | # | Source | Location | Volume Estimate | Parser Needed |
 |---|--------|----------|-----------------|---------------|
-| 1 | Work emails (FPC) | CLAUDE_MEMORY.EMAILS | 86,420 rows | SQL→vault (已有) |
+| 1 | Work emails (ACME) | CLAUDE_MEMORY.EMAILS | 86,420 rows | SQL→vault (已有) |
 | 2 | Daily reports | CLAUDE_MEMORY.DAILY_REPORTS | 1,865 rows | SQL→vault |
 | 3 | Knowledge articles | OPENCLAW_APP.KNOWLEDGE | 152 rows (149 migrated) | SQL→vault (已做) |
 | 4 | Action logs | OPENCLAW_APP.ACTIVITY_LOGS | ~3,000 rows | SQL→vault |
@@ -20,7 +20,7 @@
 | 6 | Decisions | OPENCLAW_APP.DECISIONS | 4 rows | SQL→vault_facts |
 | 7 | Questions | OPENCLAW_APP.QUESTIONS | 13 rows | SQL→vault_facts |
 | 8 | SOPs | OPENCLAW_APP.SOPS | 11 rows | SQL→vault |
-| 9 | Desktop files | C:\Users\detna\ 各處 | 未估計 | FileScanner |
+| 9 | Desktop files | (local desktop folders) | 未估計 | FileScanner |
 | 10 | Research PDFs | 各處 | 未估計 | PdfParser |
 | 11 | LINE 對話 | LINE export (.txt) | 多年 | LineParser |
 | 12 | Facebook posts | FB data export (JSON) | 多年 | FacebookParser |
@@ -300,7 +300,7 @@ Note:    This parser also extracts vault_facts from "共識" sections
 
 **Gemini**: 同意。而且 DebateParser 萃取出的 consensus facts 可以當 vault_facts 的 golden reference — 這些是三個 AI 一致同意的高品質結論。
 
-**共識**：加 DebateParser。共 10 個 parsers。初始 release 先做 Priority 1（SQL migrators + FileScanner + PdfParser），其他根據 Ted 的需求逐步加。
+**共識**：加 DebateParser。共 10 個 parsers。初始 release 先做 Priority 1（SQL migrators + FileScanner + PdfParser），其他根據 the owner 的需求逐步加。
 
 ---
 
@@ -473,4 +473,4 @@ CREATE TABLE vault_audit_trail (
 1. 完整 DDL — 合併所有 10 rounds 的 schema 變更為一份可執行 SQL
 2. 遷移執行順序 — 哪些先跑、dependency 是什麼
 3. 驗收標準 — 什麼條件下算 migration 完成
-4. Ted 的 approval checklist
+4. the owner 的 approval checklist

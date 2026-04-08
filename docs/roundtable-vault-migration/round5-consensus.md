@@ -122,7 +122,7 @@
 
 ## Approval Required
 
-Ted: Please review and approve this consensus before we begin implementation.
+the owner: Please review and approve this consensus before we begin implementation.
 Specifically:
 - [ ] 11-table schema OK?
 - [ ] Ownership axis (self/work/external/shared) OK?

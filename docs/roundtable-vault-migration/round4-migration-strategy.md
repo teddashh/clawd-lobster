@@ -116,8 +116,8 @@ CREATE INDEX idx_vdoc_threat ON vault_documents (threat_score)
 ### Phase 2: Contacts → vault_entities
 Source: CLAUDE_MEMORY.CONTACTS (5 rows) + OPENCLAW_APP.CONTACTS (5 rows, likely same)
 ```
-Ted Huang → vault_entities (entity_type='person', ownership='self')
-  aliases: Ted, Ted Huang, Ted Theodore J Huang
+the developer → vault_entities (entity_type='person', ownership='self')
+  aliases: the owner, the developer, the developer
   metadata_json: {email, phone, relationship, identity_level}
 Annis → vault_entities (entity_type='person', ownership='shared')
   aliases: Annis
@@ -251,7 +251,7 @@ After all phases:
 - [ ] Total vault_entities includes all contacts + email senders
 - [ ] Total vault_facts includes decisions + questions + security flags
 - [ ] Total vault_audit_trail = 1,355 + 1,696 = ~3,051
-- [ ] Search works: "Josh Huang" returns emails, entity, relations
+- [ ] Search works: "J. Smith" returns emails, entity, relations
 - [ ] Search works: "cybersecurity incident 2024" returns emails + daily report
 - [ ] Time range works: emails from Q3 2023
 

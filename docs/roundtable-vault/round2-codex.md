@@ -1,7 +1,7 @@
 Reading additional input from stdin...
 OpenAI Codex v0.118.0 (research preview)
 --------
-workdir: C:\Users\detna\clawd-lobster
+workdir: (local repo)
 model: gpt-5.4
 provider: openai
 approval: never

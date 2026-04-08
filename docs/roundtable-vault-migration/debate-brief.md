@@ -2,7 +2,7 @@
 
 ## Context
 
-Ted wants Oracle L3 (The Vault) to be his **permanent deep brain** — store EVERYTHING from his entire professional and personal life, searchable and well-organized. Currently there are TWO Oracle schemas:
+The developer wants Oracle L3 (The Vault) to be a **permanent deep brain** — store EVERYTHING from his entire professional and personal life, searchable and well-organized. Currently there are TWO Oracle schemas:
 
 ### Schema 1: `OPENCLAW_APP` (operational)
 | Table | Rows | Purpose |
@@ -35,7 +35,7 @@ Ted wants Oracle L3 (The Vault) to be his **permanent deep brain** — store EVE
 | SOP | 11 | Same SOPs |
 | DECISIONS | 4 | Architectural decisions with 3W1H |
 | OPEN_QUESTIONS | 13 | Unresolved questions with priority |
-| PERSONALITY_TRAITS | 0 | Empty — planned for Ted's behavioral patterns |
+| PERSONALITY_TRAITS | 0 | Empty — planned for the developer's behavioral patterns |
 | CROSS_REFERENCES | 0 | Empty — planned for cross-table links |
 | RESOLVED | 0 | Empty — resolved items |
 | SYNC_WATERMARK | 1 | Sync state |
@@ -65,27 +65,27 @@ The current 9-table vault schema was designed for document-centric storage. Can 
 - Personality traits → vault_facts (claim-based)?
 - Workspaces → metadata? Or vault_sources?
 
-### Q2: Data Separation (Ted's biggest concern)
-Ted wants clear separation of:
-- **My stuff vs. others' stuff** — Ted's emails vs. general knowledge
-- **Work vs. personal** — FPC/corporate vs. personal life
+### Q2: Data Separation (the developer's biggest concern)
+the developer wants clear separation of:
+- **My stuff vs. others' stuff** — the developer's emails vs. general knowledge
+- **Work vs. personal** — corporate vs. personal life
 - **Internal vs. external** — trusted internal data vs. external web/imports
 - **Different time periods** — how to handle 5+ years of temporal data
 
 Current `privacy_level` (public/internal/restricted/secret) may not be enough.
 
 ### Q3: The Suspicious Flag Problem
-AUDIT_LOG has `IS_SUSPICIOUS` + `SUSPICIOUS_REASON` for phishing detection. Ted says "just putting suspicious there seems irresponsible." How should security/trust metadata be handled in the Vault?
+AUDIT_LOG has `IS_SUSPICIOUS` + `SUSPICIOUS_REASON` for phishing detection. the developer says "just putting suspicious there seems irresponsible." How should security/trust metadata be handled in the Vault?
 
 ### Q4: Daily Work Log / Action Log
-Ted's tradition of daily work logs (from OpenClaw era). Where do these go?
+the developer's tradition of daily work logs (from OpenClaw era). Where do these go?
 - DAILY_REPORTS has 1,865 narrative summaries
 - ACTIVITY_LOG has 1,355 agent actions
 - ACTION_LOG (OPENCLAW_APP) has 1,696 agent actions
 - These are audit trails, not knowledge per se
 
 ### Q5: Audit Trail Architecture
-Ted wants:
+the developer wants:
 - Daily action log (what happened today)
 - Audit trail (who did what, when, why)
 - Quantified memory (measurable tracking over time)
@@ -109,12 +109,12 @@ Looking at PERSONALITY_TRAITS (empty) and CROSS_REFERENCES (empty) — were thes
 ### Email (AUDIT_LOG)
 ```
 TS: 2021-08-16 21:23
-FROM: Josh Huang/FPC Management Center <jhuang@fpcusa.com>
-TO: Alex Chuang, Jimmy Lien
+FROM: J. Smith/ACME Corp <jsmith@example.com>
+TO: A. Lee, J. Wang
 SUBJECT: Re: Customer PO to Order Entry Automation - follow-up meeting
 IMPORTANCE: M
 WHAT: Re: Customer PO to Order Entry Automation - follow-up meeting
-PEOPLE: ["Josh Huang/FPC Management Center"]
+PEOPLE: ["J. Smith/ACME Corp"]
 KEYWORDS: ["Customer", "Order", "Entry", "Automation", "follow-up"]
 SNIPPET: Thanks, Alex. Jimmy, please provide the link to Peter...
 ```
@@ -129,13 +129,13 @@ NARRATIVE: 資安事件 Day 5，全公司 WFH。三路外部協調：Trifident�
 
 ### Contact
 ```
-NAME: Ted Huang | NICKNAME: Ted | EMAIL: ted@ted-h.com | RELATIONSHIP: owner | IDENTITY: owner
+NAME: (owner) | NICKNAME: (owner) | EMAIL: owner@example.com | RELATIONSHIP: owner | IDENTITY: owner
 ```
 
 ## Constraints
 - Oracle Autonomous Database (cloud, always-free tier)
 - VECTOR(1536, FLOAT32) support available
-- Single owner (Ted) — no multi-tenancy needed
+- Single owner (the developer) — no multi-tenancy needed
 - Must be queryable by agents (Claude, Codex, Gemini, QWEN)
 - Migration must be reversible (old data kept until verified)
 - Performance matters for 86K+ email searches

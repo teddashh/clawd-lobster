@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The current 9-table Vault schema is **70% there** but needs targeted expansions to serve as Ted's permanent deep brain. I propose adding 3 new tables and modifying 2 existing ones — a total of 12 vault tables. The principle: **everything is a document, entity, or fact — but not everything is the same KIND of document.**
+The current 9-table Vault schema is **70% there** but needs targeted expansions to serve as the owner's permanent deep brain. I propose adding 3 new tables and modifying 2 existing ones — a total of 12 vault tables. The principle: **everything is a document, entity, or fact — but not everything is the same KIND of document.**
 
 ---
 
@@ -22,7 +22,7 @@ The document/entity/fact/relation model is powerful enough for most data types. 
 | Open questions | **NEW: `vault_questions`** | Active items need state management, not just storage |
 | Contacts | `vault_entities` (entity_type='person') | With all contact fields in metadata_json |
 | Workspaces | `vault_sources` (source_type='workspace') | Workspace = a source of data |
-| Personality traits | `vault_facts` (extraction_method='behavioral_observation') | Traits are claims about Ted |
+| Personality traits | `vault_facts` (extraction_method='behavioral_observation') | Traits are claims about the owner |
 | Action logs | **NEW: `vault_audit_trail`** | Operational logs need a dedicated fast-write table |
 | Activity logs | `vault_audit_trail` | Same table, different log_type |
 
@@ -94,11 +94,11 @@ CREATE TABLE vault_metrics (
 
 **Position: Use a multi-axis classification, not just privacy_level.**
 
-Current `privacy_level` (public/internal/restricted/secret) is a single axis. Ted needs at least 3:
+Current `privacy_level` (public/internal/restricted/secret) is a single axis. the owner needs at least 3:
 
 1. **Ownership axis** (`ownership`): `self` / `work` / `external` / `shared`
-   - self = Ted's personal stuff
-   - work = FPC corporate
+   - self = the owner's personal stuff
+   - work = ACME corporate
    - external = from outside parties
    - shared = family, friends
 
@@ -114,7 +114,7 @@ ALTER TABLE vault_documents ADD (
 );
 ```
 
-This means an email from Ted's boss at FPC gets: `ownership='work'`, `privacy_level='internal'`, `taxonomy_id=(work/emails)`. A personal health record gets: `ownership='self'`, `privacy_level='secret'`, `taxonomy_id=(personal/health)`.
+This means an email from the owner's boss at ACME gets: `ownership='work'`, `privacy_level='internal'`, `taxonomy_id=(work/emails)`. A personal health record gets: `ownership='self'`, `privacy_level='secret'`, `taxonomy_id=(personal/health)`.
 
 ## Q3: The Suspicious Flag
 
@@ -164,7 +164,7 @@ A binary `IS_SUSPICIOUS` is lazy. Instead:
 
 The flow: Agents write to `vault_audit_trail` in real-time → Nightly cron synthesizes into a `daily_report` document → Weekly cron computes `vault_metrics` aggregates.
 
-This gives Ted:
+This gives the owner:
 - "What did the agents do today?" → query audit_trail
 - "What happened this week?" → search daily_report documents
 - "How many emails did I get per month in 2023?" → query metrics
@@ -192,12 +192,12 @@ Migration path:
 Key architectural principle: **Every piece of data should eventually be connected to entities and facts.**
 
 - Raw email comes in → it's a `vault_document`
-- Entity extraction → creates/updates `vault_entities` (Josh Huang, Alex Chuang, FPC Management Center)
+- Entity extraction → creates/updates `vault_entities` (J. Smith, A. Lee, ACME Corp)
 - Fact extraction → creates `vault_facts` ("Josh requested Jimmy to provide link to Peter", "Customer PO automation project exists")
 - Relations → connects entities to documents to facts
 
 This means an agent can ask:
-- "Tell me about Josh Huang" → entity profile with all related emails, facts, relations
+- "Tell me about J. Smith" → entity profile with all related emails, facts, relations
 - "What decisions were made about the PO automation project?" → facts linked to that entity
 - "Who did I interact with most in Q3 2023?" → metrics from relation counts
 
@@ -210,7 +210,7 @@ The 86K emails are the RAW MATERIAL. The real value is in the extracted entities
 What the current schema lacks:
 1. **Quantified tracking** (`vault_metrics`) — see Q5
 2. **Tag/label system** — the taxonomy tree is hierarchical (good for categories), but tags are flat and many-to-many. Consider a `vault_tags` table or use `tags_json` CLOB on vault_documents.
-3. **PERSONALITY_TRAITS** → I recommend absorbing into vault_facts. A trait IS a fact: "Ted prefers concise communication" (confidence: 0.92, observed_count: 47).
+3. **PERSONALITY_TRAITS** → I recommend absorbing into vault_facts. A trait IS a fact: "the owner prefers concise communication" (confidence: 0.92, observed_count: 47).
 4. **CROSS_REFERENCES** → Already covered by vault_relations. That's exactly what relations are.
 5. **Calendar events** → Currently embedded in DAILY_REPORTS as JSON. Should become vault_documents (doc_type='calendar_event') with occurred_at as the event time.
 

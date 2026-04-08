@@ -22,7 +22,7 @@
 
 ## Claude's Cross-Examination of Codex
 
-**Q to Codex**: You propose vault_emails with 28 typed columns. But what happens when Ted wants to store LINE messages, WhatsApp messages, Slack messages, meeting transcripts? Do we create vault_line_messages, vault_whatsapp_messages, vault_slack_messages? Where does the table proliferation end?
+**Q to Codex**: You propose vault_emails with 28 typed columns. But what happens when the owner wants to store LINE messages, WhatsApp messages, Slack messages, meeting transcripts? Do we create vault_line_messages, vault_whatsapp_messages, vault_slack_messages? Where does the table proliferation end?
 
 **Claude's argument**: The document model is general-purpose BY DESIGN. An email is a document with metadata. A LINE message is a document with metadata. A meeting transcript is a document with metadata. The only thing that varies is the metadata schema — and that's exactly what `metadata_json` handles.
 
@@ -36,7 +36,7 @@ Codex's approach leads to an N+1 table problem: every new data source = a new ta
 
 ## Codex's Cross-Examination of Claude
 
-**Q to Claude**: You claim JSON path queries on 86K rows are fast enough. But have you benchmarked this? What happens when Ted has 500K emails in 5 years? What about compound queries like "all high-importance emails from Josh Huang in Q3 2023"? That's THREE JSON path extractions in one WHERE clause. Show me the execution plan.
+**Q to Claude**: You claim JSON path queries on 86K rows are fast enough. But have you benchmarked this? What happens when the owner has 500K emails in 5 years? What about compound queries like "all high-importance emails from J. Smith in Q3 2023"? That's THREE JSON path extractions in one WHERE clause. Show me the execution plan.
 
 **Codex's argument**: Oracle CAN do JSON functional indexes, but each one is a separate index. A compound query needs a compound index. With typed columns, you get: `CREATE INDEX idx ON vault_emails(from_addr, importance, year, month)` — one B-tree, one seek. With JSON, you need 3 separate indexes and Oracle has to intersect them. At 500K rows, this matters.
 
@@ -46,7 +46,7 @@ Codex's approach leads to an N+1 table problem: every new data source = a new ta
 
 ## Gemini's Cross-Examination of Claude
 
-**Q to Claude**: vault_questions as a separate table. Why? A question is a fact in an 'open' lifecycle state. Your vault_facts already has lifecycle management. Adding vault_questions means agents need to search TWO tables when looking for "things Ted is wondering about."
+**Q to Claude**: vault_questions as a separate table. Why? A question is a fact in an 'open' lifecycle state. Your vault_facts already has lifecycle management. Adding vault_questions means agents need to search TWO tables when looking for "things the owner is wondering about."
 
 **Also**: vault_metrics as a separate table — agree this is needed. But how do you propose generating metrics? Is this a cron job? What's the source of truth?
 

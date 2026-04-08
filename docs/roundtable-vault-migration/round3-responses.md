@@ -6,12 +6,12 @@
 Fair point. Let me address the compound query scenario:
 
 ```sql
--- "All high-importance emails from Josh Huang in Q3 2023"
+-- "All high-importance emails from J. Smith in Q3 2023"
 -- With functional indexes:
 SELECT id, title, occurred_at
 FROM vault_documents
 WHERE doc_type = 'email'
-AND JSON_VALUE(metadata_json, '$.from_addr') = 'jhuang@fpcusa.com'
+AND JSON_VALUE(metadata_json, '$.from_addr') = 'jsmith@example.com'
 AND JSON_VALUE(metadata_json, '$.importance') = 'H'
 AND occurred_at BETWEEN TIMESTAMP '2023-07-01 00:00:00' AND TIMESTAMP '2023-09-30 23:59:59';
 ```

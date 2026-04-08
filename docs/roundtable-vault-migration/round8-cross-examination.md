@@ -36,7 +36,7 @@ FROM vault_documents d;
 ## Topic B: 對話粒度
 
 ### Gemini challenges Claude:
-"你說 LINE 對話以『天』為單位切分。但如果 Ted 跟 David 連續三天討論同一件事（買房），切成三個 document 會丟失上下文。一個 agent 問 'Ted 和 David 討論買房的結論是什麼？' 會需要搜三個 document 再合併。"
+"你說 LINE 對話以『天』為單位切分。但如果 the owner 跟 David 連續三天討論同一件事（買房），切成三個 document 會丟失上下文。一個 agent 問 'the owner 和 David 討論買房的結論是什麼？' 會需要搜三個 document 再合併。"
 
 ### Claude responds:
 確實。但另一個極端（三天對話合為一個 document）會造成 occurred_at 無法精確標記。
@@ -75,7 +75,7 @@ FROM vault_documents d;
 ## Topic D: GDPR 刪除的連鎖效應
 
 ### Gemini challenges Claude:
-"你的 GDPR erase 方法 retract 了 entity 和相關 documents。但如果 David Chen 發了一封 email 給 10 個人，這封 email 也提到了 Ted 的工作內容。Retract 這封 email 等於也刪了 Ted 的工作記錄。如何平衡？"
+"你的 GDPR erase 方法 retract 了 entity 和相關 documents。但如果 David Chen 發了一封 email 給 10 個人，這封 email 也提到了 the owner 的工作內容。Retract 這封 email 等於也刪了 the owner 的工作記錄。如何平衡？"
 
 ### Claude responds:
 分層處理：
@@ -83,7 +83,7 @@ FROM vault_documents d;
 2. **Content-level redaction**：在相關 documents 的 content 中，用 `[REDACTED]` 替換 David 的個人資訊（名字、email）。但保留 email 的其他內容。
 3. **Fact-level retract**：retract 所有「關於 David 的 facts」。
 
-這不是完美的 GDPR compliance（那需要律師），但對個人 deep brain 來說足夠了。Ted 的 Vault 不是公開服務，GDPR 壓力較小。
+這不是完美的 GDPR compliance（那需要律師），但對個人 deep brain 來說足夠了。the owner 的 Vault 不是公開服務，GDPR 壓力較小。
 
 **共識**：GDPR erase = entity retract + content redaction + fact retract。三層級，不是全刪。
 
@@ -133,14 +133,14 @@ vault.absorb(
 ### Codex 的壓力測試:
 
 ```
-Scenario: Agent asks "2024年 Q3 跟 Josh Huang 討論的 SOAR 專案最後結論是什麼？"
+Scenario: Agent asks "2024年 Q3 跟 J. Smith 討論的 SOAR 專案最後結論是什麼？"
 
 Query decomposition:
-1. entity_resolve("Josh Huang") → entity_id=123
+1. entity_resolve("J. Smith") → entity_id=123
 2. Search vault_documents WHERE:
    - doc_type IN ('email', 'conversation', 'meeting_transcript')
    - occurred_at BETWEEN '2024-07-01' AND '2024-09-30'
-   - (email_from LIKE '%jhuang%' OR content LIKE '%Josh Huang%' OR content LIKE '%SOAR%')
+   - (email_from LIKE '%jsmith%' OR content LIKE '%J. Smith%' OR content LIKE '%SOAR%')
 3. Filter by relations: documents linked to entity 123
 4. Extract relevant facts from matched documents
 ```

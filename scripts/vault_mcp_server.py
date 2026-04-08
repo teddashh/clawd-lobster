@@ -1,6 +1,10 @@
 """
 vault_mcp_server.py — MCP server wrapping vault_api for Agent SDK consumption.
 
+⚠️  DRAFT — NOT WORKING
+The claude_agent_sdk imports below (tool, create_sdk_mcp_server) use an API
+that has NOT been verified. Do NOT rely on this module until confirmed.
+
 Exposes Vault operations as MCP tools so any Claude agent (via Agent SDK)
 can ingest, search, query, and manage the Oracle Vault.
 

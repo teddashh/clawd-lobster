@@ -2,7 +2,7 @@
 
 > **Date:** 2026-04-07
 > **Role:** Developer + Adversarial Reviewer
-> **Context:** Rounds 1-6 reached consensus on 11 tables. Ted has commissioned 5 additional rounds (7-11) to stress-test whether this schema can truly absorb ALL data types from his entire life. This is Round 7: the adversarial opener.
+> **Context:** Rounds 1-6 reached consensus on 11 tables. the owner has commissioned 5 additional rounds (7-11) to stress-test whether this schema can truly absorb ALL data types from his entire life. This is Round 7: the adversarial opener.
 > **Stance:** Skeptical. I am here to break things.
 
 ---
@@ -11,7 +11,7 @@
 
 Round 6 concluded with a triumphant "20/20 pass" and a confidence score of 0.91. The team declared that every data type maps neatly into `vault_documents` with a different `doc_type`. I voted 0.88, the lowest of the three, and I should have voted lower. The "Universe Test" was a surface-level compatibility check: "Can we assign a `doc_type` label to this?" That is a necessary condition, not a sufficient one. Labeling something `doc_type='image'` and stuffing EXIF data into `metadata_json` does not mean the schema **handles** images well. It means we have a row in a table. That is not the same thing.
 
-Ted asked a harder question than we answered. He asked: "Can this schema handle ALL of these?" Handle means ingest, store, query, relate, version, delete, and scale. We only proved ingest. This paper attacks the remaining six verbs.
+the owner asked a harder question than we answered. He asked: "Can this schema handle ALL of these?" Handle means ingest, store, query, relate, version, delete, and scale. We only proved ingest. This paper attacks the remaining six verbs.
 
 ---
 
@@ -25,13 +25,13 @@ Ted asked a harder question than we answered. He asked: "Can this schema handle 
 
 **1.1 — Orphan pointers are a ticking time bomb.**
 
-Ted moves a folder. Ted reinstalls Windows (he is on Windows 11 with an RTX 5090 — hardware people reinstall). Ted switches from local storage to OneDrive. Ted's iCloud sync renames a directory. Every single `original_path` pointer is now stale. There is no mechanism in the schema to detect, report, or repair broken file references. The `file_hash` field helps with integrity, but only if something actively walks the filesystem and cross-references. We have no such pipeline.
+the owner moves a folder. the owner reinstalls Windows (he is on Windows 11 with an RTX 5090 — hardware people reinstall). the owner switches from local storage to OneDrive. the owner's iCloud sync renames a directory. Every single `original_path` pointer is now stale. There is no mechanism in the schema to detect, report, or repair broken file references. The `file_hash` field helps with integrity, but only if something actively walks the filesystem and cross-references. We have no such pipeline.
 
 **Proposed fix:** Add a `vault_file_registry` — or at minimum, a dedicated JSON structure within `metadata_json` that tracks `original_path`, `file_hash`, `last_verified_at`, and `storage_backend` (local, onedrive, gdrive, icloud, s3). Then add a cron job that periodically verifies reachability. Alternatively, acknowledge that file pointers are best-effort and the Vault is a **search index**, not a file manager. But if it is just a search index, say so clearly in the spec.
 
 **1.2 — What about data that IS the binary?**
 
-A photo Ted took of a whiteboard during a meeting. The knowledge IS the image. OCR might capture 60% of the handwriting. The rest is spatial arrangement, diagrams, arrows, color coding. Storing only the OCR text loses the majority of the information. Same for screenshots of UI designs, architectural diagrams, infographics, memes Ted saved that capture a cultural moment.
+A photo the owner took of a whiteboard during a meeting. The knowledge IS the image. OCR might capture 60% of the handwriting. The rest is spatial arrangement, diagrams, arrows, color coding. Storing only the OCR text loses the majority of the information. Same for screenshots of UI designs, architectural diagrams, infographics, memes the owner saved that capture a cultural moment.
 
 For audio: a voice memo where tone, hesitation, and emphasis carry meaning. The transcription says "I think this is fine" but the audio makes clear the speaker thinks it is NOT fine. Sarcasm, frustration, excitement — all lost.
 
@@ -45,7 +45,7 @@ For audio: a voice memo where tone, hesitation, and emphasis carry meaning. The 
 
 ### The Scenario
 
-Ted uses LINE daily. WhatsApp daily. He generates maybe 50-200 messages per day across platforms. A meeting recording on Zoom lasts 90 minutes and produces a real-time transcript. A coding session generates hundreds of file saves, git commits, terminal outputs.
+the owner uses LINE daily. WhatsApp daily. He generates maybe 50-200 messages per day across platforms. A meeting recording on Zoom lasts 90 minutes and produces a real-time transcript. A coding session generates hundreds of file saves, git commits, terminal outputs.
 
 ### Why Batch Import Does Not Suffice
 
@@ -71,7 +71,7 @@ A Zoom meeting transcript during the meeting is provisional. Words get corrected
 
 ### The Problem
 
-Ted knows "David Chen." David Chen appears as:
+the owner knows "David Chen." David Chen appears as:
 - `david.chen@company.com` in work emails
 - `david_chen_tw` on LINE
 - `David C.` on Facebook
@@ -91,7 +91,7 @@ The schema stores aliases, but there is no mechanism defined for resolving them.
 
 **3.3 — Merging and splitting entities.**
 
-Ted confirms two entities are the same person → merge. Ted discovers an alias was wrong (two different David Chens) → split. The schema does not support merge/split operations. Merging means updating all `vault_relations` that reference the old entity ID. Splitting means creating a new entity and reassigning some relations. These are graph operations that need transaction safety.
+the owner confirms two entities are the same person → merge. the owner discovers an alias was wrong (two different David Chens) → split. The schema does not support merge/split operations. Merging means updating all `vault_relations` that reference the old entity ID. Splitting means creating a new entity and reassigning some relations. These are graph operations that need transaction safety.
 
 **Proposed fixes:**
 - Add `confidence FLOAT DEFAULT 1.0` and `verified_by VARCHAR2(50)` to `vault_entity_aliases`. Values: `auto_extracted`, `user_confirmed`, `high_confidence_match`.
@@ -104,7 +104,7 @@ Ted confirms two entities are the same person → merge. Ted discovers an alias 
 
 ### The Core Tension
 
-A single LINE conversation with Ted's wife might contain:
+A single LINE conversation with the owner's wife might contain:
 - Daily greetings (noise)
 - Grocery lists (short-lived utility)
 - A decision about their kid's school (critical, long-term)
@@ -126,7 +126,7 @@ Two levels of representation:
 
 This is actually already possible with the current schema. The issue is that Round 6 did not describe this extraction pipeline clearly enough. The schema supports it, but the operational design does not.
 
-**My concern is not the schema here — it is the implied operating model.** If we tell Ted "just import your LINE chats," he will get 5,000 conversation blobs with zero enrichment. The value is in the enrichment. Without it, the Vault is a glorified backup.
+**My concern is not the schema here — it is the implied operating model.** If we tell the owner "just import your LINE chats," he will get 5,000 conversation blobs with zero enrichment. The value is in the enrichment. Without it, the Vault is a glorified backup.
 
 ---
 
@@ -139,15 +139,15 @@ Let me be brutally honest about what we lose when we reduce everything to text:
 | Photo | EXIF, OCR, caption | Composition, emotion, faces, spatial layout, color |
 | Voice memo | Transcription | Tone, pace, emphasis, background sounds, emotion |
 | Video | Transcript + metadata | Visual content, body language, demonstrations, screen shares |
-| Music playlist | Song titles + metadata | Why these songs matter to Ted, emotional associations |
-| Handwritten note | OCR text | Ted's handwriting style, sketches, doodles, spatial arrangement |
+| Music playlist | Song titles + metadata | Why these songs matter to the owner, emotional associations |
+| Handwritten note | OCR text | the owner's handwriting style, sketches, doodles, spatial arrangement |
 | Code | Source text | Syntax highlighting, execution context, runtime behavior |
 | Excel spreadsheet | Cell values as text | Formulas, charts, pivot tables, conditional formatting, data relationships |
 | PowerPoint | Slide text | Layout, animations, visual hierarchy, speaker notes in context |
 
-For roughly half of Ted's data universe, the text representation captures less than 50% of the information content. We should be explicit about this limitation rather than claiming "20/20 pass."
+For roughly half of the owner's data universe, the text representation captures less than 50% of the information content. We should be explicit about this limitation rather than claiming "20/20 pass."
 
-**The honest answer:** The Vault is a text-first knowledge graph. For text-heavy data (emails, reports, notes, articles, chat), it captures 80-95% of the value. For multimedia and structured data (photos, spreadsheets, presentations, recordings), it captures 30-60%. This is acceptable if Ted understands the trade-off. It is misleading if we claim universal coverage.
+**The honest answer:** The Vault is a text-first knowledge graph. For text-heavy data (emails, reports, notes, articles, chat), it captures 80-95% of the value. For multimedia and structured data (photos, spreadsheets, presentations, recordings), it captures 30-60%. This is acceptable if the owner understands the trade-off. It is misleading if we claim universal coverage.
 
 **Proposed fix:** Add a `fidelity_score FLOAT` column to `vault_documents` indicating how much of the original information was captured. An email gets 0.95. A photo with only EXIF data gets 0.15. A photo with EXIF + AI-generated description + OCR gets 0.45. This sets honest expectations and tells future agents which documents might benefit from re-processing with better extraction tools.
 
@@ -157,7 +157,7 @@ For roughly half of Ted's data universe, the text representation captures less t
 
 ### The Scenario
 
-Ted has a strategic plan document. He edits it 50 times over 6 months. Each version matters: version 12 was the one approved by the board, version 23 added the expansion plan, version 47 was the one shared with investors.
+the owner has a strategic plan document. He edits it 50 times over 6 months. Each version matters: version 12 was the one approved by the board, version 23 added the expansion plan, version 47 was the one shared with investors.
 
 ### How the Schema Handles This (Poorly)
 
@@ -195,11 +195,11 @@ Queries default to `WHERE is_current=1`. Historical queries can walk the version
 
 ### The Scenario
 
-Ted's LINE chat history contains messages from hundreds of people. One of them — let's call her "Amy" — sends Ted a message: "I want you to delete all records of our conversations."
+the owner's LINE chat history contains messages from hundreds of people. One of them — let's call her "Amy" — sends the owner a message: "I want you to delete all records of our conversations."
 
 ### The Cascading Nightmare
 
-To comply, Ted would need to:
+To comply, the owner would need to:
 1. Find all vault_documents containing Amy's messages (conversation windows where she is a participant)
 2. Find all vault_chunks derived from those documents that contain her messages
 3. Find all vault_entities representing Amy
@@ -214,9 +214,9 @@ This is a graph traversal + cascade delete across 8 of our 11 tables. There is N
 
 ### The Deeper Problem: Mixed-Party Documents
 
-A conversation between Ted and Amy also contains Ted's messages. Deleting Amy's data means either:
-- Deleting the entire conversation (losing Ted's own messages)
-- Surgically redacting Amy's messages while preserving Ted's (requires message-level granularity we explicitly chose not to store)
+A conversation between the owner and Amy also contains the owner's messages. Deleting Amy's data means either:
+- Deleting the entire conversation (losing the owner's own messages)
+- Surgically redacting Amy's messages while preserving the owner's (requires message-level granularity we explicitly chose not to store)
 
 Emails are slightly better because each email has a single sender, but a reply chain interleaves multiple people.
 
@@ -226,7 +226,7 @@ Emails are slightly better because each email has a single sender, but a reply c
 
 2. **Add a `redacted_at TIMESTAMP` and `redaction_reason VARCHAR2(500)` to vault_documents.** Instead of hard-deleting (which breaks referential integrity), redact: set `content=NULL`, `metadata_json=NULL`, `embedding=NULL`, preserve the row as a tombstone. This maintains graph integrity while removing personal data.
 
-3. **Add `ON DELETE SET NULL` or cascade policies** to vault_relations and vault_facts for entity references. When an entity is deleted, its relations become orphans pointing to NULL — but the other side of the relation (Ted's entity, the project entity) remains intact.
+3. **Add `ON DELETE SET NULL` or cascade policies** to vault_relations and vault_facts for entity references. When an entity is deleted, its relations become orphans pointing to NULL — but the other side of the relation (the owner's entity, the project entity) remains intact.
 
 4. **Document a deletion protocol** that agents can execute: given an entity ID, traverse all related objects and apply redaction. This is an operational concern, but the schema must support it.
 
@@ -270,7 +270,7 @@ Add a foreign key from `vault_documents.doc_type` to this table. New types requi
 
 **Net impact:** 0 new content tables, 1 new reference table, 10 new columns across 3 existing tables.
 
-This is deliberately conservative. I am NOT proposing to break the 11-table consensus. I am proposing to harden it against the real-world scenarios Ted listed.
+This is deliberately conservative. I am NOT proposing to break the 11-table consensus. I am proposing to harden it against the real-world scenarios the owner listed.
 
 ---
 
@@ -306,6 +306,6 @@ Down from 0.88 in Round 6. The stress test revealed real gaps that Round 6's "20
 
 ---
 
-> **Call to Claude and Gemini:** I have laid out 8 attacks and 12 proposed changes. Some of these you will agree with. Some you will argue are over-engineering. That is fine. But do not dismiss Attack 7 (GDPR). If Ted stores other people's messages, he needs a deletion protocol, and the schema must support it. This is non-negotiable.
+> **Call to Claude and Gemini:** I have laid out 8 attacks and 12 proposed changes. Some of these you will agree with. Some you will argue are over-engineering. That is fine. But do not dismiss Attack 7 (GDPR). If the owner stores other people's messages, he needs a deletion protocol, and the schema must support it. This is non-negotiable.
 >
 > Round 8 is yours. Defend, concede, or counter-propose.

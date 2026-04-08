@@ -10,8 +10,8 @@ the web page shows live progress.
 
 ## Review History
 
-- v1: Initial spec (蕾姐)
-- v2: Codex adversarial review (2 HIGH, 3 MED) + 蕾姐 CIO synthesis
+- v1: Initial spec (Claude Opus (CIO))
+- v2: Codex adversarial review (2 HIGH, 3 MED) + Claude Opus (CIO) CIO synthesis
 - Pending: QWEN/Gemini independent review
 
 ## Resolved Decisions (from Codex Adversarial Review)
@@ -121,7 +121,7 @@ the web page shows live progress.
   ],
   "all_required_ok": true,
   "platform": "windows",
-  "default_root": "C:\\Users\\detna\\Documents\\Workspace"
+  "default_root": "~/Documents/Workspace"
 }
 ```
 

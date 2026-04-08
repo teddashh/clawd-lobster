@@ -4,7 +4,7 @@
 
 The mandate to create a "permanent deep brain" is a project of profound ambition. It requires us to move beyond simple data storage and design a living, interconnected system for knowledge, memory, and introspection. My position is rooted in the principles of long-term architectural integrity, scalability, and query-centric design. A successful Vault must not be a write-only data graveyard; it must be a high-performance system for retrieval, correlation, and synthesis.
 
-The proposed 9-table schema is a solid, document-centric starting point. However, to truly unify the rich, varied, and often-structured data from both `OPENCLAW_APP` and `CLAUDE_MEMORY`, we must evolve this foundation. My recommendations focus on targeted extensions and strategic modeling to create a single, cohesive, and powerful schema that can truly serve as Ted's "deep brain" for decades to come.
+The proposed 9-table schema is a solid, document-centric starting point. However, to truly unify the rich, varied, and often-structured data from both `OPENCLAW_APP` and `CLAUDE_MEMORY`, we must evolve this foundation. My recommendations focus on targeted extensions and strategic modeling to create a single, cohesive, and powerful schema that can truly serve as the owner's "deep brain" for decades to come.
 
 ---
 
@@ -163,4 +163,4 @@ I am highly confident that this proposed architecture provides a robust, scalabl
 
 1.  **Ingestion & Migration Complexity:** The biggest challenge is not schema design, but building the ETL (Extract, Transform, Load) pipelines to correctly parse, classify, and load 86k+ emails and gigs of other legacy data into this new, highly structured model. This effort is non-trivial and must be meticulously planned.
 2.  **Query Performance at Scale:** The proposed model is highly relational. While this is excellent for data integrity and powerful queries, it requires careful and proactive performance tuning. Partitioning, indexing, and materialized views must be part of the initial implementation, not bolted on later when performance inevitably degrades.
-3.  **The User/Application Layer:** A perfect Vault with no intuitive way to access it is a failure. The success of this project is critically dependent on a parallel effort to design and build the search, query, and visualization interfaces that will allow Ted and the agents to actually *use* this deep brain. The schema is the foundation, but the house is the application built on top. We must design for the queries we want to run.
+3.  **The User/Application Layer:** A perfect Vault with no intuitive way to access it is a failure. The success of this project is critically dependent on a parallel effort to design and build the search, query, and visualization interfaces that will allow the owner and the agents to actually *use* this deep brain. The schema is the foundation, but the house is the application built on top. We must design for the queries we want to run.

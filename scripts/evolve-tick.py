@@ -252,6 +252,7 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
         print("[evolve] No workspace available to run Claude in.")
         return 0
 
+    # Try agent_dispatch first, fall back to subprocess claude -p
     try:
         from agent_dispatch import dispatch_sync
         result = dispatch_sync(
@@ -264,17 +265,50 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
             print("[evolve] Agent returned no output.")
             return 0
 
-        # Count extracted patterns from JSON blocks
         learned = sum(1 for b in result.json_blocks if b.get("type") == "skill")
         knowledge = sum(1 for b in result.json_blocks if b.get("type") == "knowledge")
 
         if learned > 0 or knowledge > 0:
             print(f"[evolve] Extracted {learned} skill(s), {knowledge} knowledge item(s)")
-            print(f"[evolve] Agent: {len(result.tool_calls)} tool calls, {result.elapsed_seconds}s")
         else:
             print("[evolve] No new patterns found this cycle.")
 
         return learned
+
+    except ImportError:
+        # agent_dispatch not available — fall back to subprocess
+        print("[evolve] agent_dispatch not available, using subprocess fallback")
+        try:
+            result = subprocess.run(
+                ["claude", "-p", prompt, "--output-format", "text"],
+                capture_output=True, text=True, timeout=CLAUDE_TIMEOUT,
+                cwd=cwd, encoding="utf-8", errors="replace",
+            )
+            output = result.stdout or ""
+            if not output.strip():
+                print("[evolve] Claude returned no output.")
+                return 0
+
+            json_blocks = []
+            for match in re.finditer(r"```json\s*\n(.*?)\n```", output, re.DOTALL):
+                try:
+                    json_blocks.append(json.loads(match.group(1)))
+                except json.JSONDecodeError:
+                    continue
+
+            learned = sum(1 for b in json_blocks if b.get("type") == "skill")
+            knowledge = sum(1 for b in json_blocks if b.get("type") == "knowledge")
+
+            if learned > 0 or knowledge > 0:
+                print(f"[evolve] Extracted {learned} skill(s), {knowledge} knowledge item(s)")
+            else:
+                print("[evolve] No new patterns found this cycle.")
+
+            return learned
+
+        except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+            print(f"[evolve] Subprocess fallback error: {e}")
+            return 0
 
     except Exception as e:
         print(f"[evolve] Agent dispatch error: {e}")
@@ -333,21 +367,37 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
         return 0
 
     try:
-        from agent_dispatch import dispatch_sync
-        result = dispatch_sync(
-            prompt, cwd=cwd,
-            tools=["Read", "Glob", "Grep"],
-            max_turns=10,
-        )
-        output = result.text
+        # Try agent_dispatch, fall back to subprocess
+        output = ""
+        json_blocks = []
+        try:
+            from agent_dispatch import dispatch_sync
+            result = dispatch_sync(
+                prompt, cwd=cwd,
+                tools=["Read", "Glob", "Grep"],
+                max_turns=10,
+            )
+            output = result.text
+            json_blocks = result.json_blocks
+        except ImportError:
+            result = subprocess.run(
+                ["claude", "-p", prompt, "--output-format", "text"],
+                capture_output=True, text=True, timeout=CLAUDE_TIMEOUT,
+                cwd=cwd, encoding="utf-8", errors="replace",
+            )
+            output = result.stdout or ""
+            for match in re.finditer(r"```json\s*\n(.*?)\n```", output, re.DOTALL):
+                try:
+                    json_blocks.append(json.loads(match.group(1)))
+                except json.JSONDecodeError:
+                    continue
 
-        if not result.ok or "NO_PROPOSALS" in output:
+        if not output.strip() or "NO_PROPOSALS" in output:
             return 0
 
-        # Use pre-extracted JSON blocks from dispatch result
         proposals_written = 0
 
-        for proposal in result.json_blocks:
+        for proposal in json_blocks:
             try:
                 title = proposal.get("title", "untitled")
                 workspace = proposal.get("workspace", "")

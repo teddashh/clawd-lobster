@@ -1,6 +1,6 @@
 # Round 7 — Gemini (2.5 Pro): Universal Ingestion Architecture
 
-This round of analysis moves from the theoretical soundness of our 11-table schema to its practical application against the ultimate stress test: Ted's goal of a universal "everything store." The consensus schema is flexible, with `vault_documents` as the central hub and `doc_type` as the primary differentiator. Now, we must scrutinize the architectural patterns and ancillary systems required to make this schema performant, reliable, and useful as it scales from 86,000 emails to over a million heterogeneous documents. My analysis focuses on the journey of data—from the outside world into the vault, how it lives and changes within the vault, and how it is ultimately retrieved.
+This round of analysis moves from the theoretical soundness of our 11-table schema to its practical application against the ultimate stress test: the owner's goal of a universal "everything store." The consensus schema is flexible, with `vault_documents` as the central hub and `doc_type` as the primary differentiator. Now, we must scrutinize the architectural patterns and ancillary systems required to make this schema performant, reliable, and useful as it scales from 86,000 emails to over a million heterogeneous documents. My analysis focuses on the journey of data—from the outside world into the vault, how it lives and changes within the vault, and how it is ultimately retrieved.
 
 ### 1. Data Lifecycle Management: The Challenge of Mutability
 
@@ -37,7 +37,7 @@ The promise of semantic search comes at a cost: storing vector embeddings. Let's
 *   A 1536-dimension vector using 4-byte floats (`FLOAT4`) requires `1536 * 4 = 6,144` bytes, or roughly **6 KB per vector**.
 *   For **500,000 chunks**, the storage required for the vectors alone is `500,000 * 6 KB = 3,000,000 KB`, which is **3 GB**.
 
-This calculation is conservative. It doesn't include the text of the chunks themselves, the main document content, other tables, indexes, or database WALs. A 3 GB vector index will immediately disqualify most "Always Free" database tiers, which often cap out at 500 MB to 1 GB of total storage. Ted must budget for a paid, dedicated database plan. This "vector tax" is a significant, recurring operational cost that scales linearly with the number of chunks.
+This calculation is conservative. It doesn't include the text of the chunks themselves, the main document content, other tables, indexes, or database WALs. A 3 GB vector index will immediately disqualify most "Always Free" database tiers, which often cap out at 500 MB to 1 GB of total storage. the owner must budget for a paid, dedicated database plan. This "vector tax" is a significant, recurring operational cost that scales linearly with the number of chunks.
 
 **Mitigation Strategies:**
 *   **Intelligent Chunking:** Don't embed everything. Short, non-descriptive chunks or boilerplate can be excluded.
@@ -74,7 +74,7 @@ The `vault_entity_aliases` table is the correct tool, but automating its populat
 
 1.  **Heuristic Linking:** On ingestion, extract obvious alias candidates (email addresses, phone numbers, profile URLs). If a new document contains an alias already linked to an entity, provisionally link the new document to that entity.
 2.  **Probabilistic Clustering:** A background agent continuously analyzes the `vault_entity_aliases` table. It looks for clusters. For example, if alias "Dr. Robert Smith", alias "Bob S.", and alias "r.smith@hospital.com" frequently co-occur in the same documents (especially with other entities like "Cardiology Dept"), the agent can propose a high-confidence merge.
-3.  **Human-in-the-Loop:** The system will make mistakes. There *must* be a simple interface for Ted to confirm or deny proposed entity merges. "Is 'Bobby' (from LINE) the same person as 'Robert Jones' (from email)?" Every manual confirmation becomes high-quality training data that makes the probabilistic clustering agent smarter over time.
+3.  **Human-in-the-Loop:** The system will make mistakes. There *must* be a simple interface for the owner to confirm or deny proposed entity merges. "Is 'Bobby' (from LINE) the same person as 'Robert Jones' (from email)?" Every manual confirmation becomes high-quality training data that makes the probabilistic clustering agent smarter over time.
 
 ### 7. Retention and Archival: Data Temperature
 

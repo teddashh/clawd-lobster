@@ -85,7 +85,7 @@ is_latest       NUMBER(1) DEFAULT 1
 
 ### Storage / Vector Tax
 **Gemini**: 500K chunks × 6KB = 3GB vector。Always Free 可能不夠。
-**Claude**: Ted 的 Always Free tier 是 20GB（ATP），不是 500MB。3GB vectors + 3GB other = ~6GB total，在限制內。但 embedding policy 仍然重要 — 不是每個 chunk 都需要 embed。
+**Claude**: the owner 的 Always Free tier 是 20GB（ATP），不是 500MB。3GB vectors + 3GB other = ~6GB total，在限制內。但 embedding policy 仍然重要 — 不是每個 chunk 都需要 embed。
 **共識**: 維持 Always Free tier。加 embedding policy convention in metadata_json。
 
 ### Data Temperature (Hot/Warm/Cold)

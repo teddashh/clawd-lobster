@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-經過 11 輪辯論（三個 AI agent 交叉質詢、壓力測試、收斂），The Vault schema 已達到所有參與者一致同意的最終狀態。Schema 可以處理 Ted 的所有現有資料（86K+ emails、daily reports、knowledge articles、action logs、contacts、decisions、questions、SOPs），以及所有未來資料類型（LINE 對話、Facebook 文章、照片、PDF、語音備忘錄、會議錄音、財務/健康/法律文件、程式碼、網頁、手寫筆記掃描等）。
+經過 11 輪辯論（三個 AI agent 交叉質詢、壓力測試、收斂），The Vault schema 已達到所有參與者一致同意的最終狀態。Schema 可以處理 the owner 的所有現有資料（86K+ emails、daily reports、knowledge articles、action logs、contacts、decisions、questions、SOPs），以及所有未來資料類型（LINE 對話、Facebook 文章、照片、PDF、語音備忘錄、會議錄音、財務/健康/法律文件、程式碼、網頁、手寫筆記掃描等）。
 
 **三方最終信心分數平均：0.92 / 1.00**
 
@@ -485,9 +485,9 @@ python vault_enrich.py --doc-type email --mode chunk_only
 | 5 | 5 contacts as entities | `SELECT COUNT(*) FROM vault_entities WHERE entity_type='person'` |
 | 6 | 4 decisions + 13 questions as facts | `SELECT COUNT(*) FROM vault_facts` |
 | 7 | All sync_log entries = success | `SELECT COUNT(*) FROM vault_sync_log WHERE status != 'success'` = 0 |
-| 8 | search() returns results for "FPC" | `vault_api.search("FPC")` returns email docs |
-| 9 | entity_resolve("Ted") works | `vault_api.entity_resolve("Ted")` finds entity |
-| 10 | about() returns cross-type results | `vault_api.about("Ted")` returns emails + reports + facts |
+| 8 | search() returns results for "ACME" | `vault_api.search("ACME")` returns email docs |
+| 9 | entity_resolve("owner") works | `vault_api.entity_resolve("owner")` finds entity |
+| 10 | about() returns cross-type results | `vault_api.about("owner")` returns emails + reports + facts |
 | 11 | Rollback works for each source | `vault_migrate.py --source X --rollback` cleans up |
 | 12 | Total storage < 10GB | Oracle dashboard or DBA_SEGMENTS query |
 
@@ -517,13 +517,13 @@ python vault_enrich.py --doc-type email --mode chunk_only
 
 ---
 
-## Ted's Approval Checklist
+## the owner's Approval Checklist
 
 ```
 □ 1. Schema (13 tables + 2 views) — 同意？
 □ 2. doc_type 清單 (25 types) — 要加減嗎？
 □ 3. Migration 順序 (knowledge→contacts→decisions→questions→sops→action_logs→daily_reports→emails) — OK？
-□ 4. Email ownership = 'work' (全部 FPC email) — 正確？
+□ 4. Email ownership = 'work' (全部 ACME email) — 正確？
 □ 5. Enrichment deferred (先存再慢慢萃取) — 同意？
 □ 6. 30-day grace period before cleanup — 夠嗎？
 □ 7. Parser 優先順序 (先 SQL migrators，再 FileScanner/PdfParser) — OK？
@@ -545,7 +545,7 @@ python vault_enrich.py --doc-type email --mode chunk_only
 1. **Parser development** — 10 parsers defined, to be built incrementally
 2. **Enrichment pipeline** — Chunking + embedding + entity extraction (background job)
 3. **Multimodal embedding** — When models and tooling mature, ALTER ADD a second vector column
-4. **Entity merge UI** — Ted needs a way to confirm/deny entity merge proposals
+4. **Entity merge UI** — the owner needs a way to confirm/deny entity merge proposals
 5. **Hybrid search optimization** — Metadata filter → vector search pipeline in vault_api.search()
 
 ---
