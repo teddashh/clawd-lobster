@@ -569,13 +569,15 @@ def seed_doc_types(cursor, dry_run: bool = False) -> dict:
             result["seeded"] += 1
             continue
         try:
+            # M8 fix: use named binds for clarity (doc_type appears in both USING and INSERT)
             cursor.execute("""
                 MERGE INTO vault_doc_types t
-                USING (SELECT :1 AS doc_type FROM dual) s
+                USING (SELECT :dt_match AS doc_type FROM dual) s
                 ON (t.doc_type = s.doc_type)
                 WHEN NOT MATCHED THEN INSERT (doc_type, description, parent_type)
-                    VALUES (:2, :3, :4)
-            """, [doc_type, doc_type, description, parent_type])
+                    VALUES (:dt_val, :desc, :parent)
+            """, {"dt_match": doc_type, "dt_val": doc_type,
+                  "desc": description, "parent": parent_type})
             result["seeded"] += 1
         except Exception as e:
             err = str(e)
@@ -649,8 +651,11 @@ def doctor(cursor) -> dict:
     except Exception:
         diag["vector_support"] = False
 
-    # Check tables + row counts
+    # Check tables + row counts (C2 fix: names come from TABLES constant, not user input)
+    _ALLOWED_TABLES = frozenset(n for n, _ in TABLES)
     for name, _ in TABLES:
+        if name not in _ALLOWED_TABLES:
+            continue
         if _table_exists(cursor, name):
             cursor.execute(f"SELECT COUNT(*) FROM {name}")
             diag["tables"][name] = cursor.fetchone()[0]

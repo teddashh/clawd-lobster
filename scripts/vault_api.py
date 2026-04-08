@@ -27,6 +27,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+__all__ = ["Vault"]
+
 
 # ---------------------------------------------------------------------------
 # Connection management
@@ -306,16 +308,17 @@ class Vault:
         Returns list of {id, type, title, excerpt, occurred_at, score}.
         """
         results = []
-        q = f"%{query}%"
+        q_like = f"%{query}%"
+        q_lower = query.lower()
 
         with self._pool.acquire() as conn:
             with conn.cursor() as cur:
-                # Search documents
-                params = [q, q, limit]
+                # Search documents — M7 fix: use DBMS_LOB.INSTR for CLOB (safe for >32K)
+                binds: dict[str, Any] = {"q_like": q_like, "q_lower": q_lower, "row_limit": limit}
                 type_filter = ""
                 if doc_type:
-                    type_filter = "AND d.doc_type = :4"
-                    params = [q, q, limit, doc_type]
+                    type_filter = "AND d.doc_type = :doc_type"
+                    binds["doc_type"] = doc_type
 
                 cur.execute(f"""
                     SELECT d.id, d.doc_type, d.title, d.occurred_at, d.lifecycle,
@@ -323,11 +326,12 @@ class Vault:
                            s.display_name AS source_name
                     FROM vault_documents d
                     JOIN vault_sources s ON s.id = d.source_id
-                    WHERE (LOWER(d.title) LIKE LOWER(:1) OR LOWER(d.content) LIKE LOWER(:2))
+                    WHERE (LOWER(d.title) LIKE LOWER(:q_like)
+                           OR DBMS_LOB.INSTR(LOWER(d.content), :q_lower) > 0)
                         {type_filter}
                     ORDER BY d.occurred_at DESC
-                    FETCH FIRST :3 ROWS ONLY
-                """, params)
+                    FETCH FIRST :row_limit ROWS ONLY
+                """, binds)
 
                 for row in _fetchall_dict(cur):
                     row["type"] = "document"
@@ -338,10 +342,10 @@ class Vault:
                     SELECT f.id, f.claim, f.confidence, f.fact_date, f.lifecycle,
                            f.source_agent
                     FROM vault_facts f
-                    WHERE LOWER(f.claim) LIKE LOWER(:1)
+                    WHERE LOWER(f.claim) LIKE LOWER(:fact_q)
                     ORDER BY f.confidence DESC, f.created_at DESC
-                    FETCH FIRST :2 ROWS ONLY
-                """, [q, limit])
+                    FETCH FIRST :fact_limit ROWS ONLY
+                """, {"fact_q": q_like, "fact_limit": limit})
 
                 for row in _fetchall_dict(cur):
                     row["type"] = "fact"
@@ -428,18 +432,19 @@ class Vault:
                 """, [eid])
                 profile["facts"] = _fetchall_dict(cur)
 
-                # Related entities
+                # Related entities — M6 fix: wrap UNION in subquery for overall limit
                 cur.execute("""
-                    SELECT e.id, e.entity_type, e.canonical_name, r.relation_type
-                    FROM vault_relations r
-                    JOIN vault_entities e ON e.id = r.object_id AND r.object_type = 'entity'
-                    WHERE r.subject_type = 'entity' AND r.subject_id = :1
-                    UNION
-                    SELECT e.id, e.entity_type, e.canonical_name, r.relation_type
-                    FROM vault_relations r
-                    JOIN vault_entities e ON e.id = r.subject_id AND r.subject_type = 'entity'
-                    WHERE r.object_type = 'entity' AND r.object_id = :2
-                    FETCH FIRST 50 ROWS ONLY
+                    SELECT * FROM (
+                        SELECT e.id, e.entity_type, e.canonical_name, r.relation_type
+                        FROM vault_relations r
+                        JOIN vault_entities e ON e.id = r.object_id AND r.object_type = 'entity'
+                        WHERE r.subject_type = 'entity' AND r.subject_id = :1
+                        UNION
+                        SELECT e.id, e.entity_type, e.canonical_name, r.relation_type
+                        FROM vault_relations r
+                        JOIN vault_entities e ON e.id = r.subject_id AND r.subject_type = 'entity'
+                        WHERE r.object_type = 'entity' AND r.object_id = :2
+                    ) FETCH FIRST 50 ROWS ONLY
                 """, [eid, eid])
                 profile["relations"] = _fetchall_dict(cur)
 
@@ -626,24 +631,49 @@ class Vault:
                    metadata: dict | None = None,
                    contact_id: int | None = None,
                    taxonomy_id: int | None = None) -> int:
-        """Create an entity with optional aliases. Returns entity ID."""
+        """Create an entity with optional aliases. Returns entity ID.
+        M5 fix: resolve + insert in same connection, catch constraint violation for race."""
         with self._pool.acquire() as conn:
             with conn.cursor() as cur:
-                # Check if entity already exists
-                existing = self.entity_resolve(canonical_name)
-                if existing:
-                    return existing["id"]
+                # Check if entity already exists (same connection — reduces TOCTOU window)
+                norm = canonical_name.strip().lower()
+                cur.execute("""
+                    SELECT e.id FROM vault_entities e
+                    JOIN vault_entity_aliases a ON a.entity_id = e.id
+                    WHERE a.alias_normalized = :1
+                    FETCH FIRST 1 ROWS ONLY
+                """, [norm])
+                row = cur.fetchone()
+                if row:
+                    return row[0]
+
+                # Also check canonical name directly
+                cur.execute("""
+                    SELECT id FROM vault_entities WHERE LOWER(canonical_name) = :1
+                    FETCH FIRST 1 ROWS ONLY
+                """, [norm])
+                row = cur.fetchone()
+                if row:
+                    return row[0]
 
                 eid_var = cur.var(int)
-                cur.execute("""
-                    INSERT INTO vault_entities (entity_type, canonical_name, metadata_json,
-                        contact_id, taxonomy_id, first_seen_at, last_seen_at)
-                    VALUES (:1, :2, :3, :4, :5, SYSTIMESTAMP, SYSTIMESTAMP)
-                    RETURNING id INTO :6
-                """, [entity_type, canonical_name,
-                      json.dumps(metadata) if metadata else None,
-                      contact_id, taxonomy_id, eid_var])
-                entity_id = eid_var.getvalue()[0]
+                try:
+                    cur.execute("""
+                        INSERT INTO vault_entities (entity_type, canonical_name, metadata_json,
+                            contact_id, taxonomy_id, first_seen_at, last_seen_at)
+                        VALUES (:1, :2, :3, :4, :5, SYSTIMESTAMP, SYSTIMESTAMP)
+                        RETURNING id INTO :6
+                    """, [entity_type, canonical_name,
+                          json.dumps(metadata) if metadata else None,
+                          contact_id, taxonomy_id, eid_var])
+                    entity_id = eid_var.getvalue()[0]
+                except Exception as e:
+                    # Race condition: another process created it between check and insert
+                    if "unique constraint" in str(e).lower():
+                        conn.rollback()
+                        resolved = self.entity_resolve(canonical_name)
+                        return resolved["id"] if resolved else -1
+                    raise
 
                 # Add canonical name as alias
                 all_aliases = [canonical_name] + (aliases or [])

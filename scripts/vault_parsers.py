@@ -31,6 +31,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+__all__ = [
+    "PreDocument", "BaseParser", "ParserRouter", "DedupEngine", "absorb",
+    "TextFileParser", "PdfParser", "EmailParser", "LineParser",
+    "FacebookParser", "ImageParser", "MeetingParser", "WebParser",
+    "VoiceMemoParser", "DebateParser",
+]
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -42,7 +49,7 @@ SKIP_DIRS = {
 }
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB — skip files larger than this
-CHUNK_SIZE = 4000  # characters per chunk for large files
+CHUNK_SIZE = 4000  # characters per chunk (~1000 tokens English, ~2000 tokens CJK)
 
 CODE_EXTENSIONS = {
     ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java", ".c", ".cpp",
@@ -116,10 +123,10 @@ class PreDocument:
 # ---------------------------------------------------------------------------
 
 class BaseParser:
-    """All parsers inherit from this."""
+    """All parsers inherit from this. Subclasses must override supported_extensions."""
     name: str = "base"
-    supported_extensions: list[str] = []
-    supported_mime_types: list[str] = []
+    supported_extensions: tuple[str, ...] = ()  # L1 fix: immutable tuple, not mutable list
+    supported_mime_types: tuple[str, ...] = ()
     priority: int = 100  # lower = matched first
 
     def can_handle(self, source: str, **kwargs) -> bool:
@@ -132,15 +139,19 @@ class BaseParser:
         raise NotImplementedError(f"{self.name} parser has no parse() implementation")
 
     def _file_meta(self, path: str) -> dict[str, Any]:
-        """Common file metadata."""
+        """Common file metadata.
+        L2 note: st_ctime = creation time on Windows, inode change time on Linux/macOS.
+        """
         p = Path(path)
         stat = p.stat()
+        # Use st_birthtime on macOS if available (true creation time)
+        ctime = getattr(stat, "st_birthtime", stat.st_ctime)
         return {
             "filename": p.name,
             "extension": p.suffix.lower(),
             "size_bytes": stat.st_size,
             "modified_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
-            "created_at": datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc).isoformat(),
+            "created_at": datetime.fromtimestamp(ctime, tz=timezone.utc).isoformat(),
         }
 
 
@@ -354,23 +365,25 @@ class EmailParser(BaseParser):
                 if text_part.get_content_type() == "text/html":
                     body = self._strip_html(body)
         else:
-            # Fallback for mailbox messages
+            # Fallback for mailbox messages — M4 fix: respect charset from Content-Type
             if msg.is_multipart():
                 for part in msg.walk():
                     ct = part.get_content_type()
+                    charset = part.get_content_charset() or "utf-8"
                     if ct == "text/plain":
                         payload = part.get_payload(decode=True)
                         if payload:
-                            body = payload.decode("utf-8", errors="replace")
+                            body = payload.decode(charset, errors="replace")
                             break
                     elif ct == "text/html" and not body:
                         payload = part.get_payload(decode=True)
                         if payload:
-                            body = self._strip_html(payload.decode("utf-8", errors="replace"))
+                            body = self._strip_html(payload.decode(charset, errors="replace"))
             else:
                 payload = msg.get_payload(decode=True)
+                charset = msg.get_content_charset() or "utf-8"
                 if payload:
-                    body = payload.decode("utf-8", errors="replace")
+                    body = payload.decode(charset, errors="replace")
 
         # Parse date
         occurred_at = None
@@ -428,12 +441,37 @@ class EmailParser(BaseParser):
 
     @staticmethod
     def _strip_html(html: str) -> str:
-        """Crude HTML tag stripper."""
-        text = re.sub(r"<style[^>]*>.*?</style>", "", html, flags=re.S)
-        text = re.sub(r"<script[^>]*>.*?</script>", "", text, flags=re.S)
-        text = re.sub(r"<[^>]+>", " ", text)
-        text = re.sub(r"\s+", " ", text)
-        return text.strip()
+        """M3 fix: use html.parser instead of naive regex."""
+        from html.parser import HTMLParser
+        from io import StringIO
+
+        class _Stripper(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self._out = StringIO()
+                self._skip = False
+            def handle_starttag(self, tag, attrs):
+                if tag in ("style", "script"):
+                    self._skip = True
+            def handle_endtag(self, tag):
+                if tag in ("style", "script"):
+                    self._skip = False
+            def handle_data(self, data):
+                if not self._skip:
+                    self._out.write(data + " ")
+            def get_text(self):
+                return re.sub(r"\s+", " ", self._out.getvalue()).strip()
+
+        stripper = _Stripper()
+        try:
+            stripper.feed(html)
+            return stripper.get_text()
+        except Exception:
+            # Fallback to regex if parser fails on malformed HTML
+            text = re.sub(r"<style[^>]*>.*?</style>", "", html, flags=re.S)
+            text = re.sub(r"<script[^>]*>.*?</script>", "", text, flags=re.S)
+            text = re.sub(r"<[^>]+>", " ", text)
+            return re.sub(r"\s+", " ", text).strip()
 
 
 class LineParser(BaseParser):
@@ -494,7 +532,8 @@ class LineParser(BaseParser):
         results = []
         for date_str, messages in days.items():
             try:
-                occurred = datetime.strptime(date_str, "%Y/%m/%d").replace(tzinfo=timezone.utc)
+                # L5 fix: LINE exports use local time, not UTC
+                occurred = datetime.strptime(date_str, "%Y/%m/%d").astimezone()
             except ValueError:
                 occurred = None
 
@@ -632,9 +671,14 @@ class ImageParser(BaseParser):
             img.close()
 
         except ImportError:
-            meta["error"] = "Pillow not installed"
+            meta["error"] = "Pillow not installed (pip install Pillow)"
         except Exception as e:
-            meta["error"] = str(e)
+            err = str(e)
+            # L3 fix: helpful error for HEIC files
+            if p.suffix.lower() == ".heic" and "cannot identify" in err.lower():
+                meta["error"] = "HEIC requires pillow-heif (pip install pillow-heif)"
+            else:
+                meta["error"] = err
 
         # Build content from available metadata
         content_parts = [f"[Image: {p.name}]"]
@@ -880,17 +924,20 @@ class VoiceMemoParser(BaseParser):
     name = "voice_memo"
     supported_extensions = [".m4a", ".wav", ".mp3", ".ogg", ".flac"]
     priority = 80
+    _whisper_model = None  # M9 fix: cache model at class level
 
     def parse(self, source: str, **kwargs) -> list[PreDocument]:
         p = Path(source)
         meta = self._file_meta(source)
         mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
 
-        # Try whisper transcription
+        # Try whisper transcription — M9: load model once, reuse across files
         try:
             import whisper
-            model = whisper.load_model("base")
-            result = model.transcribe(str(p))
+            if VoiceMemoParser._whisper_model is None:
+                model_name = kwargs.get("whisper_model", "base")
+                VoiceMemoParser._whisper_model = whisper.load_model(model_name)
+            result = VoiceMemoParser._whisper_model.transcribe(str(p))
             text = result.get("text", "")
             meta["language"] = result.get("language", "")
             meta["whisper_model"] = "base"
@@ -1072,37 +1119,40 @@ class DedupEngine:
         self.vault = vault
         self._seen_hashes: set[str] = set()  # in-session dedup
 
-    def check(self, pre_doc: PreDocument) -> tuple[str, int | None]:
+    def check(self, pre_doc: PreDocument) -> tuple[str, int | None, dict]:
         """Check if document should be ingested.
-        Returns (action, existing_doc_id).
+        Returns (action, existing_doc_id, version_info).
             action: 'skip' | 'version' | 'new'
+            version_info: {} or {parent_doc_id, version} for versioned docs
+        M2 fix: no longer mutates pre_doc — returns version_info separately.
         """
         content_hash = hashlib.sha256(pre_doc.content.encode("utf-8")).hexdigest()
 
         # In-session dedup (no DB needed)
         if content_hash in self._seen_hashes:
-            return ("skip", None)
+            return ("skip", None, {})
         self._seen_hashes.add(content_hash)
 
         # If no vault connection, can't check DB
         if not self.vault:
-            return ("new", None)
+            return ("new", None, {})
 
-        # Layer 1: exact content match → skip
+        # Layer 1: exact content match -> skip
         existing = self.vault.find_by_hash(content_hash)
         if existing:
-            return ("skip", existing.get("id"))
+            return ("skip", existing.get("id"), {})
 
-        # Layer 2: same path, different content → new version
+        # Layer 2: same path, different content -> new version
         if pre_doc.original_path:
             prev = self.vault.find_by_path(pre_doc.original_path)
             if prev:
-                pre_doc.parent_doc_id = prev.get("id")
-                pre_doc.version = (prev.get("version") or 1) + 1
-                return ("version", prev.get("id"))
+                return ("version", prev.get("id"), {
+                    "parent_doc_id": prev.get("id"),
+                    "version": (prev.get("version") or 1) + 1,
+                })
 
         # Layer 3: truly new
-        return ("new", None)
+        return ("new", None, {})
 
 
 # ---------------------------------------------------------------------------
@@ -1150,7 +1200,7 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
         # Count by type
         summary["by_type"][doc.doc_type] = summary["by_type"].get(doc.doc_type, 0) + 1
 
-        action, existing_id = dedup.check(doc)
+        action, existing_id, version_info = dedup.check(doc)
 
         if action == "skip":
             summary["skipped"] += 1
@@ -1163,10 +1213,13 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
                 summary["new"] += 1
             continue
 
-        # Actually ingest
+        # Actually ingest — merge version_info into kwargs if versioning
         if vault:
             try:
-                vault.ingest(**doc.to_ingest_kwargs())
+                ingest_kwargs = doc.to_ingest_kwargs()
+                if version_info:
+                    ingest_kwargs.update(version_info)
+                vault.ingest(**ingest_kwargs)
                 if action == "version":
                     summary["versioned"] += 1
                 else:
