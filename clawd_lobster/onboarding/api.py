@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from . import state_store, lease, intents, manifest, probes, executor
+from . import state_store, lease, intents, manifest, probes, executor, handoff
 
 
 # ---------------------------------------------------------------------------
@@ -261,3 +261,33 @@ def get_jobs_status(query: dict) -> tuple[dict, int]:
     for sid in skill_ids:
         statuses[sid] = executor.check_scheduler(sid)
     return {"ok": True, "jobs": statuses}, 200
+
+
+# ---------------------------------------------------------------------------
+# Handoff
+# ---------------------------------------------------------------------------
+
+def generate_handoff(body: dict) -> tuple[dict, int]:
+    """POST /api/onboarding/handoff — Generate Claude Code handoff package."""
+    session_id = body.get("session_id", "")
+    port = body.get("port", 3333)
+    workspace_dir = body.get("workspace_dir")
+
+    if not session_id:
+        return {"ok": False, "error": "session_id required"}, 400
+
+    result = handoff.generate_handoff(session_id, port=port, workspace_dir=workspace_dir)
+    status = 200 if result.get("ok") else 500
+    return result, status
+
+
+def detect_handoff_state(body: dict) -> tuple[dict, int]:
+    """POST /api/onboarding/detect — Detect active handoff in a workspace."""
+    workspace_dir = body.get("workspace_dir", "")
+    if not workspace_dir:
+        return {"ok": False, "error": "workspace_dir required"}, 400
+
+    result = handoff.detect_handoff(workspace_dir)
+    if result:
+        return {"ok": True, "handoff": result}, 200
+    return {"ok": False, "message": "No active handoff"}, 404

@@ -145,6 +145,13 @@ ONBOARDING_PAGE = (
     # Skill cards container (filled by JS)
     "<div id='tiers-container'></div>"
 
+    # Handoff banner
+    "<div class='card' id='handoff-banner' style='display:none;text-align:center;border-color:var(--purple);margin-bottom:24px'>"
+    "<p style='margin-bottom:12px;color:var(--fg2)'>Want Claude to help with the remaining setup? Launch Claude Code in your workspace.</p>"
+    "<button class='btn primary' onclick='launchHandoff()' style='background:var(--purple);border-color:var(--purple)'>🤖 Launch Claude Code</button>"
+    "<div id='handoff-result' style='margin-top:12px;font-size:0.85rem;color:var(--fg2);display:none'></div>"
+    "</div>"
+
     # Actions
     "<div style='text-align:center;margin-top:32px;' id='actions'>"
     "<button class='btn primary' id='btn-complete' onclick='completeOnboarding()' disabled>Complete Setup</button>"
@@ -302,6 +309,9 @@ function render() {
 
   // Mascot message
   updateMascot();
+
+  // Handoff banner
+  checkHandoffBanner();
 }
 
 function getSkillIcon(id) {
@@ -424,6 +434,38 @@ async function completeOnboarding() {
   const data = await res.json();
   if (data.ok) { window.location.href = '/workspaces'; }
   else alert(data.error || 'Cannot complete yet');
+}
+
+// ── Handoff ──
+async function launchHandoff() {
+  if (!sessionId) return;
+  const res = await fetch(API + '/api/onboarding/handoff-gen', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({session_id: sessionId, port: location.port || 3333})
+  });
+  const data = await res.json();
+  const el = document.getElementById('handoff-result');
+  el.style.display = 'block';
+  if (data.ok) {
+    el.innerHTML = '<strong style="color:var(--green)">CLAUDE.md generated!</strong><br>'
+      + 'Open a terminal in your workspace and run:<br>'
+      + '<code style="background:var(--bg3);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:6px">claude</code><br>'
+      + '<span style="font-size:0.8rem;color:var(--fg3)">Claude will read the onboarding instructions and help you set up.</span>';
+  } else {
+    el.innerHTML = '<span style="color:var(--red)">Error: ' + (data.error || 'Unknown') + '</span>';
+  }
+}
+
+// Show handoff banner when there are pending items
+function checkHandoffBanner() {
+  if (!state) return;
+  const pending = (state.items || []).filter(i => i.status === 'pending' || i.status === 'failed');
+  const banner = document.getElementById('handoff-banner');
+  if (pending.length > 0 && state.phase !== 'complete') {
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 // ── Polling ──

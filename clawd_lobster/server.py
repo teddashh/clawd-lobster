@@ -150,6 +150,8 @@ class _Handler(BaseHTTPRequestHandler):
             "/api/onboarding/session": self._api_ob_create_session,
             "/api/onboarding/intent": self._api_ob_intent,
             "/api/onboarding/reconcile": self._api_ob_reconcile,
+            "/api/onboarding/handoff-gen": self._api_ob_handoff_gen,
+            "/api/onboarding/detect": self._api_ob_detect,
             "/api/controller/acquire": self._api_ob_lease_acquire,
             "/api/controller/renew": self._api_ob_lease_renew,
             "/api/controller/release": self._api_ob_lease_release,
@@ -732,6 +734,16 @@ class _Handler(BaseHTTPRequestHandler):
     def _api_ob_lease_handoff(self) -> None:
         body = self._read_body()
         data, status = ob_api.handoff_lease(body)
+        self._send_json(data, status)
+
+    def _api_ob_handoff_gen(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.generate_handoff(body)
+        self._send_json(data, status)
+
+    def _api_ob_detect(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.detect_handoff_state(body)
         self._send_json(data, status)
 
 
