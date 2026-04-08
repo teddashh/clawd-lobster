@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Getting Started with Clawd-Lobster</title>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+  --fg: #e6edf3; --fg2: #8b949e; --fg3: #484f58;
+  --accent: #58a6ff; --green: #3fb950; --red: #f85149;
+  --yellow: #d29922; --purple: #bc8cff;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container { max-width: 860px; margin: 0 auto; padding: 40px 20px; }
+
+/* Hero */
+.hero { text-align: center; padding: 60px 20px 40px; }
+.hero .mascot { width: 120px; height: 120px; margin-bottom: 20px; }
+.hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+.hero h1 span { color: var(--accent); }
+.hero .tagline { font-size: 1.2rem; color: var(--fg2); max-width: 600px; margin: 0 auto 24px; }
+.hero .cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.hero .cta a { display: inline-block; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 1rem; }
+.hero .cta .primary { background: var(--accent); color: #fff; }
+.hero .cta .secondary { border: 1px solid var(--bg3); color: var(--fg); }
+.hero .cta .primary:hover { background: #4a9aef; text-decoration: none; }
+.hero .cta .secondary:hover { border-color: var(--accent); text-decoration: none; }
+
+/* Section */
+.section { margin: 60px 0; }
+.section h2 { font-size: 1.6rem; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.section h2 .num { background: var(--accent); color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+.section p { color: var(--fg2); margin-bottom: 16px; }
+
+/* Screenshot */
+.screenshot { border: 1px solid var(--bg3); border-radius: var(--radius); overflow: hidden; margin: 20px 0; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+.screenshot img { width: 100%; display: block; }
+.screenshot .caption { background: var(--bg2); padding: 10px 16px; color: var(--fg3); font-size: 0.85rem; text-align: center; }
+
+/* Code block */
+.code-block { background: var(--bg2); border: 1px solid var(--bg3); border-radius: 8px; padding: 16px 20px; margin: 16px 0; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.9rem; overflow-x: auto; position: relative; }
+.code-block .copy { position: absolute; top: 8px; right: 8px; background: var(--bg3); border: none; color: var(--fg2); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+.code-block .copy:hover { color: var(--fg); }
+
+/* Feature grid */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin: 24px 0; }
+.feature { background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 20px; }
+.feature .icon { font-size: 2rem; margin-bottom: 8px; }
+.feature h3 { font-size: 1rem; margin-bottom: 6px; }
+.feature p { color: var(--fg2); font-size: 0.85rem; margin: 0; }
+
+/* Skills table */
+.skills-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.skills-table th, .skills-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--bg3); }
+.skills-table th { color: var(--fg3); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.skills-table td { font-size: 0.9rem; }
+.skills-table .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; }
+.skills-table .required { background: rgba(63,185,80,0.15); color: var(--green); }
+.skills-table .optional { background: rgba(88,166,255,0.15); color: var(--accent); }
+
+/* Quote */
+.quote { background: var(--bg2); border-left: 3px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 20px 24px; margin: 24px 0; font-style: italic; color: var(--fg2); }
+.quote .author { color: var(--fg3); font-size: 0.85rem; margin-top: 8px; font-style: normal; }
+
+/* Footer */
+.footer { text-align: center; padding: 40px 20px; color: var(--fg3); font-size: 0.85rem; border-top: 1px solid var(--bg3); margin-top: 60px; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .hero h1 { font-size: 1.8rem; }
+  .hero .tagline { font-size: 1rem; }
+  .features { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <img src="screenshots/onboarding-skill-parade.png" alt="Clawd-Lobster Setup" class="mascot" style="width:200px;height:auto;border-radius:12px;border:1px solid #21262d">
+  <h1><span>Clawd-Lobster</span> Getting Started</h1>
+  <p class="tagline">Your AI-native development framework. Claude Code guides you through setup — no manual configuration needed.</p>
+  <div class="cta">
+    <a href="https://github.com/teddashh/clawd-lobster" class="primary">View on GitHub</a>
+    <a href="#install" class="secondary">Quick Install</a>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- What is it -->
+<div class="section">
+  <h2>What is Clawd-Lobster?</h2>
+  <p>Clawd-Lobster is a skills wrapper for Claude Code that transforms it from a coding assistant into a full AI development platform. It adds persistent memory, automated learning, multi-agent orchestration, and project management — all guided by an AI-native onboarding experience.</p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">🧠</div>
+      <h3>Persistent Memory</h3>
+      <p>SQLite-backed memory server with 28 MCP tools. Your AI remembers decisions, learnings, and skills across sessions.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">📋</div>
+      <h3>Spec-Driven Dev</h3>
+      <p>Go from idea to working code with structured specs, AI review, and multi-agent execution (Architect, Reviewer, Coder, Tester).</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🤖</div>
+      <h3>Multi-Agent</h3>
+      <p>Claude leads. Codex (GPT-5.4) reviews. Gemini validates. Three AI brains, one unified workflow.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🧬</div>
+      <h3>Self-Evolution</h3>
+      <p>Automatically extracts reusable patterns from completed work. Your AI gets smarter over time.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🚀</div>
+      <h3>One-Command Deploy</h3>
+      <p>Docker-based deployment pipeline. Detect stack, generate configs, ship to dev/staging/prod.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🦞</div>
+      <h3>Agent-Guided Setup</h3>
+      <p>Claude Code walks you through installation. No manual config files. The AI IS the installer.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Install -->
+<div class="section" id="install">
+  <h2><span class="num">1</span> Install</h2>
+  <p>One command to get started:</p>
+
+  <div class="code-block">
+    <button class="copy" onclick="navigator.clipboard.writeText('git clone https://github.com/teddashh/clawd-lobster && cd clawd-lobster && pip install -e .')">Copy</button>
+    git clone https://github.com/teddashh/clawd-lobster<br>
+    cd clawd-lobster<br>
+    pip install -e .
+  </div>
+
+  <p><strong>Prerequisites:</strong> Python 3.10+, Node.js 18+, Git, <a href="https://claude.ai/code">Claude Code CLI</a></p>
+</div>
+
+<!-- Launch -->
+<div class="section">
+  <h2><span class="num">2</span> Launch the Dashboard</h2>
+  <p>Start the web dashboard and let Claude guide you:</p>
+
+  <div class="code-block">
+    <button class="copy" onclick="navigator.clipboard.writeText('clawd-lobster serve')">Copy</button>
+    clawd-lobster serve
+  </div>
+
+  <p>This opens <code>http://localhost:3333/onboarding</code> — the Agent-Guided Skill Parade.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/onboarding-skill-parade.png" alt="Onboarding Skill Parade" loading="lazy">
+    <div class="caption">The Skill Parade — your AI mascot guides you through each skill, one by one</div>
+  </div>
+</div>
+
+<!-- Skill Parade -->
+<div class="section">
+  <h2><span class="num">3</span> Walk Through the Skill Parade</h2>
+  <p>The onboarding walks you through 4 tiers of setup:</p>
+
+  <table class="skills-table">
+    <thead>
+      <tr><th>Tier</th><th>Skill</th><th>What It Does</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="4" style="color:var(--fg3);font-weight:600;padding-top:16px">Foundations</td></tr>
+      <tr><td></td><td>🌐 Language</td><td>Choose your interface language (5 supported)</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>🔑 Claude Auth</td><td>Verify Claude Code CLI is authenticated</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>📡 GitHub Hub</td><td>Connect your private Hub repo for cross-machine sync</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>📁 Workspace Root</td><td>Set where your workspaces live</td><td><span class="badge required">Required</span></td></tr>
+
+      <tr><td colspan="4" style="color:var(--fg3);font-weight:600;padding-top:16px">Required Skills</td></tr>
+      <tr><td></td><td>🧠 Memory Server</td><td>28 MCP tools for persistent AI memory</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>📋 Spec</td><td>Structured specification framework</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>🧽 Absorb</td><td>Ingest knowledge from files, PDFs, emails</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>🧬 Evolve</td><td>Automatic pattern learning (every 2h)</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>💓 Heartbeat</td><td>Session health monitoring (every 30m)</td><td><span class="badge required">Required</span></td></tr>
+      <tr><td></td><td>🚀 Deploy</td><td>Docker deployment pipeline</td><td><span class="badge required">Required</span></td></tr>
+
+      <tr><td colspan="4" style="color:var(--fg3);font-weight:600;padding-top:16px">Power Skills (Optional)</td></tr>
+      <tr><td></td><td>🤖 Codex Bridge</td><td>Delegate to GPT-5.4 for bulk work and reviews</td><td><span class="badge optional">Optional</span></td></tr>
+      <tr><td></td><td>💎 Gemini Bridge</td><td>Cross-model validation and architecture debates</td><td><span class="badge optional">Optional</span></td></tr>
+      <tr><td></td><td>📓 NotebookLM</td><td>Free RAG + content generation</td><td><span class="badge optional">Optional</span></td></tr>
+      <tr><td></td><td>🏢 Connect Odoo</td><td>ERP integration for business processes</td><td><span class="badge optional">Optional</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Agent-Guided -->
+<div class="section">
+  <h2><span class="num">4</span> Let Claude Take Over</h2>
+  <p>Click <strong>"Launch Claude Code"</strong> in the dashboard. Claude enters your workspace and guides you conversationally through the remaining setup — explaining each skill, installing dependencies, and registering cron jobs.</p>
+
+  <p>The web dashboard updates in real-time as Claude works. You see progress on screen while talking to Claude in the terminal.</p>
+
+  <div class="quote">
+    "Since we're in the Agent era, having the Agent guide the installation is a completely new experience. The web + Claude together decide the presentation."
+    <div class="author">— Project Design Philosophy</div>
+  </div>
+</div>
+
+<!-- Skills Dashboard -->
+<div class="section">
+  <h2><span class="num">5</span> Manage Your Skills</h2>
+  <p>After setup, the persistent dashboard lets you manage everything:</p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">⚡</div>
+      <h3>Skills (3 tabs)</h3>
+      <p>MCP Servers, Prompt Patterns, and Cron Jobs — all configurable from the web.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🔑</div>
+      <h3>API Keys</h3>
+      <p>Manage credentials for Claude, GitHub, Codex, Gemini, Oracle, and Odoo.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">⚙️</div>
+      <h3>Settings</h3>
+      <p>Language, workspace root, Hub info, and server configuration.</p>
+    </div>
+  </div>
+
+  <div class="screenshot">
+    <img src="screenshots/skills-dashboard.png" alt="Skills Dashboard" loading="lazy">
+    <div class="caption">Skills Dashboard — MCP Servers tab showing Memory Server</div>
+  </div>
+</div>
+
+<!-- Architecture -->
+<div class="section">
+  <h2>Architecture</h2>
+  <p>Clawd-Lobster uses an <strong>Agent-Guided Escape Room</strong> architecture:</p>
+
+  <div class="code-block" style="font-size:0.8rem">
+    Web Dashboard (Visual Layer) + Claude Code (Conversation Layer)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Backend API (Sole State Authority)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+    &nbsp;&nbsp;&nbsp;state.json + controller.json + events.jsonl<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OS Scheduler (cron / Task Scheduler)
+  </div>
+
+  <p>Key design decisions from a <a href="https://github.com/teddashh/clawd-lobster/tree/master/docs/roundtable-onboarding">5-round three-agent debate</a> (Claude + Codex + Gemini):</p>
+  <ul style="color:var(--fg2);margin:12px 0 12px 20px">
+    <li>Backend API is the sole authority for state transitions</li>
+    <li>Controller lease protocol prevents concurrent mutations</li>
+    <li>OS schedulers for cron jobs (not internal daemon)</li>
+    <li>Multi-page server-rendered dashboard (no SPA framework)</li>
+    <li>Token-based auth (Jupyter-style) for localhost security</li>
+  </ul>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p>Clawd-Lobster is open source. <a href="https://github.com/teddashh/clawd-lobster">GitHub</a></p>
+  <p style="margin-top:8px">Built with Claude Opus 4.6 + Codex GPT-5.4 + Gemini 3.1 Pro</p>
+</div>
+
+</div>
+</body>
+</html>

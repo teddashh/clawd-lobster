@@ -181,6 +181,7 @@ class _Handler(BaseHTTPRequestHandler):
             "/credentials": self._route_credentials,
             "/settings": self._route_settings,
             "/squad": self._route_squad,
+            "/guide": self._route_guide,
             "/api/status": self._api_status,
             "/api/workspaces": self._api_workspaces,
             "/api/squad/state": self._api_squad_state,
@@ -203,6 +204,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(data, status)
         elif path.startswith("/assets/"):
             self._serve_asset(path)
+        elif path.startswith("/screenshots/"):
+            self._serve_screenshot(path)
         else:
             self.send_error(404)
 
@@ -356,6 +359,31 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_html(pages_dashboard.SETTINGS_PAGE)
         except (ImportError, AttributeError):
             self._send_html("<html><body><h1>Settings page loading...</h1></body></html>")
+
+    def _serve_screenshot(self, path: str) -> None:
+        """Serve screenshot files from docs/screenshots/."""
+        name = path.split("/screenshots/", 1)[-1]
+        if ".." in name or "/" in name or "\\" in name:
+            self.send_error(403)
+            return
+        fp = REPO_DIR / "docs" / "screenshots" / name
+        if not fp.exists() or not fp.is_file():
+            self.send_error(404)
+            return
+        data = fp.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "image/png")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _route_guide(self, query: dict) -> None:
+        guide_path = REPO_DIR / "docs" / "onboarding-guide.html"
+        if guide_path.exists():
+            self._send_html(guide_path.read_text(encoding="utf-8"))
+        else:
+            self._send_html("<html><body><h1>Guide not found</h1></body></html>", 404)
 
     def _route_squad(self, query: dict) -> None:
         self._send_html(pages.SQUAD_PAGE)
