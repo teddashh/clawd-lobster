@@ -1,11 +1,11 @@
 {
   "id": "absorb",
   "name": "Absorb",
-  "description": "Use when the user provides a folder, repo URL, or web link to learn from — triggers on /absorb, 'scan this repo', 'import this project', or 'learn from this codebase'. Also fires when migrating knowledge from another workspace or onboarding a reference project.",
+  "description": "Universal knowledge ingestion — absorb files, folders, PDFs, emails, LINE chats, Facebook posts, images, web pages, and more into The Vault (Oracle L3) or Memory (L1+L2). Triggers on /absorb, 'scan this repo', 'import this project', 'absorb my files', or 'learn from this'.",
   "context": "fork",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "category": "intelligence",
-  "tags": ["knowledge", "learning", "import", "migration", "absorb"],
+  "tags": ["knowledge", "learning", "import", "migration", "absorb", "vault", "ingestion", "parser"],
   "kind": "prompt-pattern",
   "icon": "🧽",
   "alwaysOn": true,
@@ -17,18 +17,22 @@
     "properties": {
       "dry_run": { "type": "boolean", "description": "Preview what would be absorbed without writing anything" },
       "depth": { "type": "string", "enum": ["shallow", "normal", "deep"], "description": "How deeply to analyze sources: shallow=README only, normal=key files, deep=full codebase" },
-      "auto_create_todos": { "type": "boolean", "description": "Automatically create TODO items from discovered tasks" }
+      "auto_create_todos": { "type": "boolean", "description": "Automatically create TODO items from discovered tasks" },
+      "prefer_vault": { "type": "boolean", "description": "Prefer Oracle Vault (L3) when available, otherwise fall back to Memory (L1+L2)" },
+      "parser": { "type": "string", "description": "Force a specific parser: text, pdf, email, line, facebook, image, meeting, web, voice_memo, debate" }
     }
   },
   "configDefaults": {
     "dry_run": false,
     "depth": "normal",
-    "auto_create_todos": true
+    "auto_create_todos": true,
+    "prefer_vault": true,
+    "parser": null
   },
   "healthCheck": { "type": "none", "intervalSeconds": 0 },
   "dependencies": {
     "skills": ["memory-server"],
-    "system": [],
-    "python": []
+    "system": ["python3"],
+    "python": ["oracledb"]
   }
 }

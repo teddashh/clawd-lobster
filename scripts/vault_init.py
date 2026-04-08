@@ -30,7 +30,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Schema version — bump when DDL changes
 # ---------------------------------------------------------------------------
-SCHEMA_VERSION = "4.0.0"
+SCHEMA_VERSION = "11.0.0"
 
 # ---------------------------------------------------------------------------
 # Connection helpers
@@ -109,7 +109,7 @@ TABLES: list[tuple[str, str]] = [
             CONSTRAINT uq_source_uri UNIQUE (source_type, source_uri_hash)
         )""",
     ),
-    # 2. DOCUMENTS
+    # 2. DOCUMENTS (v11: +ownership, email fields, versioning, fidelity, redaction)
     (
         "vault_documents",
         """CREATE TABLE vault_documents (
@@ -128,6 +128,17 @@ TABLES: list[tuple[str, str]] = [
             embedding       VECTOR(1536, FLOAT32),
             embedding_model VARCHAR2(128),
             lifecycle       VARCHAR2(20) DEFAULT 'raw',
+            ownership       VARCHAR2(20) DEFAULT 'self',
+            email_from      VARCHAR2(500),
+            email_importance VARCHAR2(10),
+            email_direction VARCHAR2(10),
+            threat_score    NUMBER(3,2),
+            parent_doc_id   NUMBER,
+            version         NUMBER DEFAULT 1,
+            is_latest       NUMBER(1) DEFAULT 1,
+            fidelity        VARCHAR2(15) DEFAULT 'high',
+            redacted_at     TIMESTAMP,
+            original_path   VARCHAR2(2048),
             CONSTRAINT uq_doc_content UNIQUE (source_id, content_hash)
         )""",
     ),
@@ -149,7 +160,7 @@ TABLES: list[tuple[str, str]] = [
             CONSTRAINT uq_chunk UNIQUE (document_id, chunk_index)
         )""",
     ),
-    # 4. ENTITIES
+    # 4. ENTITIES (v11: +ownership, +merged_into_id)
     (
         "vault_entities",
         """CREATE TABLE vault_entities (
@@ -164,11 +175,13 @@ TABLES: list[tuple[str, str]] = [
             last_seen_at    TIMESTAMP,
             confidence      NUMBER(3,2) DEFAULT 0.80,
             lifecycle       VARCHAR2(20) DEFAULT 'extracted',
+            ownership       VARCHAR2(20) DEFAULT 'external',
+            merged_into_id  NUMBER,
             created_at      TIMESTAMP DEFAULT SYSTIMESTAMP,
             updated_at      TIMESTAMP DEFAULT SYSTIMESTAMP
         )""",
     ),
-    # 5. ENTITY ALIASES
+    # 5. ENTITY ALIASES (v11: +confidence, +verified_by)
     (
         "vault_entity_aliases",
         """CREATE TABLE vault_entity_aliases (
@@ -177,16 +190,22 @@ TABLES: list[tuple[str, str]] = [
             alias_text      VARCHAR2(500) NOT NULL,
             alias_normalized VARCHAR2(500) NOT NULL,
             source          VARCHAR2(64) DEFAULT 'extraction',
+            confidence      NUMBER(3,2) DEFAULT 1.0,
+            verified_by     VARCHAR2(50) DEFAULT 'auto_extracted',
             created_at      TIMESTAMP DEFAULT SYSTIMESTAMP,
             CONSTRAINT uq_alias UNIQUE (entity_id, alias_normalized)
         )""",
     ),
-    # 6. FACTS
+    # 6. FACTS (v11: +fact_type, +subject, +predicate, +object, +valid_from/to)
     (
         "vault_facts",
         """CREATE TABLE vault_facts (
             id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             claim           VARCHAR2(4000) NOT NULL,
+            fact_type       VARCHAR2(30) DEFAULT 'claim',
+            subject         VARCHAR2(500),
+            predicate       VARCHAR2(200),
+            object_value    CLOB,
             confidence      NUMBER(3,2) DEFAULT 0.80,
             source_doc_id   NUMBER REFERENCES vault_documents(id),
             source_chunk_id NUMBER REFERENCES vault_chunks(id),
@@ -194,6 +213,8 @@ TABLES: list[tuple[str, str]] = [
             extraction_method VARCHAR2(50),
             taxonomy_id     NUMBER,
             fact_date       TIMESTAMP,
+            valid_from      TIMESTAMP,
+            valid_to        TIMESTAMP,
             created_at      TIMESTAMP DEFAULT SYSTIMESTAMP,
             lifecycle       VARCHAR2(20) DEFAULT 'extracted',
             superseded_by   NUMBER,
@@ -247,6 +268,72 @@ TABLES: list[tuple[str, str]] = [
             CONSTRAINT uq_sync UNIQUE (source_layer, source_id, vault_table)
         )""",
     ),
+    # 10. AUDIT TRAIL (v11 — operational audit log)
+    (
+        "vault_audit_trail",
+        """CREATE TABLE vault_audit_trail (
+            id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            action          VARCHAR2(50) NOT NULL,
+            actor           VARCHAR2(100),
+            target_type     VARCHAR2(50),
+            target_id       NUMBER,
+            details         CLOB CHECK (details IS JSON),
+            created_at      TIMESTAMP DEFAULT SYSTIMESTAMP
+        )""",
+    ),
+    # 11. METRICS (v11 — quantified self-awareness)
+    (
+        "vault_metrics",
+        """CREATE TABLE vault_metrics (
+            id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            metric_type     VARCHAR2(50) NOT NULL,
+            metric_value    NUMBER,
+            metric_json     CLOB CHECK (metric_json IS JSON),
+            measured_at     TIMESTAMP DEFAULT SYSTIMESTAMP
+        )""",
+    ),
+    # 12. DOC TYPES (v11 — advisory registry, no FK from vault_documents)
+    (
+        "vault_doc_types",
+        """CREATE TABLE vault_doc_types (
+            doc_type        VARCHAR2(50) PRIMARY KEY,
+            description     VARCHAR2(500),
+            parent_type     VARCHAR2(50),
+            created_at      TIMESTAMP DEFAULT SYSTIMESTAMP
+        )""",
+    ),
+]
+
+# ---------------------------------------------------------------------------
+# ALTER TABLE statements for upgrading existing v4 schema to v11
+# Each statement is (description, SQL). Safe to re-run: ORA-01430 = column exists.
+# ---------------------------------------------------------------------------
+ALTER_STATEMENTS: list[tuple[str, str]] = [
+    # vault_documents new columns
+    ("vault_documents.ownership", "ALTER TABLE vault_documents ADD ownership VARCHAR2(20) DEFAULT 'self'"),
+    ("vault_documents.email_from", "ALTER TABLE vault_documents ADD email_from VARCHAR2(500)"),
+    ("vault_documents.email_importance", "ALTER TABLE vault_documents ADD email_importance VARCHAR2(10)"),
+    ("vault_documents.email_direction", "ALTER TABLE vault_documents ADD email_direction VARCHAR2(10)"),
+    ("vault_documents.threat_score", "ALTER TABLE vault_documents ADD threat_score NUMBER(3,2)"),
+    ("vault_documents.parent_doc_id", "ALTER TABLE vault_documents ADD parent_doc_id NUMBER"),
+    ("vault_documents.version", "ALTER TABLE vault_documents ADD version NUMBER DEFAULT 1"),
+    ("vault_documents.is_latest", "ALTER TABLE vault_documents ADD is_latest NUMBER(1) DEFAULT 1"),
+    ("vault_documents.fidelity", "ALTER TABLE vault_documents ADD fidelity VARCHAR2(15) DEFAULT 'high'"),
+    ("vault_documents.redacted_at", "ALTER TABLE vault_documents ADD redacted_at TIMESTAMP"),
+    ("vault_documents.original_path", "ALTER TABLE vault_documents ADD original_path VARCHAR2(2048)"),
+    # vault_entities new columns
+    ("vault_entities.ownership", "ALTER TABLE vault_entities ADD ownership VARCHAR2(20) DEFAULT 'external'"),
+    ("vault_entities.merged_into_id", "ALTER TABLE vault_entities ADD merged_into_id NUMBER"),
+    # vault_entity_aliases new columns
+    ("vault_entity_aliases.confidence", "ALTER TABLE vault_entity_aliases ADD confidence NUMBER(3,2) DEFAULT 1.0"),
+    ("vault_entity_aliases.verified_by", "ALTER TABLE vault_entity_aliases ADD verified_by VARCHAR2(50) DEFAULT 'auto_extracted'"),
+    # vault_facts new columns
+    ("vault_facts.fact_type", "ALTER TABLE vault_facts ADD fact_type VARCHAR2(30) DEFAULT 'claim'"),
+    ("vault_facts.subject", "ALTER TABLE vault_facts ADD subject VARCHAR2(500)"),
+    ("vault_facts.predicate", "ALTER TABLE vault_facts ADD predicate VARCHAR2(200)"),
+    ("vault_facts.object_value", "ALTER TABLE vault_facts ADD object_value CLOB"),
+    ("vault_facts.valid_from", "ALTER TABLE vault_facts ADD valid_from TIMESTAMP"),
+    ("vault_facts.valid_to", "ALTER TABLE vault_facts ADD valid_to TIMESTAMP"),
 ]
 
 INDEXES: list[str] = [
@@ -257,12 +344,21 @@ INDEXES: list[str] = [
     "CREATE INDEX idx_vdoc_taxonomy ON vault_documents(taxonomy_id)",
     "CREATE INDEX idx_vdoc_hash ON vault_documents(content_hash)",
     "CREATE INDEX idx_vdoc_lifecycle ON vault_documents(lifecycle)",
+    # v11: new document indexes
+    "CREATE INDEX idx_vdoc_ownership ON vault_documents(ownership)",
+    "CREATE INDEX idx_vdoc_email_from ON vault_documents(email_from)",
+    "CREATE INDEX idx_vdoc_parent ON vault_documents(parent_doc_id)",
+    "CREATE INDEX idx_vdoc_latest ON vault_documents(is_latest)",
+    "CREATE INDEX idx_vdoc_fidelity ON vault_documents(fidelity)",
+    "CREATE INDEX idx_vdoc_original_path ON vault_documents(original_path)",
     # Chunks
     "CREATE INDEX idx_vchunk_doc ON vault_chunks(document_id)",
     # Entities
     "CREATE INDEX idx_ventity_type ON vault_entities(entity_type)",
     "CREATE INDEX idx_ventity_name ON vault_entities(canonical_name)",
     "CREATE INDEX idx_ventity_contact ON vault_entities(contact_id)",
+    # v11: entity merge tracking
+    "CREATE INDEX idx_ventity_merged ON vault_entities(merged_into_id)",
     # Aliases
     "CREATE INDEX idx_valias_norm ON vault_entity_aliases(alias_normalized)",
     "CREATE INDEX idx_valias_entity ON vault_entity_aliases(entity_id)",
@@ -271,6 +367,8 @@ INDEXES: list[str] = [
     "CREATE INDEX idx_vfact_lifecycle ON vault_facts(lifecycle)",
     "CREATE INDEX idx_vfact_date ON vault_facts(fact_date)",
     "CREATE INDEX idx_vfact_agent ON vault_facts(source_agent)",
+    # v11: fact_type index
+    "CREATE INDEX idx_vfact_type ON vault_facts(fact_type)",
     # Relations
     "CREATE INDEX idx_vrel_subject ON vault_relations(subject_type, subject_id)",
     "CREATE INDEX idx_vrel_object ON vault_relations(object_type, object_id)",
@@ -280,6 +378,13 @@ INDEXES: list[str] = [
     "CREATE INDEX idx_vevent_time ON vault_events(created_at)",
     # Sync log
     "CREATE INDEX idx_vsync_source ON vault_sync_log(source_layer, source_id)",
+    # v11: Audit trail
+    "CREATE INDEX idx_vaudit_action ON vault_audit_trail(action)",
+    "CREATE INDEX idx_vaudit_actor ON vault_audit_trail(actor)",
+    "CREATE INDEX idx_vaudit_created ON vault_audit_trail(created_at)",
+    # v11: Metrics
+    "CREATE INDEX idx_vmetrics_type ON vault_metrics(metric_type)",
+    "CREATE INDEX idx_vmetrics_measured ON vault_metrics(measured_at)",
 ]
 
 VIEWS: list[tuple[str, str]] = [
@@ -287,7 +392,7 @@ VIEWS: list[tuple[str, str]] = [
         "v_document_summary",
         """CREATE OR REPLACE VIEW v_document_summary AS
         SELECT d.id, d.doc_type, d.title, d.occurred_at, d.lifecycle,
-               d.privacy_level, d.language,
+               d.privacy_level, d.language, d.ownership, d.fidelity, d.is_latest,
                s.source_type, s.display_name AS source_name,
                (SELECT COUNT(*) FROM vault_chunks c WHERE c.document_id = d.id) AS chunk_count,
                (SELECT COUNT(*) FROM vault_facts f WHERE f.source_doc_id = d.id) AS fact_count
@@ -298,13 +403,25 @@ VIEWS: list[tuple[str, str]] = [
         "v_entity_profile",
         """CREATE OR REPLACE VIEW v_entity_profile AS
         SELECT e.id, e.entity_type, e.canonical_name, e.confidence, e.lifecycle,
-               e.first_seen_at, e.last_seen_at,
+               e.ownership, e.merged_into_id, e.first_seen_at, e.last_seen_at,
                (SELECT LISTAGG(a.alias_text, ', ') WITHIN GROUP (ORDER BY a.alias_text)
                 FROM vault_entity_aliases a WHERE a.entity_id = e.id) AS aliases,
                (SELECT COUNT(*) FROM vault_relations r
                 WHERE (r.subject_type = 'entity' AND r.subject_id = e.id)
                    OR (r.object_type = 'entity' AND r.object_id = e.id)) AS relation_count
         FROM vault_entities e""",
+    ),
+    # v11: current documents view (non-retracted, latest version)
+    (
+        "v_current_documents",
+        """CREATE OR REPLACE VIEW v_current_documents AS
+        SELECT d.id, d.doc_type, d.title, d.occurred_at, d.lifecycle,
+               d.privacy_level, d.ownership, d.fidelity, d.version,
+               d.email_from, d.email_direction, d.original_path,
+               s.source_type, s.display_name AS source_name
+        FROM vault_documents d
+        JOIN vault_sources s ON s.id = d.source_id
+        WHERE d.is_latest = 1 AND d.redacted_at IS NULL""",
     ),
 ]
 
@@ -314,6 +431,37 @@ SCHEMA_META_DDL = """CREATE TABLE vault_schema_meta (
     value   VARCHAR2(1000),
     updated_at TIMESTAMP DEFAULT SYSTIMESTAMP
 )"""
+
+# ---------------------------------------------------------------------------
+# Seed data for vault_doc_types (25 initial types)
+# ---------------------------------------------------------------------------
+DOC_TYPE_SEEDS: list[tuple[str, str, str | None]] = [
+    ("email", "Electronic mail message", None),
+    ("conversation", "Chat/messaging conversation", None),
+    ("social_post", "Social media post", None),
+    ("daily_report", "Daily work summary report", "report"),
+    ("report", "Generic report", None),
+    ("note", "Personal or work note", None),
+    ("sop", "Standard operating procedure", None),
+    ("pdf", "PDF document", None),
+    ("image", "Photograph or image", None),
+    ("voice_memo", "Audio recording with transcription", None),
+    ("meeting_transcript", "Meeting recording transcript", None),
+    ("action_log", "Agent or human action log entry", None),
+    ("debate_transcript", "AI roundtable debate record", None),
+    ("code_artifact", "Source code file or snippet", None),
+    ("webpage", "Archived web page", None),
+    ("file", "Generic file", None),
+    ("financial_record", "Invoice, receipt, statement", None),
+    ("health_record", "Medical or health document", None),
+    ("legal_document", "Contract, agreement, legal filing", None),
+    ("news_article", "News or press article", None),
+    ("scan", "Scanned document or handwritten note", None),
+    ("research_paper", "Academic or research publication", "pdf"),
+    ("presentation", "Slide deck or presentation", "file"),
+    ("spreadsheet", "Excel or data spreadsheet", "file"),
+    ("knowledge", "Knowledge base article", "note"),
+]
 
 
 # ---------------------------------------------------------------------------
@@ -390,6 +538,51 @@ def create_indexes(cursor, dry_run: bool = False) -> dict:
             else:
                 result["errors"].append(f"{idx_name}: {err}")
 
+    return result
+
+
+def apply_alters(cursor, dry_run: bool = False) -> dict:
+    """Apply ALTER TABLE statements for upgrading v4 to v11. Safe to re-run."""
+    result = {"applied": [], "skipped": [], "errors": []}
+    for desc, ddl in ALTER_STATEMENTS:
+        if dry_run:
+            print(f"[DRY RUN] Would alter: {desc}")
+            result["applied"].append(desc)
+            continue
+        try:
+            cursor.execute(ddl)
+            result["applied"].append(desc)
+        except Exception as e:
+            err = str(e)
+            if "ORA-01430" in err:  # column already exists
+                result["skipped"].append(desc)
+            else:
+                result["errors"].append(f"{desc}: {err}")
+    return result
+
+
+def seed_doc_types(cursor, dry_run: bool = False) -> dict:
+    """Seed vault_doc_types with initial 25 types. Safe to re-run (MERGE)."""
+    result = {"seeded": 0, "skipped": 0, "errors": []}
+    for doc_type, description, parent_type in DOC_TYPE_SEEDS:
+        if dry_run:
+            result["seeded"] += 1
+            continue
+        try:
+            cursor.execute("""
+                MERGE INTO vault_doc_types t
+                USING (SELECT :1 AS doc_type FROM dual) s
+                ON (t.doc_type = s.doc_type)
+                WHEN NOT MATCHED THEN INSERT (doc_type, description, parent_type)
+                    VALUES (:2, :3, :4)
+            """, [doc_type, doc_type, description, parent_type])
+            result["seeded"] += 1
+        except Exception as e:
+            err = str(e)
+            if "ORA-00001" in err:  # unique constraint = already exists
+                result["skipped"] += 1
+            else:
+                result["errors"].append(f"{doc_type}: {err}")
     return result
 
 
@@ -498,13 +691,16 @@ def main():
 
     if args.dry_run:
         print("[DRY RUN MODE — no changes will be made]\n")
-        # In dry run, print all DDL and exit
         print("--- Tables ---")
         create_tables(None, dry_run=True)
+        print("\n--- ALTER (v4 to v11 upgrades) ---")
+        apply_alters(None, dry_run=True)
         print("\n--- Indexes ---")
         create_indexes(None, dry_run=True)
         print("\n--- Views ---")
         create_views(None, dry_run=True)
+        print("\n--- Seed doc types ---")
+        seed_doc_types(None, dry_run=True)
         print(f"\n--- Schema version: {SCHEMA_VERSION} ---")
         return
 
@@ -544,6 +740,10 @@ def main():
     t_result = create_tables(cursor, dry_run=False)
     conn.commit()
 
+    print("\n--- Applying ALTER statements (v4 to v11) ---")
+    a_result = apply_alters(cursor, dry_run=False)
+    conn.commit()
+
     print("\n--- Creating indexes ---")
     i_result = create_indexes(cursor, dry_run=False)
     conn.commit()
@@ -552,7 +752,11 @@ def main():
     v_result = create_views(cursor, dry_run=False)
     conn.commit()
 
-    all_errors = t_result["errors"] + i_result["errors"] + v_result["errors"]
+    print("\n--- Seeding doc types ---")
+    s_result = seed_doc_types(cursor, dry_run=False)
+    conn.commit()
+
+    all_errors = t_result["errors"] + a_result["errors"] + i_result["errors"] + v_result["errors"] + s_result["errors"]
 
     # Only stamp schema version if no errors occurred
     if not all_errors:
@@ -566,8 +770,10 @@ def main():
     print("\n" + "=" * 50)
     print("SUMMARY")
     print(f"  Tables:  {len(t_result['created'])} created, {len(t_result['skipped'])} skipped, {len(t_result['errors'])} errors")
+    print(f"  Alters:  {len(a_result['applied'])} applied, {len(a_result['skipped'])} skipped, {len(a_result['errors'])} errors")
     print(f"  Indexes: {len(i_result['created'])} created, {len(i_result['skipped'])} skipped, {len(i_result['errors'])} errors")
     print(f"  Views:   {len(v_result['created'])} created, {len(v_result['errors'])} errors")
+    print(f"  Seeds:   {s_result['seeded']} doc types seeded, {s_result['skipped']} skipped")
 
     if all_errors:
         print(f"  Schema:  NOT STAMPED (errors)")

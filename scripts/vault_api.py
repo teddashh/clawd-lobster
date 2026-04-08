@@ -226,6 +226,50 @@ class Vault:
                     result["errors"].append(f"item[{i}]: {e}")
         return result
 
+    # === FIND (for dedup) ===
+
+    def find_by_hash(self, content_hash: str) -> dict | None:
+        """Find a document by content hash. Used for dedup layer 1."""
+        with self._pool.acquire() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, doc_type, title, version, is_latest
+                    FROM vault_documents
+                    WHERE content_hash = :1 AND is_latest = 1
+                    FETCH FIRST 1 ROWS ONLY
+                """, [content_hash])
+                return _fetchone_dict(cur)
+
+    def find_by_path(self, original_path: str) -> dict | None:
+        """Find latest document by original_path. Used for dedup layer 2 (versioning)."""
+        with self._pool.acquire() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, doc_type, title, version, is_latest, content_hash
+                    FROM vault_documents
+                    WHERE original_path = :1 AND is_latest = 1
+                    ORDER BY version DESC
+                    FETCH FIRST 1 ROWS ONLY
+                """, [original_path])
+                return _fetchone_dict(cur)
+
+    # === CHUNKS ===
+
+    def add_chunk(self, document_id: int, chunk_index: int, content: str,
+                  token_count: int | None = None) -> int:
+        """Add a text chunk to a document. Returns chunk ID."""
+        with self._pool.acquire() as conn:
+            with conn.cursor() as cur:
+                cid_var = cur.var(int)
+                cur.execute("""
+                    INSERT INTO vault_chunks (document_id, chunk_index, text_content, token_count)
+                    VALUES (:1, :2, :3, :4)
+                    RETURNING id INTO :5
+                """, [document_id, chunk_index, content, token_count, cid_var])
+                chunk_id = cid_var.getvalue()[0]
+                conn.commit()
+                return chunk_id
+
     # === SEARCH ===
 
     def search(self, query: str, doc_type: str | None = None,
@@ -655,6 +699,165 @@ class Vault:
                 conn.commit()
                 return fact_id
 
+    # === ENTITY MERGE / SPLIT ===
+
+    def merge_entities(self, source_id: int, target_id: int,
+                       reason: str = "") -> dict:
+        """Merge source entity into target. Source gets merged_into_id = target.
+        All aliases from source are copied to target. Relations are re-pointed."""
+        with self._pool.acquire() as conn:
+            with conn.cursor() as cur:
+                # Verify both exist
+                cur.execute("SELECT id, canonical_name FROM vault_entities WHERE id = :1", [source_id])
+                src = _fetchone_dict(cur)
+                cur.execute("SELECT id, canonical_name FROM vault_entities WHERE id = :1", [target_id])
+                tgt = _fetchone_dict(cur)
+                if not src or not tgt:
+                    return {"ok": False, "error": "Entity not found"}
+
+                # Copy aliases from source → target
+                cur.execute("""
+                    SELECT alias_text, alias_normalized, source, confidence
+                    FROM vault_entity_aliases WHERE entity_id = :1
+                """, [source_id])
+                for alias in _fetchall_dict(cur):
+                    try:
+                        cur.execute("""
+                            INSERT INTO vault_entity_aliases
+                                (entity_id, alias_text, alias_normalized, source, confidence, verified_by)
+                            VALUES (:1, :2, :3, :4, :5, 'entity_merge')
+                        """, [target_id, alias["alias_text"], alias["alias_normalized"],
+                              alias.get("source", "merge"), alias.get("confidence", 0.8)])
+                    except Exception:
+                        pass  # duplicate alias
+
+                # Re-point relations
+                cur.execute("""
+                    UPDATE vault_relations SET subject_id = :1
+                    WHERE subject_type = 'entity' AND subject_id = :2
+                """, [target_id, source_id])
+                cur.execute("""
+                    UPDATE vault_relations SET object_id = :1
+                    WHERE object_type = 'entity' AND object_id = :2
+                """, [target_id, source_id])
+
+                # Mark source as merged
+                cur.execute("""
+                    UPDATE vault_entities SET merged_into_id = :1, lifecycle = 'merged',
+                        updated_at = SYSTIMESTAMP
+                    WHERE id = :2
+                """, [target_id, source_id])
+
+                # Log event
+                cur.execute("""
+                    INSERT INTO vault_events (target_type, target_id, from_state, to_state, reason, actor)
+                    VALUES ('entity', :1, 'extracted', 'merged', :2, 'vault_api')
+                """, [source_id, reason or f"Merged into entity #{target_id}"])
+
+                # Audit trail
+                try:
+                    cur.execute("""
+                        INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
+                        VALUES ('merge_entity', 'vault_api', 'entity', :1, :2)
+                    """, [source_id, json.dumps({
+                        "source_id": source_id, "source_name": src["canonical_name"],
+                        "target_id": target_id, "target_name": tgt["canonical_name"],
+                        "reason": reason,
+                    })])
+                except Exception:
+                    pass  # audit_trail table might not exist yet
+
+                conn.commit()
+                return {
+                    "ok": True,
+                    "merged": src["canonical_name"],
+                    "into": tgt["canonical_name"],
+                }
+
+    def gdpr_erase(self, entity_id: int, reason: str = "GDPR erasure request") -> dict:
+        """Privacy deletion: redact all content associated with an entity.
+        Does NOT physically delete — sets redacted_at tombstone on documents,
+        removes entity content, logs the operation."""
+        with self._pool.acquire() as conn:
+            with conn.cursor() as cur:
+                # 1. Find entity
+                cur.execute("SELECT id, canonical_name FROM vault_entities WHERE id = :1", [entity_id])
+                entity = _fetchone_dict(cur)
+                if not entity:
+                    return {"ok": False, "error": "Entity not found"}
+
+                report = {
+                    "entity": entity["canonical_name"],
+                    "documents_redacted": 0,
+                    "facts_retracted": 0,
+                    "relations_removed": 0,
+                    "aliases_removed": 0,
+                }
+
+                # 2. Find all related documents (via relations)
+                cur.execute("""
+                    SELECT DISTINCT r.object_id FROM vault_relations r
+                    WHERE r.subject_type = 'entity' AND r.subject_id = :1
+                        AND r.object_type = 'document'
+                """, [entity_id])
+                doc_ids = [r[0] for r in cur.fetchall()]
+
+                # 3. Redact documents
+                for doc_id in doc_ids:
+                    cur.execute("""
+                        UPDATE vault_documents SET redacted_at = SYSTIMESTAMP,
+                            content = '[REDACTED]', title = '[REDACTED]',
+                            is_latest = 0
+                        WHERE id = :1
+                    """, [doc_id])
+                    report["documents_redacted"] += 1
+
+                # 4. Retract facts
+                cur.execute("""
+                    UPDATE vault_facts SET lifecycle = 'retracted'
+                    WHERE source_doc_id IN (SELECT object_id FROM vault_relations
+                        WHERE subject_type = 'entity' AND subject_id = :1 AND object_type = 'document')
+                """, [entity_id])
+                report["facts_retracted"] = cur.rowcount
+
+                # 5. Remove relations
+                cur.execute("""
+                    DELETE FROM vault_relations
+                    WHERE (subject_type = 'entity' AND subject_id = :1)
+                       OR (object_type = 'entity' AND object_id = :2)
+                """, [entity_id, entity_id])
+                report["relations_removed"] = cur.rowcount
+
+                # 6. Remove aliases
+                cur.execute("DELETE FROM vault_entity_aliases WHERE entity_id = :1", [entity_id])
+                report["aliases_removed"] = cur.rowcount
+
+                # 7. Anonymize entity
+                cur.execute("""
+                    UPDATE vault_entities SET canonical_name = '[REDACTED]',
+                        metadata_json = NULL, lifecycle = 'retracted',
+                        updated_at = SYSTIMESTAMP
+                    WHERE id = :1
+                """, [entity_id])
+
+                # 8. Log event
+                cur.execute("""
+                    INSERT INTO vault_events (target_type, target_id, to_state, reason, actor)
+                    VALUES ('entity', :1, 'retracted', :2, 'vault_api.gdpr_erase')
+                """, [entity_id, reason])
+
+                # 9. Audit trail
+                try:
+                    cur.execute("""
+                        INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
+                        VALUES ('gdpr_erase', 'vault_api', 'entity', :1, :2)
+                    """, [entity_id, json.dumps(report)])
+                except Exception:
+                    pass
+
+                conn.commit()
+                return {"ok": True, **report}
+
     # === ADMIN ===
 
     def stats(self) -> dict:
@@ -663,6 +866,7 @@ class Vault:
             "vault_sources", "vault_documents", "vault_chunks",
             "vault_entities", "vault_entity_aliases", "vault_facts",
             "vault_relations", "vault_events", "vault_sync_log",
+            "vault_audit_trail", "vault_metrics", "vault_doc_types",
         ]
         result: dict[str, Any] = {"tables": {}, "schema_version": None}
 
