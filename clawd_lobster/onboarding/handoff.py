@@ -22,6 +22,7 @@ def generate_handoff(
     session_id: str,
     port: int = 3333,
     workspace_dir: str | None = None,
+    token: str | None = None,
 ) -> dict:
     """Generate the Claude Code handoff package.
 
@@ -53,6 +54,7 @@ def generate_handoff(
     # Build state summary for Claude
     items_summary = _build_items_summary(state)
     api_reference = _build_api_reference(port)
+    token_display = token if token else "YOUR_TOKEN"
 
     claude_md = f"""# Clawd-Lobster Onboarding — Agent Guide
 
@@ -73,19 +75,21 @@ You are the conversational guide. Together you and the web are co-pilots.
    ```bash
    curl -s -X POST http://localhost:{port}/api/controller/acquire \\
      -H 'Content-Type: application/json' \\
+     -H 'Authorization: Bearer {token_display}' \\
      -d '{{"session_id":"{session_id}","holder":"claude"}}'
    ```
    Save the `lease_id` from the response. Renew every 25 seconds.
 
 2. **Read current state** to know what's pending:
    ```bash
-   curl -s http://localhost:{port}/api/onboarding/state?session_id={session_id}
+   curl -s "http://localhost:{port}/api/onboarding/state?session_id={session_id}"
    ```
 
 3. **Run skill setup** for the next pending item:
    ```bash
    curl -s -X POST http://localhost:{port}/api/skills/SKILL_ID/install \\
      -H 'Content-Type: application/json' \\
+     -H 'Authorization: Bearer {token_display}' \\
      -d '{{"session_id":"{session_id}","lease_id":"YOUR_LEASE_ID","skill_id":"SKILL_ID"}}'
    ```
 
@@ -93,6 +97,7 @@ You are the conversational guide. Together you and the web are co-pilots.
    ```bash
    curl -s -X POST http://localhost:{port}/api/onboarding/intent \\
      -H 'Content-Type: application/json' \\
+     -H 'Authorization: Bearer {token_display}' \\
      -d '{{"session_id":"{session_id}","lease_id":"YOUR_LEASE_ID","intent":"set_foundation","item_id":"foundation.language","payload":{{"value":"en"}}}}'
    ```
 
@@ -100,6 +105,7 @@ You are the conversational guide. Together you and the web are co-pilots.
    ```bash
    curl -s -X POST http://localhost:{port}/api/jobs/register \\
      -H 'Content-Type: application/json' \\
+     -H 'Authorization: Bearer {token_display}' \\
      -d '{{"skill_id":"evolve"}}'
    ```
 
@@ -107,7 +113,8 @@ You are the conversational guide. Together you and the web are co-pilots.
    ```bash
    curl -s -X POST http://localhost:{port}/api/controller/release \\
      -H 'Content-Type: application/json' \\
-     -d '{{"session_id":"{session_id}","holder":"claude"}}'
+     -H 'Authorization: Bearer {token_display}' \\
+     -d '{{"session_id":"{session_id}","holder":"claude","lease_id":"YOUR_LEASE_ID"}}'
    ```
 
 ## Current Status

@@ -118,19 +118,40 @@ class _Handler(BaseHTTPRequestHandler):
 
         return False
 
-    def _validate_token(self, token: str) -> bool:
-        """Check token against any active session."""
+    def _validate_token(self, token: str) -> str | None:
+        """Check token against active sessions. Returns matched session_id or None."""
         from .onboarding import state_store
         sessions = state_store.list_sessions()
         for sid in sessions:
             if state_store.verify_token(sid, token):
-                return True
-        return False
+                return sid
+        return None
 
     def _require_auth(self, query: dict | None = None) -> bool:
-        """Returns True if auth is OK. Sends 401 and returns False if not."""
-        if self._check_token(query):
-            return True
+        """Returns True if auth is OK. Sends 401 and returns False if not.
+
+        Also stores the authenticated session_id on the handler for
+        downstream use, so endpoints can verify session_id matches.
+        """
+        self._auth_session_id = None
+
+        # Check Authorization header first
+        auth = self.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            sid = self._validate_token(auth[7:])
+            if sid:
+                self._auth_session_id = sid
+                return True
+
+        # Check query param
+        if query:
+            token_list = query.get("token", [])
+            if token_list:
+                sid = self._validate_token(token_list[0])
+                if sid:
+                    self._auth_session_id = sid
+                    return True
+
         self.send_response(401)
         self.send_header("Content-Type", "application/json")
         self.end_headers()

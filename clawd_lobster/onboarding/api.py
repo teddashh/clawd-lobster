@@ -268,7 +268,8 @@ def generate_handoff(body: dict) -> tuple[dict, int]:
     if not session_id:
         return {"ok": False, "error": "session_id required"}, 400
 
-    result = handoff.generate_handoff(session_id, port=port, workspace_dir=workspace_dir)
+    token = body.get("token")  # pass token so curl examples include auth
+    result = handoff.generate_handoff(session_id, port=port, workspace_dir=workspace_dir, token=token)
     status = 200 if result.get("ok") else 500
     return result, status
 
