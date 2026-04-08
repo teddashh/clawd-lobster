@@ -176,7 +176,8 @@ def log_event(session_id: str, event: dict) -> None:
     seq = 1
     if path.exists():
         try:
-            seq = sum(1 for _ in open(path, encoding="utf-8")) + 1
+            with open(path, encoding="utf-8") as f:
+                seq = sum(1 for _ in f) + 1
         except OSError:
             pass
 
@@ -193,16 +194,17 @@ def get_events(session_id: str, after: int = 0) -> list[dict]:
         return []
     events = []
     try:
-        for line in open(path, encoding="utf-8"):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                evt = json.loads(line)
-                if evt.get("seq", 0) > after:
-                    events.append(evt)
-            except json.JSONDecodeError:
-                continue
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    evt = json.loads(line)
+                    if evt.get("seq", 0) > after:
+                        events.append(evt)
+                except json.JSONDecodeError:
+                    continue
     except OSError:
         pass
     return events
