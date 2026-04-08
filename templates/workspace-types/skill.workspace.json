@@ -1,0 +1,17 @@
+{
+  "name": "",
+  "type": "skill",
+  "created": "",
+  "stack": {
+    "runtime": "",
+    "kind": "prompt-pattern"
+  },
+  "deploy": {},
+  "skill": {
+    "category": "",
+    "tags": [],
+    "alwaysOn": false,
+    "dependencies": []
+  },
+  "ship_ready": false
+}

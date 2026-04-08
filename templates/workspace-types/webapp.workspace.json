@@ -1,0 +1,24 @@
+{
+  "name": "",
+  "type": "webapp",
+  "created": "",
+  "stack": {
+    "runtime": "",
+    "framework": "",
+    "db": "",
+    "cache": "",
+    "web_server": "nginx"
+  },
+  "deploy": {
+    "dev": { "mode": "local", "port": 3000 },
+    "staging": { "host": "", "method": "docker-compose", "ssh_user": "" },
+    "prod": { "host": "", "method": "ci-cd", "ssh_user": "" }
+  },
+  "features": {
+    "auth": false,
+    "payments": false,
+    "email": false,
+    "file_upload": false
+  },
+  "ship_ready": false
+}

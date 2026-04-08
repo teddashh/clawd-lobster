@@ -1,0 +1,22 @@
+{
+  "name": "",
+  "type": "api",
+  "created": "",
+  "stack": {
+    "runtime": "",
+    "framework": "",
+    "db": "",
+    "cache": ""
+  },
+  "deploy": {
+    "dev": { "mode": "local", "port": 8000 },
+    "staging": { "host": "", "method": "docker-compose", "ssh_user": "" },
+    "prod": { "host": "", "method": "ci-cd", "ssh_user": "" }
+  },
+  "api": {
+    "protocol": "rest",
+    "auth": "bearer",
+    "versioning": "url"
+  },
+  "ship_ready": false
+}

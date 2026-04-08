@@ -1,0 +1,18 @@
+{
+  "name": "",
+  "type": "mcp-server",
+  "created": "",
+  "stack": {
+    "runtime": "python",
+    "transport": "stdio"
+  },
+  "deploy": {
+    "dev": { "mode": "local" }
+  },
+  "mcp": {
+    "tools": [],
+    "resources": [],
+    "prompts": []
+  },
+  "ship_ready": false
+}

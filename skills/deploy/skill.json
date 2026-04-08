@@ -1,0 +1,53 @@
+{
+  "id": "deploy",
+  "name": "Deploy Pipeline",
+  "description": "Workspace-aware deploy pipeline — detect stack, generate Docker configs for dev/staging/prod, and ship to any environment",
+  "version": "0.1.0",
+  "category": "core",
+  "tags": ["deploy", "docker", "shipping", "infrastructure", "devops"],
+  "kind": "prompt-pattern",
+  "icon": "🚀",
+  "alwaysOn": true,
+  "defaultEnabled": true,
+
+  "permissions": {
+    "allow": []
+  },
+
+  "credentials": [],
+
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "default_cloud": {
+        "type": "string",
+        "enum": ["gcp", "aws", "azure", "self-hosted", "none"],
+        "description": "Default cloud provider for new deployments"
+      },
+      "auto_ssl": {
+        "type": "boolean",
+        "description": "Automatically configure Let's Encrypt SSL for staging/prod"
+      },
+      "docker_compose_version": {
+        "type": "string",
+        "description": "Docker Compose file version (default: 3.8)"
+      }
+    }
+  },
+  "configDefaults": {
+    "default_cloud": "none",
+    "auto_ssl": true,
+    "docker_compose_version": "3.8"
+  },
+
+  "healthCheck": {
+    "type": "none",
+    "intervalSeconds": 0
+  },
+
+  "dependencies": {
+    "skills": ["spec"],
+    "system": ["docker", "git"],
+    "python": []
+  }
+}

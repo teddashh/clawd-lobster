@@ -1,0 +1,20 @@
+{
+  "name": "",
+  "type": "agent",
+  "created": "",
+  "stack": {
+    "runtime": "python",
+    "framework": "",
+    "db": "sqlite"
+  },
+  "deploy": {
+    "dev": { "mode": "local" }
+  },
+  "agent": {
+    "model": "",
+    "mcp_tools": [],
+    "triggers": [],
+    "schedule": ""
+  },
+  "ship_ready": false
+}

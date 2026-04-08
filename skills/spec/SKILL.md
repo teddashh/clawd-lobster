@@ -68,9 +68,56 @@ Ask conversationally — not as a checklist. Adapt based on answers.
   "I have enough to build your spec. Let me set up the workspace."
 - If the user provides a reference repo/URL, use `/absorb` to scan it first.
 
-### Phase 2: Workspace Creation (automatic)
+### Phase 2: Workspace Creation (type-aware)
 
-After gathering enough context, create the workspace. Do not ask for confirmation.
+After gathering enough context, determine the workspace type and create it.
+
+#### Step 2a: Determine Workspace Type
+
+Based on Phase 1 discovery, classify the project into one of these types:
+
+| Type | When to Use |
+|------|-------------|
+| `webapp` | Full-stack web application (frontend + backend + database) |
+| `api` | Backend API service only (no frontend) |
+| `agent` | AI agent, automation tool, or bot |
+| `skill` | Clawd-Lobster skill (prompt pattern + optional code) |
+| `mcp-server` | MCP tool server (stdio or HTTP) |
+| `project` | General coding project that doesn't fit the above |
+
+**How to decide:**
+- If the user said "website", "web app", "SaaS", "platform" → `webapp`
+- If the user said "API", "backend", "microservice", "endpoint" → `api`
+- If the user said "agent", "bot", "automation", "AI tool" → `agent`
+- If the user said "skill", "command", "slash command" → `skill`
+- If the user said "MCP", "tool server", "MCP server" → `mcp-server`
+- If unclear, ask ONE question: "This sounds like a [type] — does that fit, or is it more of a [alternative]?"
+
+#### Step 2b: Confirm Type and Show What's Included
+
+Once the type is determined, briefly confirm what the user gets:
+
+```
+I'll set this up as a **webapp** workspace. That means:
+  ├── Full project scaffold (src/, tests/, deploy/)
+  ├── Docker configs for dev/staging/prod
+  ├── Deploy pipeline (/deploy:ship)
+  └── Nginx reverse proxy + SSL setup
+
+Setting up now...
+```
+
+For types without deploy (skill, project):
+```
+I'll set this up as a **skill** workspace. That means:
+  ├── Skill scaffold (SKILL.md, skill.json)
+  ├── Test scenarios
+  └── Ship via /skill:register (no Docker needed)
+
+Setting up now...
+```
+
+#### Step 2c: Create the Workspace
 
 1. Derive a workspace name from the project (kebab-case, e.g., `invoice-tracker`).
 2. Determine the workspace root:
@@ -79,20 +126,27 @@ After gathering enough context, create the workspace. Do not ask for confirmatio
 4. Create a private GitHub repo: `gh repo create <workspace_name> --private --clone`
    (If `auto_create_github` is `false`, just `git init` instead.)
 5. Initialize memory: `python scripts/init_db.py`
-6. Create `CLAUDE.md` in workspace root with project-specific instructions from Phase 1.
-7. Create directory structure:
-   ```
-   <workspace>/
-   ├── CLAUDE.md
-   ├── knowledge/
-   ├── skills/learned/
-   └── openspec/
-       ├── project.md
-       ├── changes/
-       └── specs/
-   ```
-8. Register the workspace in `workspaces.json`.
-9. Initial commit: `git commit -m "Initialize workspace"`.
+6. **Read the type-specific scaffold** from `templates/workspace-types/<type>.scaffold.md`
+   and create the directory structure accordingly.
+7. **Create `workspace.json`** from `templates/workspace-types/<type>.workspace.json`,
+   filling in the name, creation date, and stack info from Phase 1 discovery.
+8. **Create `CLAUDE.md`** in workspace root:
+   - Start with project-specific instructions from Phase 1.
+   - Append type-specific rules from `templates/workspace-types/<type>.claude.md`.
+   - Include deploy commands if applicable.
+9. Register the workspace in `workspaces.json` (with type field).
+10. Initial commit: `git commit -m "Initialize <type> workspace"`.
+
+#### Step 2d: Offer Deploy Setup (for deployable types)
+
+For `webapp`, `api`, `agent`, and `mcp-server` types, after workspace creation:
+
+```
+Workspace ready! Since this is a [webapp], I can set up your deploy pipeline now.
+Run /deploy:init to configure Docker + environments, or continue with /spec to plan features first.
+```
+
+Do NOT auto-run `/deploy:init`. Let the user choose when.
 
 ### Phase 3: Spec Generation (YOU produce, user reviews)
 

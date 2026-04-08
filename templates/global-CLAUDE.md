@@ -54,3 +54,23 @@ Skills > 2.0 effectiveness = proven patterns. Skills unused 90+ days = verify fi
 - **mcp-server**: MCP tools (memory-server, connect-odoo)
 - **prompt-pattern**: Instructions in SKILL.md (evolve, spec, codex-bridge)
 - **cron**: Scheduled tasks (heartbeat)
+
+## Workspace Types & Deploy Pipeline
+
+Each workspace has a `workspace.json` that defines its type, stack, and deploy config.
+
+**Types:** `webapp` | `api` | `agent` | `skill` | `mcp-server` | `project`
+
+**Deploy commands (for webapp/api types):**
+- `/deploy:init` — Detect stack, configure environments, write infra spec
+- `/deploy:build` — Generate Docker configs for dev/staging/prod
+- `/deploy:ship dev` — Start local Docker environment
+- `/deploy:ship staging` — Deploy to staging server
+- `/deploy:ship prod` — Deploy to production (requires confirmation)
+- `/deploy:status` — Check deployment state across all environments
+- `/deploy:teardown <env>` — Stop and remove containers
+
+**Environment safety:**
+- **Dev:** Claude Code runs freely, hot reload, debug mode
+- **Staging:** Manual Claude Code OK, verify integrations
+- **Prod:** NEVER run Claude Code — deploy via git push + CI/CD only

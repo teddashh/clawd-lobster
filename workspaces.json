@@ -26,5 +26,24 @@
       "deploy": "all",
       "created": "2026-04-07"
     }
-  ]
+  ],
+  "_schema": {
+    "description": "Each workspace entry in the 'workspaces' array follows this shape",
+    "workspace": {
+      "name": "string — kebab-case workspace name",
+      "type": "string — one of: webapp, api, agent, skill, mcp-server, project",
+      "path": "string — absolute path to workspace directory",
+      "created": "string — ISO date (YYYY-MM-DD)",
+      "repo": "string — GitHub repo URL (if created)",
+      "stack": {
+        "runtime": "string — python, node, php, go, rust, etc.",
+        "framework": "string — fastapi, express, next, laravel, etc."
+      },
+      "deploy": {
+        "dev": { "mode": "local", "port": 0 },
+        "staging": { "host": "", "method": "docker-compose" },
+        "prod": { "host": "", "method": "ci-cd" }
+      }
+    }
+  }
 }
