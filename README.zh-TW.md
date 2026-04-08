@@ -157,20 +157,38 @@ GitHub 是控制平面。Git 是協定。
 
 `clawd-lobster serve` 在 `localhost:3333` 開啟常駐 web dashboard。
 
-**新手引導** — 首次啟動的精靈會檢查前置需求、帶你設定、建立第一個 workspace。
+**新手引導（Skill Parade）** — Agent 引導式體驗。網頁顯示互動式技能卡片；Claude Code 在終端機用對話方式帶你設定。一起走過語言、認證、workspace，然後逐一設定每個 skill。[完整指南 →](docs/onboarding-guide.html)
 
 **Workspaces** — 所有專案一目了然。狀態、規格書進度、記憶體大小、最後活動時間。
 
+**Skills（3 分頁）** — MCP 伺服器、Prompt 模式、Cron 任務。設定、啟用/停用、健康檢查。
+
+**API 金鑰** — 管理 Claude、GitHub、Codex、Gemini、Oracle、Odoo 的認證。遮罩顯示，逐項健康探測。
+
 **Spec Squad** — 跟 Claude 聊天釐清需求。在即時 dashboard 上看四個 agent 工作，有階段時間軸和對話歷程。
+
+### Agent 引導式安裝（Escape Room）
+
+這不是傳統安裝程式。網頁 dashboard 和 Claude Code 是**共同駕駛**：
+
+```
+網頁（視覺層）         +     Claude Code（對話層）
+顯示技能卡片                 解釋每個技能在做什麼
+顯示設定進度                 回答你的問題
+顯示設定表單                 執行安裝指令
+即時更新                     讀取狀態，推進流程
+```
+
+兩者都不是主控。都透過同一個後端 API 提交意圖。控制器租約確保不會互相踩踏。
 
 ---
 
 ## Skills
 
-10 個精選 skill。每個只做好一件事。點名稱看完整文件。
+14 個技能，3 種類型。每個只做好一件事。點名稱看完整文件。
 
 ### [memory-server](skills/memory-server/README.md) — 根基
-26 個 MCP 工具，跨 session 持久記憶。4 層架構，從即時本地快取到雲端同步。顯著性引擎自動浮現重要知識、讓雜訊沉澱。支援 CJK token 估算。這就是讓 Claude Code 不再失憶的 skill。
+28 個 MCP 工具，跨 session 持久記憶。4 層架構，從即時本地快取到雲端同步。顯著性引擎自動浮現重要知識、讓雜訊沉澱。支援 CJK token 估算。這就是讓 Claude Code 不再失憶的 skill。
 
 ### [spec](skills/spec/README.md) — 從想法到程式碼
 引導式 workspace 建立、OpenSpec 文件產出（3W1H）、Spec Squad 多 agent 流水線。Discovery 訪談萃取你的需求。Architect 撰寫含 Gherkin 場景的可測試規格書。Reviewer 把它拆開來挑。Coder 按契約實作。Tester 逐條驗證。終端機或 Web 皆可。
@@ -199,20 +217,27 @@ GitHub 是控制平面。Git 是協定。
 ### [notebooklm-bridge](skills/notebooklm-bridge/README.md) — 文件產出
 自動將 workspace 文件同步到 Google NotebookLM。從你的 codebase 文件產出簡報、資訊圖表、podcast 和報告。內建浮水印移除：多頁用頁碼蓋印、單頁用日期蓋印。全頁面風格一致。
 
+### [deploy](skills/deploy/README.md) — 部署
+Docker 部署管線。自動偵測技術堆疊（Python、Node、Go、Rust、PHP、.NET），產出 Dockerfile、docker-compose 和 nginx 設定。支援 dev/staging/prod 三環境。
+
+### [learned](skills/learned/README.md) — 活的技能庫
+evolve 自動填充的可重用模式目錄。每個模式有效能分數 — 成功的模式上浮，過時的衰減。90 天未使用則歸檔。
+
 ---
 
-每個 skill 都有**觸發描述**（Claude 知道何時啟動）、**Gotchas 區塊**（常見錯誤要避免）、和**動態 `!command` 注入**（載入時的即時上下文）。
+每個 skill 都有**清單**（`skill.json`）包含觸發描述、onboarding 資訊和健康檢查。[skill manager](scripts/skill-manager.py) 負責生命週期管理（啟用、停用、設定、憑證、健康）。
 
 ---
 
 ## 架構
 
 ```
-Skills (the what)      ->  10 skills with manifests, instructions, gotchas
-Tools (the how)        ->  32 MCP tools + Claude Code native tools
+Skills (the what)      ->  14 skills with manifests (skill.json), instructions, gotchas
+Tools (the how)        ->  28 MCP tools + Claude Code native tools + 22 onboarding APIs
 Hooks (the when)       ->  OS scheduler, git hooks, PostToolUse, Stop hooks
-Memory (the brain)     ->  SQLite Ledger + Git Wiki (Thin Ledger pattern)
+Memory (the brain)     ->  SQLite Ledger + Git Wiki + Oracle Vault (4-layer)
 Operations (the cycle) ->  INGEST / QUERY / LINT (continuous knowledge lifecycle)
+Dashboard (the eyes)   ->  Web UI at localhost:3333 (Skill Parade + 3-tab Skills + Keys)
 ```
 
 **站在巨人肩膀上。** Clawd-Lobster 不重建 Claude Code。它用 Claude Code 原生的擴充點（MCP servers、CLAUDE.md、hooks、settings.json），完全照 Anthropic 的設計走。Claude Code 出新功能，你直接受益。模型進步，你的 agent 跟著進步。零 adapter 程式碼。

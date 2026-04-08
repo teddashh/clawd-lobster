@@ -158,11 +158,27 @@ GitHub がコントロールプレーン。Git がプロトコル。
 
 `clawd-lobster serve` で `localhost:3333` に常駐 Web ダッシュボードが開きます。
 
-**オンボーディング** — 初回ウィザードが前提条件をチェックし、セットアップをガイドし、最初のワークスペースを作成します。
+**オンボーディング（Skill Parade）** — エージェント案内型の体験。Webにインタラクティブなスキルカードを表示し、Claude Codeがターミナルで対話的にガイド。言語、認証、ワークスペースを一緒に設定し、各スキルを一つずつ進めます。[完全ガイド →](docs/onboarding-guide.html)
 
 **ワークスペース** — すべてのプロジェクトを一覧表示。ステータス、仕様の進捗、メモリサイズ、最終アクティビティ。
 
-**Spec Squad** — ブラウザで Claude とチャットして要件を発見。フェーズタイムラインとターン履歴を備えたライブダッシュボードで、4つのエージェントの作業をリアルタイムで監視。
+**Skills（3タブ）** — MCPサーバー、プロンプトパターン、Cronジョブ。設定、有効/無効、ヘルスチェック。
+
+**APIキー** — Claude、GitHub、Codex、Gemini、Oracle、Odooの認証管理。マスク表示、サービスごとのヘルスプローブ。
+
+**Spec Squad** — Claude とチャットして要件を発見。ライブダッシュボードで4つのエージェントの作業をリアルタイムで監視。
+
+### エージェント案内型セットアップ（Escape Room）
+
+これは従来のインストーラーではありません。WebダッシュボードとClaude Codeは**共同操縦者**です：
+
+```
+Web（ビジュアル層）    +     Claude Code（対話層）
+スキルカードを表示           各スキルの説明
+設定進捗を表示               質問に回答
+設定フォームを表示           インストールコマンドを実行
+リアルタイム更新             状態を読み取り、フローを進行
+```
 
 ---
 
@@ -209,11 +225,12 @@ XML-RPC + MCP による双方向 Odoo ERP 接続。Odoo データの読み書き
 ## アーキテクチャ
 
 ```
-Skills (the what)      ->  10 skills with manifests, instructions, gotchas
-Tools (the how)        ->  32 MCP tools + Claude Code native tools
+Skills (the what)      ->  14 skills with manifests (skill.json), instructions, gotchas
+Tools (the how)        ->  28 MCP tools + Claude Code native tools + 22 onboarding APIs
 Hooks (the when)       ->  OS scheduler, git hooks, PostToolUse, Stop hooks
-Memory (the brain)     ->  SQLite Ledger + Git Wiki (Thin Ledger pattern)
+Memory (the brain)     ->  SQLite Ledger + Git Wiki + Oracle Vault (4-layer)
 Operations (the cycle) ->  INGEST / QUERY / LINT (continuous knowledge lifecycle)
+Dashboard (the eyes)   ->  Web UI at localhost:3333 (Skill Parade + 3-tab Skills + Keys)
 ```
 
 **巨人の肩の上に立つ。** Clawd-Lobster は Claude Code を再構築しません。Claude Code のネイティブ拡張ポイント（MCP サーバー、CLAUDE.md、hooks、settings.json）を Anthropic が設計した通りに使います。Claude Code が新機能をリリースすれば、そのまま使える。モデルが改善されれば、あなたのエージェントも改善される。アダプターコードはゼロ。

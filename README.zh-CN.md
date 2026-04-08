@@ -157,20 +157,36 @@ GitHub 是控制面。Git 是协议。
 
 `clawd-lobster serve` 在 `localhost:3333` 打开常驻 web dashboard。
 
-**新手引导** — 首次启动的向导会检查前置需求、带你设置、创建第一个 workspace。
+**新手引导（Skill Parade）** — Agent 引导式体验。网页显示互动式技能卡片；Claude Code 在终端用对话方式带你设置。一起走过语言、认证、workspace，然后逐一设置每个 skill。[完整指南 →](docs/onboarding-guide.html)
 
 **Workspaces** — 所有项目一目了然。状态、规格书进度、内存大小、最后活动时间。
 
+**Skills（3 分页）** — MCP 服务器、Prompt 模式、Cron 任务。配置、启用/停用、健康检查。
+
+**API 密钥** — 管理 Claude、GitHub、Codex、Gemini、Oracle、Odoo 的认证。遮罩显示，逐项健康探测。
+
 **Spec Squad** — 跟 Claude 聊天厘清需求。在实时 dashboard 上看四个 agent 工作，有阶段时间轴和对话历程。
+
+### Agent 引导式安装（Escape Room）
+
+这不是传统安装程序。网页 dashboard 和 Claude Code 是**共同驾驶**：
+
+```
+网页（视觉层）         +     Claude Code（对话层）
+显示技能卡片                 解释每个技能在做什么
+显示设置进度                 回答你的问题
+显示配置表单                 执行安装指令
+实时更新                     读取状态，推进流程
+```
 
 ---
 
 ## Skills
 
-10 个精选 skill。每个只做好一件事。点名称看完整文档。
+14 个技能，3 种类型。每个只做好一件事。点名称看完整文档。
 
 ### [memory-server](skills/memory-server/README.md) — 根基
-26 个 MCP 工具，跨 session 持久记忆。4 层架构，从即时本地缓存到云端同步。显著性引擎自动浮现重要知识、让噪音沉淀。支持 CJK token 估算。这就是让 Claude Code 不再失忆的 skill。
+28 个 MCP 工具，跨 session 持久记忆。4 层架构，从即时本地缓存到云端同步。显著性引擎自动浮现重要知识、让噪音沉淀。支持 CJK token 估算。这就是让 Claude Code 不再失忆的 skill。
 
 ### [spec](skills/spec/README.md) — 从想法到代码
 引导式 workspace 创建、OpenSpec 文档生成（3W1H）、Spec Squad 多 agent 流水线。Discovery 访谈提取你的需求。Architect 撰写含 Gherkin 场景的可测试规格书。Reviewer 把它拆开来挑。Coder 按契约实现。Tester 逐条验证。终端或 Web 皆可。
@@ -208,11 +224,12 @@ GitHub 是控制面。Git 是协议。
 ## 架构
 
 ```
-Skills (the what)      ->  10 skills with manifests, instructions, gotchas
-Tools (the how)        ->  32 MCP tools + Claude Code native tools
+Skills (the what)      ->  14 skills with manifests (skill.json), instructions, gotchas
+Tools (the how)        ->  28 MCP tools + Claude Code native tools + 22 onboarding APIs
 Hooks (the when)       ->  OS scheduler, git hooks, PostToolUse, Stop hooks
-Memory (the brain)     ->  SQLite Ledger + Git Wiki (Thin Ledger pattern)
+Memory (the brain)     ->  SQLite Ledger + Git Wiki + Oracle Vault (4-layer)
 Operations (the cycle) ->  INGEST / QUERY / LINT (continuous knowledge lifecycle)
+Dashboard (the eyes)   ->  Web UI at localhost:3333 (Skill Parade + 3-tab Skills + Keys)
 ```
 
 **站在巨人肩膀上。** Clawd-Lobster 不重建 Claude Code。它用 Claude Code 原生的扩展点（MCP servers、CLAUDE.md、hooks、settings.json），完全照 Anthropic 的设计走。Claude Code 出新功能，你直接受益。模型进步，你的 agent 跟着进步。零 adapter 代码。
