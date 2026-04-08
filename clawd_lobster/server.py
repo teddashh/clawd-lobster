@@ -135,6 +135,8 @@ class _Handler(BaseHTTPRequestHandler):
             "/api/workspaces/create": self._api_workspaces_create,
             "/api/squad/chat": self._api_squad_chat,
             "/api/squad/start": self._api_squad_start,
+            "/api/vault/test": self._api_vault_test,
+            "/api/vault/save": self._api_vault_save,
         }
 
         handler = routes.get(path)
@@ -516,6 +518,98 @@ class _Handler(BaseHTTPRequestHandler):
                 data["phase"] = state.get("phase", "discovery")
 
         self._send_json(data)
+
+    # ── Vault API ─────────────────────────────────────────────────────────
+
+    def _api_vault_test(self) -> None:
+        """Test Oracle Vault connection.
+
+        Expects JSON body: {wallet_dir, dsn, user, password, wallet_password}
+        Returns: {"ok": true, "version": "Oracle Database 23ai ..."}
+        """
+        body = self._read_body()
+        try:
+            import oracledb
+            kwargs = {
+                "user": body.get("user", ""),
+                "password": body.get("password", ""),
+                "dsn": body.get("dsn", ""),
+            }
+            wallet_dir = body.get("wallet_dir", "")
+            if wallet_dir:
+                kwargs["config_dir"] = wallet_dir
+                kwargs["wallet_location"] = wallet_dir
+                wp = body.get("wallet_password", "")
+                if wp:
+                    kwargs["wallet_password"] = wp
+
+            conn = oracledb.connect(**kwargs)
+            cur = conn.cursor()
+            cur.execute("SELECT banner FROM v$version WHERE ROWNUM = 1")
+            row = cur.fetchone()
+            version = row[0] if row else "connected"
+            conn.close()
+            self._send_json({"ok": True, "version": version})
+        except Exception as e:
+            self._send_json({"ok": False, "error": str(e)})
+
+    def _api_vault_save(self) -> None:
+        """Save Oracle Vault config and optionally initialize schema.
+
+        Expects JSON body: {wallet_dir, dsn, user, password, wallet_password}
+        Returns: {"ok": true}
+        """
+        body = self._read_body()
+        try:
+            # Load existing config
+            config_file = Path.home() / ".clawd-lobster" / "config.json"
+            config = {}
+            if config_file.exists():
+                config = json.loads(config_file.read_text(encoding="utf-8"))
+
+            # Update oracle section
+            config["oracle"] = {
+                "enabled": True,
+                "wallet_dir": body.get("wallet_dir", ""),
+                "wallet_password": body.get("wallet_password", ""),
+                "dsn": body.get("dsn", ""),
+                "user": body.get("user", ""),
+                "password": body.get("password", ""),
+            }
+
+            # Save atomically
+            config_file.parent.mkdir(parents=True, exist_ok=True)
+            tmp = config_file.with_suffix(".tmp")
+            tmp.write_text(
+                json.dumps(config, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+            if sys.platform == "win32" and config_file.exists():
+                config_file.unlink()
+            tmp.rename(config_file)
+
+            # Try to init schema (non-blocking, best-effort)
+            schema_msg = ""
+            try:
+                import subprocess
+                repo_dir = Path(__file__).resolve().parent.parent
+                init_script = repo_dir / "scripts" / "vault_init.py"
+                if init_script.exists():
+                    result = subprocess.run(
+                        [sys.executable, str(init_script)],
+                        capture_output=True, text=True, timeout=30,
+                    )
+                    if result.returncode == 0:
+                        schema_msg = "Schema initialized."
+            except Exception:
+                pass
+
+            self._send_json({
+                "ok": True,
+                "message": "Oracle Vault enabled." + (" " + schema_msg if schema_msg else ""),
+            })
+        except Exception as e:
+            self._send_json({"ok": False, "error": str(e)})
 
 
 # ── Version helper ─────────────────────────────────────────────────────────

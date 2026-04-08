@@ -341,6 +341,72 @@ ONBOARDING_PAGE = (
         <a href="/workspaces" class="btn btn-secondary" data-i18n="view_ws">View Workspaces</a>
         <a href="/squad" class="btn btn-primary" data-i18n="launch_squad">Launch Spec Squad</a>
       </div>
+
+      <!-- Optional: Oracle Vault (L3 Deep Brain) -->
+      <div style="margin-top:32px;border-top:1px solid #21262d;padding-top:24px;">
+        <div style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="toggleVaultSetup()">
+          <span style="font-size:20px;">&#x1F9E0;</span>
+          <div>
+            <h3 style="margin:0;font-size:16px;" data-i18n="vault_title">Optional: Oracle Vault (Deep Brain)</h3>
+            <p style="color:#8b949e;font-size:13px;margin:2px 0 0;" data-i18n="vault_subtitle">Power-user upgrade: semantic search, entity graph, unlimited capacity</p>
+          </div>
+          <span id="vault-toggle-icon" style="margin-left:auto;color:#8b949e;font-size:18px;">&#9660;</span>
+        </div>
+
+        <div id="vault-setup" style="display:none;margin-top:16px;">
+          <div class="card" style="padding:16px;">
+            <p style="color:#8b949e;font-size:13px;margin-bottom:16px;" data-i18n="vault_desc">Connect to Oracle Autonomous Database to enable The Vault — a deep brain layer with semantic vector search, entity resolution, and full lifecycle tracking. Requires an Oracle Cloud wallet.</p>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="field-group" style="grid-column:1/-1;">
+                <label data-i18n="vault_wallet_dir">Wallet directory</label>
+                <input type="text" id="vault-wallet-dir" placeholder="C:/path/to/wallet" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px;">
+              </div>
+              <div class="field-group">
+                <label data-i18n="vault_dsn">DSN (TNS name)</label>
+                <input type="text" id="vault-dsn" placeholder="mydb_tp" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px;">
+              </div>
+              <div class="field-group">
+                <label data-i18n="vault_user">Database user</label>
+                <input type="text" id="vault-user" placeholder="CLAUDE_MEMORY" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px;">
+              </div>
+              <div class="field-group">
+                <label data-i18n="vault_password">Password</label>
+                <input type="password" id="vault-password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px;">
+              </div>
+              <div class="field-group">
+                <label data-i18n="vault_wallet_password">Wallet password</label>
+                <input type="password" id="vault-wallet-pw" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:14px;">
+              </div>
+            </div>
+
+            <div style="margin-top:16px;display:flex;gap:10px;align-items:center;">
+              <button class="btn btn-secondary" onclick="testVaultConnection()" id="vault-test-btn" data-i18n="vault_test">Test Connection</button>
+              <button class="btn btn-primary" onclick="saveVaultConfig()" id="vault-save-btn" disabled data-i18n="vault_save">Save &amp; Enable Vault</button>
+              <span id="vault-status" style="font-size:13px;"></span>
+            </div>
+
+            <div id="vault-comparison" style="margin-top:20px;">
+              <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                <thead>
+                  <tr style="border-bottom:1px solid #21262d;">
+                    <th style="text-align:left;padding:6px 8px;color:#8b949e;" data-i18n="vault_feature">Feature</th>
+                    <th style="text-align:center;padding:6px 8px;color:#8b949e;" data-i18n="vault_basic">Basic (L1+L2)</th>
+                    <th style="text-align:center;padding:6px 8px;color:#58a6ff;" data-i18n="vault_with_vault">With Vault (L3)</th>
+                  </tr>
+                </thead>
+                <tbody style="color:#c9d1d9;">
+                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_search">Search</td><td style="text-align:center;" data-i18n="vault_cmp_keyword">Keyword only</td><td style="text-align:center;color:#56d364;" data-i18n="vault_cmp_semantic">Keyword + Semantic</td></tr>
+                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_capacity">Capacity</td><td style="text-align:center;">~10K</td><td style="text-align:center;color:#56d364;" data-i18n="vault_cmp_millions">Millions</td></tr>
+                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_entity">Entity graph</td><td style="text-align:center;">&#x2014;</td><td style="text-align:center;color:#56d364;">&#x2713;</td></tr>
+                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_timeline">Time-travel queries</td><td style="text-align:center;">&#x2014;</td><td style="text-align:center;color:#56d364;">&#x2713;</td></tr>
+                  <tr><td style="padding:6px 8px;" data-i18n="vault_cmp_archive">Email/doc archive</td><td style="text-align:center;">&#x2014;</td><td style="text-align:center;color:#56d364;" data-i18n="vault_cmp_full_lifecycle">Full lifecycle</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -423,6 +489,21 @@ const I18N = {
     ws_name_label:"Workspace name (kebab-case)", ws_root_label:"Workspace root directory",
     ws_name_err:"Must be kebab-case (e.g. my-project)",
     finish:"Finish Setup", finishing:"Setting up...",
+    vault_title:"Optional: Oracle Vault (Deep Brain)",
+    vault_subtitle:"Power-user upgrade: semantic search, entity graph, unlimited capacity",
+    vault_desc:"Connect to Oracle Autonomous Database to enable The Vault \u2014 a deep brain layer with semantic vector search, entity resolution, and full lifecycle tracking. Requires an Oracle Cloud wallet.",
+    vault_wallet_dir:"Wallet directory", vault_dsn:"DSN (TNS name)",
+    vault_user:"Database user", vault_password:"Password",
+    vault_wallet_password:"Wallet password",
+    vault_test:"Test Connection", vault_save:"Save & Enable Vault",
+    vault_testing:"Testing...", vault_connected:"Connected!",
+    vault_saved:"Vault enabled! Schema ready.",
+    vault_test_fail:"Connection failed",
+    vault_feature:"Feature", vault_basic:"Basic (L1+L2)", vault_with_vault:"With Vault (L3)",
+    vault_cmp_search:"Search", vault_cmp_keyword:"Keyword only", vault_cmp_semantic:"Keyword + Semantic",
+    vault_cmp_capacity:"Capacity", vault_cmp_millions:"Millions",
+    vault_cmp_entity:"Entity graph", vault_cmp_timeline:"Time-travel queries",
+    vault_cmp_archive:"Email/doc archive", vault_cmp_full_lifecycle:"Full lifecycle",
   },
   "zh-TW": {
     next:"\\u4E0B\\u4E00\\u6B65", back:"\\u8FD4\\u56DE",
@@ -477,6 +558,21 @@ const I18N = {
     ws_root_label:"\\u5DE5\\u4F5C\\u5340\\u6839\\u76EE\\u9304",
     ws_name_err:"\\u5FC5\\u9808\\u662F kebab-case\\uFF08\\u4F8B\\u5982 my-project\\uFF09",
     finish:"\\u5B8C\\u6210\\u8A2D\\u5B9A", finishing:"\\u8A2D\\u5B9A\\u4E2D\\u22EF",
+    vault_title:"\\u9078\\u914D\\uFF1AOracle Vault\\uFF08\\u6DF1\\u5C64\\u5927\\u8166\\uFF09",
+    vault_subtitle:"\\u9032\\u968E\\u5347\\u7D1A\\uFF1A\\u8A9E\\u7FA9\\u641C\\u5C0B\\u3001\\u5BE6\\u9AD4\\u5716\\u8B5C\\u3001\\u7121\\u9650\\u5BB9\\u91CF",
+    vault_desc:"\\u9023\\u63A5 Oracle \\u81EA\\u6CBB\\u8CC7\\u6599\\u5EAB\\u4EE5\\u555F\\u7528 Vault \\u2014 \\u5177\\u5099\\u5411\\u91CF\\u8A9E\\u7FA9\\u641C\\u5C0B\\u3001\\u5BE6\\u9AD4\\u89E3\\u6790\\u548C\\u5B8C\\u6574\\u751F\\u547D\\u9031\\u671F\\u8FFD\\u8E64\\u7684\\u6DF1\\u5C64\\u5927\\u8166\\u3002\\u9700\\u8981 Oracle Cloud \\u9322\\u5305\\u3002",
+    vault_wallet_dir:"\\u9322\\u5305\\u76EE\\u9304", vault_dsn:"DSN\\uFF08TNS \\u540D\\u7A31\\uFF09",
+    vault_user:"\\u8CC7\\u6599\\u5EAB\\u4F7F\\u7528\\u8005", vault_password:"\\u5BC6\\u78BC",
+    vault_wallet_password:"\\u9322\\u5305\\u5BC6\\u78BC",
+    vault_test:"\\u6E2C\\u8A66\\u9023\\u7DDA", vault_save:"\\u5132\\u5B58\\u4E26\\u555F\\u7528 Vault",
+    vault_testing:"\\u6E2C\\u8A66\\u4E2D\\u22EF", vault_connected:"\\u9023\\u7DDA\\u6210\\u529F\\uFF01",
+    vault_saved:"Vault \\u5DF2\\u555F\\u7528\\uFF01Schema \\u5DF2\\u5EFA\\u7ACB\\u3002",
+    vault_test_fail:"\\u9023\\u7DDA\\u5931\\u6557",
+    vault_feature:"\\u529F\\u80FD", vault_basic:"\\u57FA\\u672C (L1+L2)", vault_with_vault:"\\u542B Vault (L3)",
+    vault_cmp_search:"\\u641C\\u5C0B", vault_cmp_keyword:"\\u50C5\\u95DC\\u9375\\u5B57", vault_cmp_semantic:"\\u95DC\\u9375\\u5B57 + \\u8A9E\\u7FA9",
+    vault_cmp_capacity:"\\u5BB9\\u91CF", vault_cmp_millions:"\\u6578\\u767E\\u842C",
+    vault_cmp_entity:"\\u5BE6\\u9AD4\\u5716\\u8B5C", vault_cmp_timeline:"\\u6642\\u9593\\u65C5\\u884C\\u67E5\\u8A62",
+    vault_cmp_archive:"\\u90F5\\u4EF6/\\u6587\\u4EF6\\u6B78\\u6A94", vault_cmp_full_lifecycle:"\\u5B8C\\u6574\\u751F\\u547D\\u9031\\u671F",
   },
   "zh-CN": {
     next:"\\u4E0B\\u4E00\\u6B65", back:"\\u8FD4\\u56DE",
@@ -531,6 +627,16 @@ const I18N = {
     ws_root_label:"\\u5DE5\\u4F5C\\u533A\\u6839\\u76EE\\u5F55",
     ws_name_err:"\\u5FC5\\u987B\\u662F kebab-case\\uFF08\\u4F8B\\u5982 my-project\\uFF09",
     finish:"\\u5B8C\\u6210\\u8BBE\\u7F6E", finishing:"\\u8BBE\\u7F6E\\u4E2D\\u2026",
+    vault_title:"\\u53EF\\u9009\\uFF1AOracle Vault\\uFF08\\u6DF1\\u5C42\\u5927\\u8111\\uFF09",
+    vault_subtitle:"\\u8FDB\\u9636\\u5347\\u7EA7\\uFF1A\\u8BED\\u4E49\\u641C\\u7D22\\u3001\\u5B9E\\u4F53\\u56FE\\u8C31\\u3001\\u65E0\\u9650\\u5BB9\\u91CF",
+    vault_desc:"\\u8FDE\\u63A5 Oracle \\u81EA\\u6CBB\\u6570\\u636E\\u5E93\\u4EE5\\u542F\\u7528 Vault \\u2014 \\u5177\\u5907\\u5411\\u91CF\\u8BED\\u4E49\\u641C\\u7D22\\u3001\\u5B9E\\u4F53\\u89E3\\u6790\\u548C\\u5B8C\\u6574\\u751F\\u547D\\u5468\\u671F\\u8FFD\\u8E2A\\u7684\\u6DF1\\u5C42\\u5927\\u8111\\u3002\\u9700\\u8981 Oracle Cloud \\u94B1\\u5305\\u3002",
+    vault_wallet_dir:"\\u94B1\\u5305\\u76EE\\u5F55", vault_dsn:"DSN\\uFF08TNS \\u540D\\u79F0\\uFF09",
+    vault_user:"\\u6570\\u636E\\u5E93\\u7528\\u6237", vault_password:"\\u5BC6\\u7801",
+    vault_wallet_password:"\\u94B1\\u5305\\u5BC6\\u7801",
+    vault_test:"\\u6D4B\\u8BD5\\u8FDE\\u63A5", vault_save:"\\u4FDD\\u5B58\\u5E76\\u542F\\u7528 Vault",
+    vault_testing:"\\u6D4B\\u8BD5\\u4E2D\\u2026", vault_connected:"\\u8FDE\\u63A5\\u6210\\u529F\\uFF01",
+    vault_saved:"Vault \\u5DF2\\u542F\\u7528\\uFF01Schema \\u5DF2\\u5EFA\\u7ACB\\u3002",
+    vault_test_fail:"\\u8FDE\\u63A5\\u5931\\u8D25",
   },
   ja: {
     next:"\\u6B21\\u3078", back:"\\u623B\\u308B",
@@ -891,6 +997,87 @@ async function finishManual() {
     btn.textContent = T('finish');
     btn.disabled = false;
     alert('Connection error: ' + e.message);
+  }
+}
+
+// Vault setup functions
+function toggleVaultSetup() {
+  var el = document.getElementById('vault-setup');
+  var icon = document.getElementById('vault-toggle-icon');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    icon.innerHTML = '&#9650;';
+  } else {
+    el.style.display = 'none';
+    icon.innerHTML = '&#9660;';
+  }
+  applyI18n();
+}
+
+async function testVaultConnection() {
+  var btn = document.getElementById('vault-test-btn');
+  var status = document.getElementById('vault-status');
+  btn.disabled = true;
+  btn.textContent = T('vault_testing');
+  status.textContent = '';
+  status.style.color = '#8b949e';
+  try {
+    var res = await fetch('/api/vault/test', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        wallet_dir: document.getElementById('vault-wallet-dir').value.trim(),
+        dsn: document.getElementById('vault-dsn').value.trim(),
+        user: document.getElementById('vault-user').value.trim(),
+        password: document.getElementById('vault-password').value,
+        wallet_password: document.getElementById('vault-wallet-pw').value,
+      })
+    });
+    var data = await res.json();
+    if (data.ok) {
+      status.textContent = T('vault_connected') + (data.version ? ' (' + data.version + ')' : '');
+      status.style.color = '#56d364';
+      document.getElementById('vault-save-btn').disabled = false;
+    } else {
+      status.textContent = T('vault_test_fail') + ': ' + (data.error || 'unknown');
+      status.style.color = '#f85149';
+    }
+  } catch(e) {
+    status.textContent = T('vault_test_fail') + ': ' + e.message;
+    status.style.color = '#f85149';
+  }
+  btn.disabled = false;
+  btn.textContent = T('vault_test');
+}
+
+async function saveVaultConfig() {
+  var btn = document.getElementById('vault-save-btn');
+  var status = document.getElementById('vault-status');
+  btn.disabled = true;
+  status.textContent = '';
+  try {
+    var res = await fetch('/api/vault/save', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        wallet_dir: document.getElementById('vault-wallet-dir').value.trim(),
+        dsn: document.getElementById('vault-dsn').value.trim(),
+        user: document.getElementById('vault-user').value.trim(),
+        password: document.getElementById('vault-password').value,
+        wallet_password: document.getElementById('vault-wallet-pw').value,
+      })
+    });
+    var data = await res.json();
+    if (data.ok) {
+      status.textContent = T('vault_saved');
+      status.style.color = '#56d364';
+    } else {
+      status.textContent = (data.error || 'Save failed');
+      status.style.color = '#f85149';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.style.color = '#f85149';
+    btn.disabled = false;
   }
 }
 
