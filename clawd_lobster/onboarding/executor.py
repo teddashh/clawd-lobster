@@ -231,20 +231,25 @@ def _run_command_step(step: dict) -> tuple[bool, str | None]:
     if not cmd:
         return False, "No command for this platform"
 
-    # Security: commands come from skill.json manifests (we control),
-    # but reject anything with shell metacharacters that could indicate injection
-    _DANGEROUS_PATTERNS = [";", "&&", "||", "|", "`", "$(", ">>", ">{"]
-    for pat in _DANGEROUS_PATTERNS:
-        if pat in cmd and "{{" not in cmd:  # allow {{WRAPPER_DIR}} before resolve
-            return False, f"Command rejected: contains shell metacharacter '{pat}'"
-
     # Resolve {{WRAPPER_DIR}} placeholder
     wrapper_dir = str(Path(__file__).resolve().parent.parent.parent)
     cmd = cmd.replace("{{WRAPPER_DIR}}", wrapper_dir)
 
+    # Security: use shlex.split instead of shell=True to prevent injection.
+    # Commands come from skill.json manifests (we control), but defense-in-depth.
+    import shlex
+    try:
+        if _IS_WINDOWS:
+            # shlex.split doesn't handle Windows quoting well; use cmd list manually
+            cmd_list = cmd.split()
+        else:
+            cmd_list = shlex.split(cmd)
+    except ValueError as e:
+        return False, f"Command parse error: {e}"
+
     try:
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True,
+            cmd_list, capture_output=True, text=True,
             timeout=120, encoding="utf-8", errors="replace",
             cwd=wrapper_dir,
         )

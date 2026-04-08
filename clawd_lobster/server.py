@@ -165,6 +165,14 @@ class _Handler(BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/") or "/"
         query = parse_qs(parsed.query)
 
+        # Auth-exempt GET endpoints (public pages + basic status)
+        _GET_NO_AUTH = {"/", "/onboarding", "/workspaces", "/skills",
+                        "/credentials", "/settings", "/squad",
+                        "/api/status", "/api/workspaces", "/api/squad/state"}
+        if path not in _GET_NO_AUTH and path.startswith("/api/"):
+            if not self._require_auth(query):
+                return
+
         routes = {
             "/": self._route_home,
             "/onboarding": self._route_onboarding,

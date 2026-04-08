@@ -1,6 +1,6 @@
 """Acceptance tests for the onboarding system.
 
-Covers Ted's approval checklist from round5-final-consensus.md:
+Covers the approval checklist from round5-final-consensus.md:
   [x] Single-writer guarantee
   [x] Lease safety
   [x] Crash recovery
@@ -87,7 +87,7 @@ class TestLease(unittest.TestCase):
         self.assertTrue(r["ok"])
         self.assertIn("lease_id", r)
 
-        r2 = lease.release(self.sid, "web")
+        r2 = lease.release(self.sid, "web", lease_id=r["lease_id"])
         self.assertTrue(r2["ok"])
 
     def test_concurrent_lease_rejected(self):
@@ -100,15 +100,15 @@ class TestLease(unittest.TestCase):
         self.assertIn("held by another", r2["error"])
 
     def test_lease_handoff(self):
-        lease.acquire(self.sid, "web")
-        r = lease.handoff(self.sid, "web", "claude")
+        r1 = lease.acquire(self.sid, "web")
+        r = lease.handoff(self.sid, "web", "claude", lease_id=r1["lease_id"])
         self.assertTrue(r["ok"])
         self.assertEqual(r["holder"], "claude")
 
     def test_wrong_holder_cannot_release(self):
-        lease.acquire(self.sid, "web")
-        r = lease.release(self.sid, "claude")
-        self.assertFalse(r["ok"])
+        r = lease.acquire(self.sid, "web")
+        r2 = lease.release(self.sid, "claude", lease_id=r["lease_id"])
+        self.assertFalse(r2["ok"])
 
     def test_expired_lease_auto_cleanup(self):
         """Stale leases cleaned on get_current."""
@@ -344,15 +344,16 @@ class TestE2EFlow(unittest.TestCase):
         self.assertGreater(len(events), 5)
 
         # 7. Handoff to claude
-        r = lease.handoff(sid, "web", "claude")
+        r = lease.handoff(sid, "web", "claude", lease_id=lid)
         self.assertTrue(r["ok"])
+        claude_lid = r["lease_id"]
 
         # 8. Claude can't be taken over by web without release
         r = lease.acquire(sid, "web")
         self.assertFalse(r["ok"])
 
         # 9. Claude releases, web takes back
-        lease.release(sid, "claude")
+        lease.release(sid, "claude", lease_id=claude_lid)
         r = lease.acquire(sid, "web")
         self.assertTrue(r["ok"])
 
