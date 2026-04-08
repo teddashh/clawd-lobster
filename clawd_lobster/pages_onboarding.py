@@ -91,10 +91,18 @@ a { color: var(--accent); text-decoration: none; }
 .mascot { display: flex; align-items: flex-start; gap: 12px; background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); padding: 16px; margin-bottom: 24px; cursor: pointer; user-select: none; transition: transform 0.1s; }
 .mascot:active { transform: scale(0.98); }
 .mascot img { width: 48px; height: 48px; border-radius: 10px; }
-.mascot .mascot-icon { font-size: 2.5rem; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.mascot .mascot-icon.jump { transform: translateY(-12px) rotate(10deg); }
+.mascot .mascot-icon { width: 120px; height: 120px; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0; }
+.mascot .mascot-icon.jump { transform: translateY(-16px) rotate(8deg); }
+.mascot .mascot-icon img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)); }
 .mascot .bubble { flex: 1; color: var(--fg2); font-size: 0.9rem; line-height: 1.5; }
 .mascot .bubble strong { color: var(--fg); }
+
+/* Language flags */
+.lang-flags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.lang-flag { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border: 2px solid var(--bg3); border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 0.85rem; background: var(--bg); }
+.lang-flag:hover { border-color: var(--accent); }
+.lang-flag.selected { border-color: var(--green); background: rgba(63,185,80,0.1); }
+.lang-flag .flag { font-size: 1.3rem; }
 
 /* Go Live */
 .go-live { text-align: center; padding: 60px 20px; }
@@ -123,18 +131,13 @@ ONBOARDING_PAGE = (
     "<span class='phase-badge active' id='phase-badge'>Loading...</span>"
     "</div>"
 
-    # Controller banner
-    "<div class='controller-banner' id='controller-banner'>"
-    "<div class='holder'><span class='icon'>🎮</span> <span id='ctrl-holder'>No controller</span></div>"
-    "<div>"
-    "<button class='btn' id='btn-acquire' onclick='acquireLease()'>Take Control</button>"
-    "<button class='btn' id='btn-release' onclick='releaseLease()' style='display:none'>Release</button>"
-    "</div>"
-    "</div>"
+    # Controller banner placeholder (rendered inside language card by JS)
+    "<div id='controller-slot'></div>"
+    "<div id='handoff-result' style='margin-bottom:12px;font-size:0.85rem;color:var(--fg2);display:none'></div>"
 
     # Mascot (clickable — jumps + cycles quotes)
     "<div class='mascot' id='mascot' onclick='mascotClick()' title='Click me!'>"
-    "<div class='mascot-icon' id='mascot-icon'>🦞</div>"
+    "<div class='mascot-icon' id='mascot-icon'><img src='/assets/mascot-lobster.png' alt='Clawd Lobster'></div>"
     "<div class='bubble' id='mascot-bubble'>Loading wisdom...</div>"
     "</div>"
 
@@ -143,13 +146,6 @@ ONBOARDING_PAGE = (
 
     # Skill cards container (filled by JS)
     "<div id='tiers-container'></div>"
-
-    # Handoff banner
-    "<div class='card' id='handoff-banner' style='display:none;text-align:center;border-color:var(--purple);margin-bottom:24px'>"
-    "<p style='margin-bottom:12px;color:var(--fg2)'>Want Claude to help with the remaining setup? Launch Claude Code in your workspace.</p>"
-    "<button class='btn primary' onclick='launchHandoff()' style='background:var(--purple);border-color:var(--purple)'>🤖 Launch Claude Code</button>"
-    "<div id='handoff-result' style='margin-top:12px;font-size:0.85rem;color:var(--fg2);display:none'></div>"
-    "</div>"
 
     # Actions
     "<div style='text-align:center;margin-top:32px;' id='actions'>"
@@ -276,8 +272,34 @@ function render() {
         html += '</div>';
       }
 
+      // Special: language selector with flag images (no lease required)
+      if (i.id === 'foundation.language') {
+        const currentLang = (i.facts && i.facts.value) || '';
+        const flags = [
+          {code:'en', img:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 30%22><rect width=%2260%22 height=%2230%22 fill=%22%23012169%22/><path d=%22M0,0L60,30M60,0L0,30%22 stroke=%22%23fff%22 stroke-width=%226%22/><path d=%22M0,0L60,30M60,0L0,30%22 stroke=%22%23C8102E%22 stroke-width=%224%22/><path d=%22M30,0V30M0,15H60%22 stroke=%22%23fff%22 stroke-width=%2210%22/><path d=%22M30,0V30M0,15H60%22 stroke=%22%23C8102E%22 stroke-width=%226%22/></svg>', label:'English'},
+          {code:'zh-TW', img:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 40%22><rect width=%2260%22 height=%2240%22 fill=%22%23FE0000%22/><rect width=%2230%22 height=%2220%22 fill=%22%23000095%22/><text x=%2215%22 y=%2215%22 fill=%22%23fff%22 font-size=%2212%22 text-anchor=%22middle%22>%E2%98%86</text></svg>', label:'繁體中文'},
+          {code:'zh-CN', img:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 40%22><rect width=%2260%22 height=%2240%22 fill=%22%23EE1C25%22/><text x=%2212%22 y=%2220%22 fill=%22%23FFFF00%22 font-size=%2218%22>%E2%98%85</text></svg>', label:'简体中文'},
+          {code:'ja', img:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 40%22><rect width=%2260%22 height=%2240%22 fill=%22%23fff%22/><circle cx=%2230%22 cy=%2220%22 r=%2212%22 fill=%22%23BC002D%22/></svg>', label:'日本語'},
+          {code:'ko', img:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 40%22><rect width=%2260%22 height=%2240%22 fill=%22%23fff%22/><circle cx=%2230%22 cy=%2220%22 r=%2210%22 fill=%22%23C60C30%22/><circle cx=%2230%22 cy=%2215%22 r=%225%22 fill=%22%230047A0%22/></svg>', label:'한국어'},
+        ];
+        html += '<div class="lang-flags">';
+        flags.forEach(f => {
+          const sel = currentLang === f.code ? ' selected' : '';
+          html += '<div class="lang-flag' + sel + '" onclick="setLang(\\'' + f.code + '\\')">'
+            + '<img src="' + f.img + '" style="width:24px;height:16px;border-radius:2px;vertical-align:middle"> ' + f.label + '</div>';
+        });
+        html += '</div>';
+        // Controller banner right after language selection
+        html += '<div class="controller-banner" style="margin-top:14px">';
+        html += '<div class="holder"><span class="icon">🎮</span> <span id="ctrl-holder">No active controller</span></div>';
+        html += '<div style="display:flex;gap:8px;align-items:center">';
+        html += '<button class="btn primary" onclick="launchHandoff()">🤖 Launch Claude Code</button>';
+        html += '<button class="btn primary" id="btn-acquire" onclick="acquireLease()">🖱️ Take Control</button>';
+        html += '<button class="btn" id="btn-release" onclick="releaseLease()" style="display:none">Release</button>';
+        html += '</div></div>';
+      }
       // Action buttons
-      if (i.status === 'pending' || i.status === 'failed') {
+      else if (i.status === 'pending' || i.status === 'failed') {
         const canRun = !i.depends_on || i.depends_on.length === 0 || i.depends_on.every(d => {
           const dep = state.items.find(x => x.id === d);
           return dep && (dep.status === 'succeeded' || dep.status === 'skipped');
@@ -531,6 +553,28 @@ async function completeOnboarding() {
   const data = await res.json();
   if (data.ok) { window.location.href = '/workspaces'; }
   else alert(data.error || 'Cannot complete yet');
+}
+
+// ── Language ──
+async function setLang(code) {
+  // Language doesn't need lease — auto-acquire if needed, or set directly
+  if (!leaseId) {
+    const r = await fetch(API + '/api/controller/acquire', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({session_id: sessionId, holder: 'web'})
+    });
+    const d = await r.json();
+    if (d.ok) { leaseId = d.lease_id; holder = 'web'; startRenew(); }
+    else { alert('Cannot set language: ' + (d.error || 'take control first')); return; }
+  }
+  await fetch(API + '/api/onboarding/intent', {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({session_id: sessionId, lease_id: leaseId, intent: 'set_foundation', item_id: 'foundation.language', payload: {value: code}})
+  });
+  await refreshState();
+  // Update mascot language
+  if (state) state.lang = code;
+  updateMascot();
 }
 
 // ── Handoff ──
