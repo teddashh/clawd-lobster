@@ -373,11 +373,13 @@ async function acquireLease() {
 }
 
 async function releaseLease() {
-  await fetch(API + '/api/controller/release', {
+  const res = await fetch(API + '/api/controller/release', {
     method: 'POST', headers: authHeaders(),
-    body: JSON.stringify({session_id: sessionId, holder: 'web'})
+    body: JSON.stringify({session_id: sessionId, holder: 'web', lease_id: leaseId})
   });
-  leaseId = null; holder = null; stopRenew(); render();
+  const data = await res.json();
+  if (data.ok) { leaseId = null; holder = null; stopRenew(); render(); }
+  else { alert(data.error || 'Could not release'); }
 }
 
 let renewTimer = null;
@@ -409,8 +411,7 @@ async function runSetup(itemId) {
   const item = (state.items || []).find(i => i.id === itemId);
   if (item && item.kind === 'cron' && data.ok) {
     await fetch(API + '/api/jobs/register', {
-      method: 'POST', headers: {'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (localStorage.getItem('cl-token') || '')},
+      method: 'POST', headers: authHeaders(),
       body: JSON.stringify({skill_id: itemId})
     });
   }

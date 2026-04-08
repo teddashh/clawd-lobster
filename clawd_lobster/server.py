@@ -363,55 +363,8 @@ class _Handler(BaseHTTPRequestHandler):
         result = onboarding.check_prerequisites()
         self._send_json(result)
 
-    def _api_onboarding_complete(self) -> None:
-        body = self._read_body()
-        persona = body.get("persona", "noob")
-        lang = body.get("lang", "en")
-        ws_name = body.get("workspace_name", "")
-        ws_root = body.get("workspace_root", "")
-
-        if not ws_root:
-            ws_root = _resolve_workspace_root()
-
-        # Validate persona
-        if persona not in ("noob", "expert", "tech"):
-            persona = "noob"
-
-        # Validate lang
-        if lang not in ("en", "zh-TW", "zh-CN", "ja", "ko"):
-            lang = "en"
-
-        try:
-            # Save config
-            onboarding.save_config(persona, ws_root, lang=lang)
-
-            # Create workspace if name provided
-            if ws_name:
-                self._create_workspace_internal(ws_name, "personal", "")
-
-            self._send_json({"ok": True})
-        except Exception as e:
-            self._send_json({"ok": False, "error": str(e)}, status=400)
-
-    def _api_onboarding_handoff(self) -> None:
-        """Create a handoff session. Returns session_id + handoff dir path."""
-        body = self._read_body()
-        lang = body.get("lang", "en")
-        if lang not in ("en", "zh-TW", "zh-CN", "ja", "ko"):
-            lang = "en"
-
-        try:
-            state = onboarding.create_onboarding_session(lang)
-            session_id = state["session_id"]
-            session_dir = onboarding.write_handoff_file(session_id, lang)
-            self._send_json({
-                "ok": True,
-                "session_id": session_id,
-                "session_dir": str(session_dir),
-                "state": state,
-            })
-        except Exception as e:
-            self._send_json({"ok": False, "error": str(e)}, status=500)
+    # Legacy _api_onboarding_complete and _api_onboarding_handoff removed.
+    # All onboarding mutations go through /api/onboarding/intent (sole authority).
 
     def _api_onboarding_state(self, query: dict) -> None:
         """Return current onboarding session state."""
@@ -455,37 +408,7 @@ class _Handler(BaseHTTPRequestHandler):
         except OSError as e:
             self._send_json({"ok": False, "error": str(e)}, status=500)
 
-    def _api_onboarding_update(self) -> None:
-        """CLI reports step completion. Requires session_id in body."""
-        body = self._read_body()
-        session_id = body.get("session_id", "")
-        step = body.get("step", "")
-        value = body.get("value")
-
-        if not session_id or not step:
-            self._send_json(
-                {"ok": False, "error": "session_id and step required"}, status=400,
-            )
-            return
-
-        state = onboarding.update_onboarding_state(session_id, step, value)
-        if state is None:
-            self._send_json(
-                {"ok": False, "error": "Invalid session or step"}, status=400,
-            )
-            return
-
-        # If complete, also save the config
-        if step == "complete" or state.get("phase") == "complete":
-            persona = state.get("persona", "noob")
-            ws_root = state.get("workspace_root", "")
-            lang = state.get("lang", "en")
-            if not ws_root:
-                ws_root = _resolve_workspace_root()
-            try:
-                onboarding.save_config(persona, ws_root, lang=lang)
-            except Exception:
-                pass
+    # Legacy _api_onboarding_update removed — use /api/onboarding/intent instead.
 
         self._send_json({"ok": True, "state": state})
 

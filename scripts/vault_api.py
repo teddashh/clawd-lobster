@@ -38,12 +38,24 @@ _pool = None
 
 
 def _load_oracle_config() -> dict:
-    """Load Oracle config from ~/.clawd-lobster/config.json."""
-    config_file = Path.home() / ".clawd-lobster" / "config.json"
-    if not config_file.exists():
-        return {}
-    with open(config_file, encoding="utf-8") as f:
-        return json.load(f).get("oracle", {})
+    """Load Oracle config from ~/.clawd-lobster/config.json + credentials/oracle.json."""
+    base = Path.home() / ".clawd-lobster"
+    config_file = base / "config.json"
+    cfg = {}
+    if config_file.exists():
+        with open(config_file, encoding="utf-8") as f:
+            cfg = json.load(f).get("oracle", {})
+    # Merge secrets from credentials file (takes precedence)
+    creds_file = base / "credentials" / "oracle.json"
+    if creds_file.exists():
+        try:
+            with open(creds_file, encoding="utf-8") as f:
+                creds = json.load(f)
+                cfg["password"] = creds.get("password", cfg.get("password", ""))
+                cfg["wallet_password"] = creds.get("wallet_password", cfg.get("wallet_password", ""))
+        except (json.JSONDecodeError, OSError):
+            pass
+    return cfg
 
 
 def _get_pool(wallet_dir: str = "", dsn: str = "", user: str = "",
