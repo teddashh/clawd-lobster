@@ -114,7 +114,15 @@ class Vault:
                occurred_at: str | datetime | None = None,
                taxonomy_id: int | None = None,
                privacy_level: str = "internal",
-               language: str = "en") -> int:
+               language: str = "en",
+               ownership: str = "self",
+               email_from: str | None = None,
+               email_importance: str | None = None,
+               email_direction: str | None = None,
+               fidelity: str = "high",
+               original_path: str | None = None,
+               parent_doc_id: int | None = None,
+               version: int = 1) -> int:
         """Ingest a document into the Vault. Returns the new document ID.
 
         Args:
@@ -186,17 +194,36 @@ class Vault:
                 if existing:
                     return existing[0]  # already ingested
 
-                # 3. Insert document
+                # 3. Insert document (v11: includes ownership, email, fidelity, versioning, original_path)
                 doc_var = cur.var(int)
+                # Extract promoted fields from meta if passed via PreDocument.to_ingest_kwargs()
+                _ownership = ownership or (meta or {}).pop("ownership", "self")
+                _email_from = email_from or (meta or {}).pop("email_from", None)
+                _email_importance = email_importance or (meta or {}).pop("email_importance", None)
+                _email_direction = email_direction or (meta or {}).pop("email_direction", None)
+                _fidelity = fidelity or (meta or {}).pop("fidelity", "high")
+                _original_path = original_path or (meta or {}).pop("original_path", None)
+                _is_latest = 1
+                # If this is a version update, mark previous as not latest
+                if parent_doc_id:
+                    cur.execute(
+                        "UPDATE vault_documents SET is_latest = 0 WHERE id = :1",
+                        [parent_doc_id],
+                    )
                 cur.execute("""
                     INSERT INTO vault_documents (source_id, doc_type, title, content,
                         content_hash, occurred_at, metadata_json, taxonomy_id,
-                        privacy_level, language, lifecycle)
-                    VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, 'raw')
-                    RETURNING id INTO :11
+                        privacy_level, language, lifecycle,
+                        ownership, email_from, email_importance, email_direction,
+                        fidelity, original_path, parent_doc_id, version, is_latest)
+                    VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, 'raw',
+                        :11, :12, :13, :14, :15, :16, :17, :18, :19)
+                    RETURNING id INTO :20
                 """, [source_id, doc_type, title, content, content_hash,
                       occurred_at, json.dumps(meta) if meta else None,
                       taxonomy_id, privacy_level, language,
+                      _ownership, _email_from, _email_importance, _email_direction,
+                      _fidelity, _original_path, parent_doc_id, version, _is_latest,
                       doc_var])
                 doc_id = doc_var.getvalue()[0]
 
@@ -424,39 +451,35 @@ class Vault:
                  start: str | None = None, end: str | None = None,
                  limit: int = 50) -> list[dict]:
         """Chronological view of documents, optionally filtered by entity/topic/date range."""
-        conditions = []
-        params: list[Any] = []
-
-        if start:
-            conditions.append(f"d.occurred_at >= TO_TIMESTAMP(:p{len(params)+1}, 'YYYY-MM-DD')")
-            params.append(start)
-        if end:
-            conditions.append(f"d.occurred_at <= TO_TIMESTAMP(:p{len(params)+1}, 'YYYY-MM-DD')")
-            params.append(end)
-
-        where = ""
-        join = ""
-
+        # Resolve entity once (avoid triple DB call from original code)
+        entity_id = None
         if entity:
             resolved = self.entity_resolve(entity)
             if resolved:
-                join = """
-                    JOIN vault_relations r ON r.object_type = 'document' AND r.object_id = d.id
-                        AND r.subject_type = 'entity' AND r.subject_id = :entity_id
-                """
-                params.append(resolved["id"])
+                entity_id = resolved["id"]
 
+        # Build query with clean named binds
+        conditions = []
+        binds: dict[str, Any] = {"row_limit": limit}
+        join = ""
+
+        if start:
+            conditions.append("d.occurred_at >= TO_TIMESTAMP(:start_date, 'YYYY-MM-DD')")
+            binds["start_date"] = start
+        if end:
+            conditions.append("d.occurred_at <= TO_TIMESTAMP(:end_date, 'YYYY-MM-DD')")
+            binds["end_date"] = end
+        if entity_id:
+            join = """JOIN vault_relations r ON r.object_type = 'document' AND r.object_id = d.id
+                        AND r.subject_type = 'entity' AND r.subject_id = :entity_id"""
+            binds["entity_id"] = entity_id
         if topic:
-            conditions.append(f"(LOWER(d.title) LIKE LOWER(:topic) OR LOWER(d.content) LIKE LOWER(:topic2))")
-            params.extend([f"%{topic}%", f"%{topic}%"])
+            conditions.append("(LOWER(d.title) LIKE LOWER(:topic_q) OR DBMS_LOB.INSTR(LOWER(d.content), LOWER(:topic_q2)) > 0)")
+            binds["topic_q"] = f"%{topic}%"
+            binds["topic_q2"] = topic.lower()
 
-        if conditions:
-            where = "WHERE " + " AND ".join(conditions)
+        where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
-        params.append(limit)
-
-        # Build parameterized query with named binds for clarity
-        # We need to convert to positional for simplicity
         query = f"""
             SELECT d.id, d.doc_type, d.title, d.occurred_at, d.lifecycle,
                    DBMS_LOB.SUBSTR(d.content, 200, 1) AS excerpt,
@@ -466,28 +489,12 @@ class Vault:
             {join}
             {where}
             ORDER BY d.occurred_at DESC
-            FETCH FIRST :limit ROWS ONLY
+            FETCH FIRST :row_limit ROWS ONLY
         """
-
-        # Use simple positional binding
-        bind_map = {}
-        idx = 1
-        if start:
-            bind_map[f"p{idx}"] = start
-            idx += 1
-        if end:
-            bind_map[f"p{idx}"] = end
-            idx += 1
-        if entity and self.entity_resolve(entity):
-            bind_map["entity_id"] = self.entity_resolve(entity)["id"]
-        if topic:
-            bind_map["topic"] = f"%{topic}%"
-            bind_map["topic2"] = f"%{topic}%"
-        bind_map["limit"] = limit
 
         with self._pool.acquire() as conn:
             with conn.cursor() as cur:
-                cur.execute(query, bind_map)
+                cur.execute(query, binds)
                 return _fetchall_dict(cur)
 
     # === GRAPH ===
@@ -589,8 +596,13 @@ class Vault:
         """Retract a fact (mark as retracted)."""
         return self._update_lifecycle("fact", "vault_facts", fact_id, "retracted", reason or "Retracted")
 
+    # Whitelist of tables allowed in dynamic SQL (C1/C2 audit fix)
+    _LIFECYCLE_TABLES = frozenset({"vault_documents", "vault_entities", "vault_facts"})
+
     def _update_lifecycle(self, target_type: str, table: str, record_id: int,
                           new_state: str, reason: str) -> dict:
+        if table not in self._LIFECYCLE_TABLES:
+            return {"ok": False, "error": f"Table '{table}' not in allowed lifecycle tables"}
         with self._pool.acquire() as conn:
             with conn.cursor() as cur:
                 cur.execute(f"SELECT lifecycle FROM {table} WHERE id = :1", [record_id])
@@ -754,18 +766,15 @@ class Vault:
                     VALUES ('entity', :1, 'extracted', 'merged', :2, 'vault_api')
                 """, [source_id, reason or f"Merged into entity #{target_id}"])
 
-                # Audit trail
-                try:
-                    cur.execute("""
-                        INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
-                        VALUES ('merge_entity', 'vault_api', 'entity', :1, :2)
-                    """, [source_id, json.dumps({
-                        "source_id": source_id, "source_name": src["canonical_name"],
-                        "target_id": target_id, "target_name": tgt["canonical_name"],
-                        "reason": reason,
-                    })])
-                except Exception:
-                    pass  # audit_trail table might not exist yet
+                # Audit trail (must succeed — no silent swallowing)
+                cur.execute("""
+                    INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
+                    VALUES ('merge_entity', 'vault_api', 'entity', :1, :2)
+                """, [source_id, json.dumps({
+                    "source_id": source_id, "source_name": src["canonical_name"],
+                    "target_id": target_id, "target_name": tgt["canonical_name"],
+                    "reason": reason,
+                })])
 
                 conn.commit()
                 return {
@@ -789,36 +798,52 @@ class Vault:
                 report = {
                     "entity": entity["canonical_name"],
                     "documents_redacted": 0,
+                    "chunks_cleared": 0,
                     "facts_retracted": 0,
                     "relations_removed": 0,
                     "aliases_removed": 0,
                 }
 
-                # 2. Find all related documents (via relations)
+                # 2. Find all related documents — via relations AND email_from match
+                #    (audit found: H2 — unlinked docs were missed)
                 cur.execute("""
-                    SELECT DISTINCT r.object_id FROM vault_relations r
-                    WHERE r.subject_type = 'entity' AND r.subject_id = :1
-                        AND r.object_type = 'document'
-                """, [entity_id])
+                    SELECT DISTINCT id FROM (
+                        SELECT d.id FROM vault_documents d
+                        JOIN vault_relations r ON r.object_type = 'document' AND r.object_id = d.id
+                        WHERE r.subject_type = 'entity' AND r.subject_id = :1
+                        UNION
+                        SELECT d.id FROM vault_documents d
+                        WHERE d.email_from IS NOT NULL AND LOWER(d.email_from) LIKE '%' || LOWER(:2) || '%'
+                    )
+                """, [entity_id, entity["canonical_name"]])
                 doc_ids = [r[0] for r in cur.fetchall()]
 
-                # 3. Redact documents
+                # 3. Redact documents + clear their chunks
                 for doc_id in doc_ids:
                     cur.execute("""
                         UPDATE vault_documents SET redacted_at = SYSTIMESTAMP,
                             content = '[REDACTED]', title = '[REDACTED]',
-                            is_latest = 0
+                            metadata_json = NULL, is_latest = 0
                         WHERE id = :1
                     """, [doc_id])
                     report["documents_redacted"] += 1
+                    # Clear chunk content (audit H2: chunks retained original text)
+                    cur.execute("""
+                        UPDATE vault_chunks SET text_content = '[REDACTED]',
+                            summary = NULL, embedding = NULL
+                        WHERE document_id = :1
+                    """, [doc_id])
+                    report["chunks_cleared"] += cur.rowcount
 
-                # 4. Retract facts
-                cur.execute("""
-                    UPDATE vault_facts SET lifecycle = 'retracted'
-                    WHERE source_doc_id IN (SELECT object_id FROM vault_relations
-                        WHERE subject_type = 'entity' AND subject_id = :1 AND object_type = 'document')
-                """, [entity_id])
-                report["facts_retracted"] = cur.rowcount
+                # 4. Retract all facts linked to these documents
+                if doc_ids:
+                    # Use IN clause with bind list
+                    placeholders = ",".join(f":{i+1}" for i in range(len(doc_ids)))
+                    cur.execute(f"""
+                        UPDATE vault_facts SET lifecycle = 'retracted'
+                        WHERE source_doc_id IN ({placeholders})
+                    """, doc_ids)
+                    report["facts_retracted"] = cur.rowcount
 
                 # 5. Remove relations
                 cur.execute("""
@@ -835,8 +860,8 @@ class Vault:
                 # 7. Anonymize entity
                 cur.execute("""
                     UPDATE vault_entities SET canonical_name = '[REDACTED]',
-                        metadata_json = NULL, lifecycle = 'retracted',
-                        updated_at = SYSTIMESTAMP
+                        metadata_json = NULL, embedding = NULL,
+                        lifecycle = 'retracted', updated_at = SYSTIMESTAMP
                     WHERE id = :1
                 """, [entity_id])
 
@@ -846,28 +871,28 @@ class Vault:
                     VALUES ('entity', :1, 'retracted', :2, 'vault_api.gdpr_erase')
                 """, [entity_id, reason])
 
-                # 9. Audit trail
-                try:
-                    cur.execute("""
-                        INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
-                        VALUES ('gdpr_erase', 'vault_api', 'entity', :1, :2)
-                    """, [entity_id, json.dumps(report)])
-                except Exception:
-                    pass
+                # 9. Audit trail (must succeed — legally required for GDPR)
+                cur.execute("""
+                    INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
+                    VALUES ('gdpr_erase', 'vault_api', 'entity', :1, :2)
+                """, [entity_id, json.dumps(report)])
 
                 conn.commit()
                 return {"ok": True, **report}
 
     # === ADMIN ===
 
+    # Hardcoded table list for stats — safe from SQL injection (C1 audit note)
+    _STATS_TABLES = [
+        "vault_sources", "vault_documents", "vault_chunks",
+        "vault_entities", "vault_entity_aliases", "vault_facts",
+        "vault_relations", "vault_events", "vault_sync_log",
+        "vault_audit_trail", "vault_metrics", "vault_doc_types",
+    ]
+
     def stats(self) -> dict:
         """Get table row counts and schema info."""
-        tables = [
-            "vault_sources", "vault_documents", "vault_chunks",
-            "vault_entities", "vault_entity_aliases", "vault_facts",
-            "vault_relations", "vault_events", "vault_sync_log",
-            "vault_audit_trail", "vault_metrics", "vault_doc_types",
-        ]
+        tables = self._STATS_TABLES
         result: dict[str, Any] = {"tables": {}, "schema_version": None}
 
         with self._pool.acquire() as conn:

@@ -90,19 +90,6 @@ class PreDocument:
     def to_ingest_kwargs(self) -> dict[str, Any]:
         """Convert to kwargs for vault_api.Vault.ingest()."""
         meta = dict(self.metadata or {})
-        # Pack promoted fields into meta for vault_api
-        if self.email_from:
-            meta["email_from"] = self.email_from
-        if self.email_importance:
-            meta["email_importance"] = self.email_importance
-        if self.email_direction:
-            meta["email_direction"] = self.email_direction
-        if self.original_path:
-            meta["original_path"] = self.original_path
-        if self.fidelity:
-            meta["fidelity"] = self.fidelity
-        if self.ownership:
-            meta["ownership"] = self.ownership
         return {
             "content": self.content,
             "doc_type": self.doc_type,
@@ -112,6 +99,15 @@ class PreDocument:
             "occurred_at": self.occurred_at,
             "privacy_level": self.privacy_level,
             "language": self.language,
+            # v11 promoted columns — passed directly, not via meta
+            "ownership": self.ownership,
+            "email_from": self.email_from,
+            "email_importance": self.email_importance,
+            "email_direction": self.email_direction,
+            "fidelity": self.fidelity,
+            "original_path": self.original_path,
+            "parent_doc_id": self.parent_doc_id,
+            "version": self.version,
         }
 
 
@@ -254,22 +250,22 @@ class PdfParser(BaseParser):
                 metadata={**self._file_meta(source), "error": "PyMuPDF (fitz) not installed"},
             )]
 
-        doc = fitz.open(str(p))
-        pages_text = []
-        for page in doc:
-            text = page.get_text()
-            if text.strip():
-                pages_text.append(text)
+        # H4 audit fix: use context manager to prevent file handle leak on exception
+        with fitz.open(str(p)) as doc:
+            pages_text = []
+            for page in doc:
+                text = page.get_text()
+                if text.strip():
+                    pages_text.append(text)
 
-        full_text = "\n\n".join(pages_text)
-        meta = {
-            **self._file_meta(source),
-            "pages": doc.page_count,
-            "author": doc.metadata.get("author", ""),
-            "creator": doc.metadata.get("creator", ""),
-            "creation_date": doc.metadata.get("creationDate", ""),
-        }
-        doc.close()
+            full_text = "\n\n".join(pages_text)
+            meta = {
+                **self._file_meta(source),
+                "pages": doc.page_count,
+                "author": doc.metadata.get("author", ""),
+                "creator": doc.metadata.get("creator", ""),
+                "creation_date": doc.metadata.get("creationDate", ""),
+            }
 
         if not full_text.strip():
             return [PreDocument(
@@ -536,15 +532,15 @@ class FacebookParser(BaseParser):
             return True
         if Path(source).suffix.lower() != ".json":
             return False
-        # Auto-detect: Facebook export has specific structure
+        # H7 audit fix: only read first 8KB for detection, don't load entire file
         try:
+            p = Path(source)
+            if p.stat().st_size > MAX_FILE_SIZE:
+                return False
             with open(source, encoding="utf-8") as f:
-                data = json.load(f)
-            # Facebook posts export has a list of objects with "timestamp" and "data" or "attachments"
-            if isinstance(data, list) and len(data) > 0:
-                first = data[0]
-                return "timestamp" in first and ("data" in first or "attachments" in first)
-            return False
+                head = f.read(8192)
+            # Facebook posts export starts with [{"timestamp": ...}]
+            return '"timestamp"' in head and ('"data"' in head or '"attachments"' in head) and head.lstrip().startswith("[")
         except Exception:
             return False
 
@@ -807,10 +803,30 @@ class WebParser(BaseParser):
                                      uri=f"file://{p.as_posix()}",
                                      occurred_at=datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc))
 
+    # H5 audit fix: SSRF protection — block internal/metadata URLs
+    _BLOCKED_HOSTS = {"169.254.169.254", "metadata.google.internal", "100.100.100.200"}
+    _BLOCKED_PREFIXES = ("http://localhost", "http://127.0.0.1", "http://0.0.0.0",
+                         "http://[::1]", "http://10.", "http://172.16.", "http://192.168.")
+
     def _parse_url(self, url: str, **kwargs) -> list[PreDocument]:
+        # SSRF check
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if parsed.hostname in self._BLOCKED_HOSTS:
+            return [PreDocument(
+                title=url, content=f"[BLOCKED] Internal/metadata URL not allowed: {url}",
+                doc_type="webpage", fidelity="metadata_only", metadata={"url": url, "blocked": "ssrf"},
+            )]
+        if any(url.lower().startswith(p) for p in self._BLOCKED_PREFIXES):
+            return [PreDocument(
+                title=url, content=f"[BLOCKED] Private network URL not allowed: {url}",
+                doc_type="webpage", fidelity="metadata_only", metadata={"url": url, "blocked": "ssrf"},
+            )]
+
         try:
             import requests
-            resp = requests.get(url, timeout=30, headers={"User-Agent": "Clawd-Lobster/1.0"})
+            resp = requests.get(url, timeout=30, headers={"User-Agent": "Clawd-Lobster/1.0"},
+                                allow_redirects=False)
             resp.raise_for_status()
             return self._html_to_predoc(resp.text, source=url, uri=url)
         except ImportError:
@@ -1006,12 +1022,12 @@ class ParserRouter:
         return []
 
     def route_directory(self, directory: str, recursive: bool = True,
-                        **kwargs) -> list[PreDocument]:
-        """Walk a directory and parse each file."""
-        results = []
+                        **kwargs):
+        """Walk a directory and yield PreDocuments (generator — M10 audit fix: no OOM)."""
         dir_path = Path(directory)
         if not dir_path.is_dir():
-            return self.route(directory, **kwargs)
+            yield from self.route(directory, **kwargs)
+            return
 
         for root, dirs, files in os.walk(dir_path):
             dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
@@ -1031,21 +1047,18 @@ class ParserRouter:
                     continue
 
                 try:
-                    docs = self.route(fpath, **kwargs)
-                    results.extend(docs)
+                    yield from self.route(fpath, **kwargs)
                 except Exception as e:
-                    results.append(PreDocument(
+                    yield PreDocument(
                         title=f"[PARSE ERROR] {fname}",
                         content=f"Failed to parse: {e}",
                         doc_type="file",
                         fidelity="metadata_only",
                         original_path=fpath,
-                    ))
+                    )
 
             if not recursive:
                 break
-
-        return results
 
 
 # ---------------------------------------------------------------------------
@@ -1113,18 +1126,18 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
     router = ParserRouter()
     router.register_defaults()
 
-    # Parse
+    # Parse (generator — streams docs one at a time to avoid OOM)
     source_path = Path(source)
     if source_path.is_dir():
-        docs = router.route_directory(str(source_path), recursive=recursive, **kwargs)
+        doc_stream = router.route_directory(str(source_path), recursive=recursive, **kwargs)
     else:
-        docs = router.route(source, **kwargs)
+        doc_stream = router.route(source, **kwargs)
 
     # Dedup + Ingest
     dedup = DedupEngine(vault)
     summary = {
         "source": source,
-        "total": len(docs),
+        "total": 0,
         "new": 0,
         "versioned": 0,
         "skipped": 0,
@@ -1132,7 +1145,8 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
         "by_type": {},
     }
 
-    for doc in docs:
+    for doc in doc_stream:
+        summary["total"] += 1
         # Count by type
         summary["by_type"][doc.doc_type] = summary["by_type"].get(doc.doc_type, 0) + 1
 
