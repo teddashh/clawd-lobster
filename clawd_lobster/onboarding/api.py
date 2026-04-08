@@ -102,17 +102,7 @@ def run_reconcile(body: dict) -> tuple[dict, int]:
     return result, status
 
 
-def mark_complete(body: dict) -> tuple[dict, int]:
-    """POST /api/onboarding/complete — Mark onboarding complete."""
-    session_id = body.get("session_id", "")
-    lease_id = body.get("lease_id", "")
-
-    if not session_id or not lease_id:
-        return {"ok": False, "error": "session_id and lease_id required"}, 400
-
-    result = intents.apply_intent(session_id, lease_id, "complete")
-    status = 200 if result.get("ok") else 409
-    return result, status
+# mark_complete removed — completion goes through intent("complete") via /api/onboarding/intent
 
 
 def get_events(query: dict) -> tuple[dict, int]:
@@ -170,27 +160,29 @@ def renew_lease(body: dict) -> tuple[dict, int]:
 
 
 def release_lease(body: dict) -> tuple[dict, int]:
-    """POST /api/controller/release — Release lease."""
+    """POST /api/controller/release — Release lease. Requires lease_id."""
     session_id = body.get("session_id", "")
     holder = body.get("holder", "")
+    lease_id = body.get("lease_id", "")
 
-    if not session_id or not holder:
-        return {"ok": False, "error": "session_id and holder required"}, 400
+    if not session_id or not holder or not lease_id:
+        return {"ok": False, "error": "session_id, holder, and lease_id required"}, 400
 
-    result = lease.release(session_id, holder)
+    result = lease.release(session_id, holder, lease_id=lease_id)
     return result, 200 if result.get("ok") else 409
 
 
 def handoff_lease(body: dict) -> tuple[dict, int]:
-    """POST /api/controller/handoff — Transfer lease."""
+    """POST /api/controller/handoff — Transfer lease. Requires lease_id."""
     session_id = body.get("session_id", "")
     from_holder = body.get("from", "")
     to_holder = body.get("to", "")
+    lease_id = body.get("lease_id", "")
 
-    if not session_id or not from_holder or not to_holder:
-        return {"ok": False, "error": "session_id, from, and to required"}, 400
+    if not session_id or not from_holder or not to_holder or not lease_id:
+        return {"ok": False, "error": "session_id, from, to, and lease_id required"}, 400
 
-    result = lease.handoff(session_id, from_holder, to_holder)
+    result = lease.handoff(session_id, from_holder, to_holder, lease_id=lease_id)
     status = 200 if result.get("ok") else 409
     return result, status
 

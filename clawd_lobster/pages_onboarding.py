@@ -167,6 +167,12 @@ let sessionId = null;
 let leaseId = null;
 let holder = null;
 
+// ── Auth helper ──
+function authHeaders() {
+  const t = localStorage.getItem('cl-token') || '';
+  return {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t};
+}
+
 // ── Init ──
 async function init() {
   // Try to load existing session
@@ -179,7 +185,7 @@ async function init() {
   } else {
     // Create new session
     res = await fetch(API + '/api/onboarding/session', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST', headers: authHeaders(),
       body: JSON.stringify({lang: navigator.language.startsWith('zh') ? 'zh-TW' : 'en'})
     });
     data = await res.json();
@@ -358,7 +364,7 @@ function updateControllerBanner() {
 // ── Actions ──
 async function acquireLease() {
   const res = await fetch(API + '/api/controller/acquire', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: authHeaders(),
     body: JSON.stringify({session_id: sessionId, holder: 'web'})
   });
   const data = await res.json();
@@ -368,7 +374,7 @@ async function acquireLease() {
 
 async function releaseLease() {
   await fetch(API + '/api/controller/release', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: authHeaders(),
     body: JSON.stringify({session_id: sessionId, holder: 'web'})
   });
   leaseId = null; holder = null; stopRenew(); render();
@@ -378,7 +384,7 @@ let renewTimer = null;
 function startRenew() { stopRenew(); renewTimer = setInterval(async () => {
   if (!leaseId) return;
   const res = await fetch(API + '/api/controller/renew', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: authHeaders(),
     body: JSON.stringify({session_id: sessionId, lease_id: leaseId})
   });
   const data = await res.json();
@@ -390,8 +396,7 @@ async function runSetup(itemId) {
   if (!leaseId) return;
   // Use the full install endpoint (runs all setup steps, not just probe)
   const res = await fetch(API + '/api/skills/' + itemId + '/install', {
-    method: 'POST', headers: {'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + (localStorage.getItem('cl-token') || '')},
+    method: 'POST', headers: authHeaders(),
     body: JSON.stringify({session_id: sessionId, lease_id: leaseId, skill_id: itemId})
   });
   const data = await res.json();
@@ -416,7 +421,7 @@ async function runSetup(itemId) {
 async function skipItem(itemId) {
   if (!leaseId) return;
   await fetch(API + '/api/onboarding/intent', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: authHeaders(),
     body: JSON.stringify({session_id: sessionId, lease_id: leaseId, intent: 'skip_item', item_id: itemId, payload: {reason: 'User skipped'}})
   });
   await refreshState();
@@ -425,7 +430,7 @@ async function skipItem(itemId) {
 async function completeOnboarding() {
   if (!leaseId) return;
   const res = await fetch(API + '/api/onboarding/intent', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: authHeaders(),
     body: JSON.stringify({session_id: sessionId, lease_id: leaseId, intent: 'complete'})
   });
   const data = await res.json();
@@ -437,7 +442,7 @@ async function completeOnboarding() {
 async function launchHandoff() {
   if (!sessionId) return;
   const res = await fetch(API + '/api/onboarding/handoff-gen', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: authHeaders(),
     body: JSON.stringify({session_id: sessionId, port: location.port || 3333})
   });
   const data = await res.json();

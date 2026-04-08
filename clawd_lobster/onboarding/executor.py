@@ -56,7 +56,9 @@ def execute_skill_setup(
     # Validate dependencies before execution
     for dep_id in item.get("depends_on", []):
         dep = state_store.find_item(state, dep_id)
-        if dep and dep.get("status") not in ("succeeded", "skipped"):
+        if dep is None:
+            return {"ok": False, "error": f"Unknown dependency: {dep_id}"}
+        if dep.get("status") not in ("succeeded", "skipped"):
             return {"ok": False, "error": f"Dependency not met: {dep_id}"}
 
     # Validate current status allows execution

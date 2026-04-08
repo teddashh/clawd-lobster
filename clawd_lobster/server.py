@@ -677,14 +677,27 @@ class _Handler(BaseHTTPRequestHandler):
                 config = json.loads(config_file.read_text(encoding="utf-8"))
 
             # Update oracle section
+            # NOTE: Credentials stored in config.json with restrictive permissions.
+            # v2 will use OS keyring via credential provider abstraction.
             config["oracle"] = {
                 "enabled": True,
                 "wallet_dir": body.get("wallet_dir", ""),
-                "wallet_password": body.get("wallet_password", ""),
                 "dsn": body.get("dsn", ""),
                 "user": body.get("user", ""),
-                "password": body.get("password", ""),
             }
+            # Store secrets in a separate restricted file
+            secrets_dir = Path.home() / ".clawd-lobster" / "credentials"
+            secrets_dir.mkdir(parents=True, exist_ok=True)
+            oracle_secrets = secrets_dir / "oracle.json"
+            _write_json(oracle_secrets, {
+                "password": body.get("password", ""),
+                "wallet_password": body.get("wallet_password", ""),
+            })
+            # Restrict permissions (Unix only)
+            try:
+                oracle_secrets.chmod(0o600)
+            except OSError:
+                pass
 
             # Save atomically
             config_file.parent.mkdir(parents=True, exist_ok=True)
