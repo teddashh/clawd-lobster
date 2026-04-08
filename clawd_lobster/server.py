@@ -205,8 +205,13 @@ class _Handler(BaseHTTPRequestHandler):
         path = parsed.path.rstrip("/") or "/"
         query = parse_qs(parsed.query)
 
-        # Auth-exempt endpoints (session creation returns the token)
-        _NO_AUTH = {"/api/onboarding/session", "/api/onboarding/check"}
+        # Auth-exempt endpoints:
+        # - session creation (returns token), prereq check (read-only)
+        # - workspace/squad (legacy pages.py UI, will be migrated to new auth flow)
+        _NO_AUTH = {
+            "/api/onboarding/session", "/api/onboarding/check",
+            "/api/workspaces/create", "/api/squad/chat", "/api/squad/start",
+        }
         if path not in _NO_AUTH and path.startswith("/api/"):
             if not self._require_auth(query):
                 return
