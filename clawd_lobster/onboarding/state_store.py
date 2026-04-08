@@ -33,16 +33,15 @@ def _onboarding_dir(session_id: str) -> Path:
 # ---------------------------------------------------------------------------
 
 def _atomic_write(path: Path, data: dict) -> None:
-    """Write JSON atomically via temp file + rename."""
+    """Write JSON atomically via temp file + os.replace (crash-safe)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
-    if _IS_WINDOWS and path.exists():
-        path.unlink()
-    tmp.rename(path)
+    content = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(content)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(str(tmp), str(path))  # atomic on all platforms
 
 
 def _read_json(path: Path) -> dict | None:
@@ -112,7 +111,7 @@ def create_session(lang: str = "en") -> tuple[dict, str]:
         "token_hash": _hash_token(token),
         "lang": lang,
         "phase": "foundations",
-        "items": list(_FOUNDATION_ITEMS),  # deep copy via list()
+        "items": [dict(item, facts=dict(item["facts"]), depends_on=list(item["depends_on"])) for item in _FOUNDATION_ITEMS],
     }
 
     # Persist
@@ -168,18 +167,27 @@ def save_controller(session_id: str, controller: dict) -> None:
     _atomic_write(_onboarding_dir(session_id) / "controller.json", controller)
 
 
+# Track next seq per session to avoid O(n) file scan each time
+_next_seq: dict[str, int] = {}
+
+
 def log_event(session_id: str, event: dict) -> None:
     """Append an event to the audit trail."""
     path = _onboarding_dir(session_id) / "events.jsonl"
 
-    # Auto-assign seq from file line count
-    seq = 1
-    if path.exists():
-        try:
-            with open(path, encoding="utf-8") as f:
-                seq = sum(1 for _ in f) + 1
-        except OSError:
-            pass
+    # Use cached seq counter (O(1) per append)
+    if session_id not in _next_seq:
+        seq = 1
+        if path.exists():
+            try:
+                with open(path, encoding="utf-8") as f:
+                    seq = sum(1 for _ in f) + 1
+            except OSError:
+                pass
+        _next_seq[session_id] = seq
+
+    seq = _next_seq[session_id]
+    _next_seq[session_id] = seq + 1
 
     event.setdefault("ts", _now_iso())
     event.setdefault("seq", seq)

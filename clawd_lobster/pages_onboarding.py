@@ -388,31 +388,28 @@ function stopRenew() { if (renewTimer) { clearInterval(renewTimer); renewTimer =
 
 async function runSetup(itemId) {
   if (!leaseId) return;
-  // Mark as running
-  await fetch(API + '/api/onboarding/intent', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({session_id: sessionId, lease_id: leaseId, intent: 'set_status', item_id: itemId, payload: {status: 'running'}})
+  // Use the full install endpoint (runs all setup steps, not just probe)
+  const res = await fetch(API + '/api/skills/' + itemId + '/install', {
+    method: 'POST', headers: {'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + (localStorage.getItem('cl-token') || '')},
+    body: JSON.stringify({session_id: sessionId, lease_id: leaseId, skill_id: itemId})
   });
-  await refreshState();
+  const data = await res.json();
 
-  // Run verification probe
-  const res = await fetch(API + '/api/skills/' + itemId + '/verify', {method: 'POST'});
-  const probe = await res.json();
+  if (!data.ok && data.error) {
+    console.log('Setup failed:', data.error);
+  }
 
-  // Update facts
-  if (probe.ok && probe.probe) {
-    await fetch(API + '/api/onboarding/intent', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({session_id: sessionId, lease_id: leaseId, intent: 'set_facts', item_id: itemId, payload: {facts: {_probe_detected: probe.probe.detected, _probe_verified: probe.probe.verified}}})
+  // Also register cron jobs if this is a cron-type skill
+  const item = (state.items || []).find(i => i.id === itemId);
+  if (item && item.kind === 'cron' && data.ok) {
+    await fetch(API + '/api/jobs/register', {
+      method: 'POST', headers: {'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('cl-token') || '')},
+      body: JSON.stringify({skill_id: itemId})
     });
   }
 
-  // Mark result
-  const succeeded = probe.ok && probe.probe && probe.probe.verified;
-  await fetch(API + '/api/onboarding/intent', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({session_id: sessionId, lease_id: leaseId, intent: 'set_status', item_id: itemId, payload: {status: succeeded ? 'succeeded' : 'failed', error: succeeded ? null : (probe.probe ? probe.probe.repair_hint : 'Verification failed')}})
-  });
   await refreshState();
 }
 

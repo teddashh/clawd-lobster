@@ -64,7 +64,7 @@ CREATE TABLE vault_documents (
     
     -- Type-specific metadata (email headers, file metadata, etc.)
     metadata_json   CLOB CHECK (metadata_json IS JSON),
-    -- Example for email: {"from":"ted@ted-h.com","to":["david@..."],"cc":[],"thread_id":"...","message_id":"..."}
+    -- Example for email: {"from":"user@example.com","to":["colleague@example.com"],"cc":[],"thread_id":"...","message_id":"..."}
     -- Example for file: {"path":"/docs/spec.md","size":1234,"mime":"text/markdown"}
     
     -- Classification

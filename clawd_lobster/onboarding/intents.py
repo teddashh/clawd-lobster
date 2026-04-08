@@ -143,6 +143,10 @@ def _intent_set_status(
     if new_status not in valid_next:
         return {"ok": False, "error": f"Invalid transition: {current} → {new_status}"}
 
+    # Prevent skipping required items via set_status (must use skip_item intent)
+    if new_status == "skipped" and item.get("tier") not in _SKIPPABLE_TIERS:
+        return {"ok": False, "error": f"Cannot skip required item via set_status: {item_id}"}
+
     # Check dependencies for "running"
     if new_status == "running":
         for dep_id in item.get("depends_on", []):

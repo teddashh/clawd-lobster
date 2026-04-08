@@ -96,6 +96,47 @@ class _Handler(BaseHTTPRequestHandler):
         """Suppress default request logging for clean terminal output."""
         pass
 
+    # ── Token auth ────────────────────────────────────────────────────────
+
+    def _check_token(self, query: dict | None = None) -> bool:
+        """Validate auth token for API endpoints. Returns True if valid.
+
+        Token can be in query param (?token=...) or Authorization header.
+        Non-API routes (pages) don't require auth — they're just HTML.
+        """
+        # Check Authorization header first
+        auth = self.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            token = auth[7:]
+            return self._validate_token(token)
+
+        # Check query param
+        if query:
+            token_list = query.get("token", [])
+            if token_list:
+                return self._validate_token(token_list[0])
+
+        return False
+
+    def _validate_token(self, token: str) -> bool:
+        """Check token against any active session."""
+        from .onboarding import state_store
+        sessions = state_store.list_sessions()
+        for sid in sessions:
+            if state_store.verify_token(sid, token):
+                return True
+        return False
+
+    def _require_auth(self, query: dict | None = None) -> bool:
+        """Returns True if auth is OK. Sends 401 and returns False if not."""
+        if self._check_token(query):
+            return True
+        self.send_response(401)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"ok":false,"error":"Authentication required. Pass token as ?token=... or Authorization: Bearer ..."}')
+        return False
+
     # ── GET routes ─────────────────────────────────────────────────────────
 
     def do_GET(self):
@@ -141,12 +182,20 @@ class _Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        query = parse_qs(parsed.query)
+
+        # Auth-exempt endpoints (session creation returns the token)
+        _NO_AUTH = {"/api/onboarding/session", "/api/onboarding/check"}
+        if path not in _NO_AUTH and path.startswith("/api/"):
+            if not self._require_auth(query):
+                return
 
         routes = {
             "/api/onboarding/check": self._api_onboarding_check,
-            "/api/onboarding/complete": self._api_onboarding_complete,
-            "/api/onboarding/handoff": self._api_onboarding_handoff,
-            "/api/onboarding/update": self._api_onboarding_update,
+            # Legacy endpoints removed (spec: intent API is sole authority)
+            # "/api/onboarding/complete": self._api_onboarding_complete,
+            # "/api/onboarding/handoff": self._api_onboarding_handoff,
+            # "/api/onboarding/update": self._api_onboarding_update,
             "/api/onboarding/session": self._api_ob_create_session,
             "/api/onboarding/intent": self._api_ob_intent,
             "/api/onboarding/reconcile": self._api_ob_reconcile,

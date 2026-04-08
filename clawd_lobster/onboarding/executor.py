@@ -53,6 +53,16 @@ def execute_skill_setup(
     if item is None:
         return {"ok": False, "error": f"Skill not found: {skill_id}"}
 
+    # Validate dependencies before execution
+    for dep_id in item.get("depends_on", []):
+        dep = state_store.find_item(state, dep_id)
+        if dep and dep.get("status") not in ("succeeded", "skipped"):
+            return {"ok": False, "error": f"Dependency not met: {dep_id}"}
+
+    # Validate current status allows execution
+    if item.get("status") not in ("pending", "failed"):
+        return {"ok": False, "error": f"Cannot execute: item is {item.get('status')}"}
+
     # Load manifest for step definitions
     manifests = manifest.load_skill_manifests()
     skill_manifest = None
@@ -219,6 +229,13 @@ def _run_command_step(step: dict) -> tuple[bool, str | None]:
     if not cmd:
         return False, "No command for this platform"
 
+    # Security: commands come from skill.json manifests (we control),
+    # but reject anything with shell metacharacters that could indicate injection
+    _DANGEROUS_PATTERNS = [";", "&&", "||", "|", "`", "$(", ">>", ">{"]
+    for pat in _DANGEROUS_PATTERNS:
+        if pat in cmd and "{{" not in cmd:  # allow {{WRAPPER_DIR}} before resolve
+            return False, f"Command rejected: contains shell metacharacter '{pat}'"
+
     # Resolve {{WRAPPER_DIR}} placeholder
     wrapper_dir = str(Path(__file__).resolve().parent.parent.parent)
     cmd = cmd.replace("{{WRAPPER_DIR}}", wrapper_dir)
@@ -277,6 +294,11 @@ def register_scheduler(
     """
     if task_name is None:
         task_name = f"clawd-lobster-{skill_id}"
+
+    # Sanitize task_name to prevent injection (alphanumeric + hyphen only)
+    import re
+    if not re.match(r'^[a-zA-Z0-9_-]+$', task_name):
+        return {"ok": False, "error": f"Invalid task name: {task_name}", "method": "unknown"}
 
     wrapper_dir = str(Path(__file__).resolve().parent.parent.parent)
     full_command = command.replace("{{WRAPPER_DIR}}", wrapper_dir)

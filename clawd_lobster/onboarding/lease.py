@@ -110,14 +110,18 @@ def renew(session_id: str, lease_id: str) -> dict:
     return {"ok": True, "lease_id": lease_id, "expires_at": expires}
 
 
-def release(session_id: str, holder: str) -> dict:
-    """Voluntarily release the lease."""
+def release(session_id: str, holder: str, lease_id: str | None = None) -> dict:
+    """Voluntarily release the lease. Requires matching lease_id if provided."""
     controller = state_store.get_controller(session_id)
     if controller is None:
         return {"ok": False, "error": "Session not found"}
 
     if controller.get("holder") != holder:
         return {"ok": False, "error": f"Lease not held by {holder}"}
+
+    # Validate lease_id if provided (recommended for security)
+    if lease_id and controller.get("lease_id") != lease_id:
+        return {"ok": False, "error": "Lease ID mismatch"}
 
     controller.update({
         "lease_id": None,
@@ -139,14 +143,17 @@ def release(session_id: str, holder: str) -> dict:
     return {"ok": True}
 
 
-def handoff(session_id: str, from_holder: str, to_holder: str) -> dict:
-    """Transfer lease from one holder to another."""
+def handoff(session_id: str, from_holder: str, to_holder: str, lease_id: str | None = None) -> dict:
+    """Transfer lease from one holder to another. Requires matching lease_id if provided."""
     controller = state_store.get_controller(session_id)
     if controller is None:
         return {"ok": False, "error": "Session not found"}
 
     if controller.get("holder") != from_holder:
         return {"ok": False, "error": f"Lease not held by {from_holder}"}
+
+    if lease_id and controller.get("lease_id") != lease_id:
+        return {"ok": False, "error": "Lease ID mismatch"}
 
     if _is_expired(controller):
         return {"ok": False, "error": "Lease expired, cannot handoff"}

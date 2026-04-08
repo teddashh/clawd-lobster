@@ -1,32 +1,7 @@
 {
   "owner": "",
   "workspace_root": "",
-  "workspaces": [
-    {
-      "id": "test-lobster",
-      "path": "C:\\Users\\detna\\Documents\\Workspace\\test-lobster",
-      "repo": "",
-      "domain": "personal",
-      "deploy": "all",
-      "created": "2026-04-07"
-    },
-    {
-      "id": "test-lang",
-      "path": "C:\\Users\\detna\\Documents\\Workspace\\test-lang",
-      "repo": "",
-      "domain": "personal",
-      "deploy": "all",
-      "created": "2026-04-07"
-    },
-    {
-      "id": "test-project",
-      "path": "C:\\Users\\detna\\Documents\\Workspace\\test-project",
-      "repo": "",
-      "domain": "personal",
-      "deploy": "all",
-      "created": "2026-04-07"
-    }
-  ],
+  "workspaces": [],
   "_schema": {
     "description": "Each workspace entry in the 'workspaces' array follows this shape",
     "workspace": {

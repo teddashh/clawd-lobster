@@ -144,7 +144,7 @@ If any items are particularly notable, list them briefly:
 Key findings:
   - [research_paper] quantum_computing_review.pdf (47 pages)
   - [conversation] LINE: David Chen - 2024/03/15 (142 messages)
-  - [email] Re: FPC Project Update (high importance)
+  - [email] Re: Acme Project Update (high importance)
 ```
 
 ## 6. Special Case: Workspace Migration
