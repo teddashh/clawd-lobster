@@ -4,28 +4,43 @@
   "description": "Use when there is parallelizable or bulk work to delegate — triggers on /codex, 'delegate this', 'get a second opinion', 'run a code review', or when blitz tasks are marked [codex]. Also fires when context window is filling up and independent tasks remain.",
   "version": "0.1.0",
   "category": "integration",
-  "tags": ["codex", "openai", "delegation", "parallel", "execution"],
+  "tags": [
+    "codex",
+    "openai",
+    "delegation",
+    "parallel",
+    "execution"
+  ],
   "kind": "prompt-pattern",
   "icon": "🔗",
   "alwaysOn": false,
-  "defaultEnabled": false,
-
+  "defaultEnabled": true,
   "permissions": {
     "allow": []
   },
-
   "credentials": [
     {
       "id": "codex-auth",
       "label": "OpenAI Codex Authentication",
       "required": true,
       "fields": [
-        {"key": "auth_method", "label": "Auth Method", "type": "string", "placeholder": "chatgpt-plus or api-key", "sensitive": false},
-        {"key": "status", "label": "Auth Status", "type": "string", "placeholder": "verified after codex login", "sensitive": false}
+        {
+          "key": "auth_method",
+          "label": "Auth Method",
+          "type": "string",
+          "placeholder": "chatgpt-plus or api-key",
+          "sensitive": false
+        },
+        {
+          "key": "status",
+          "label": "Auth Status",
+          "type": "string",
+          "placeholder": "verified after codex login",
+          "sensitive": false
+        }
       ]
     }
   ],
-
   "configSchema": {
     "type": "object",
     "properties": {
@@ -39,7 +54,14 @@
       },
       "default_effort": {
         "type": "string",
-        "enum": ["none", "minimal", "low", "medium", "high", "xhigh"],
+        "enum": [
+          "none",
+          "minimal",
+          "low",
+          "medium",
+          "high",
+          "xhigh"
+        ],
         "description": "Default effort level for delegated tasks"
       }
     }
@@ -49,17 +71,17 @@
     "preferred_model": "gpt-5.3-codex",
     "default_effort": "medium"
   },
-
   "healthCheck": {
     "type": "command",
     "target": "codex --version",
     "intervalSeconds": 3600,
     "timeoutSeconds": 5
   },
-
   "dependencies": {
     "skills": [],
-    "system": ["node>=18"],
+    "system": [
+      "node>=18"
+    ],
     "python": []
   }
 }

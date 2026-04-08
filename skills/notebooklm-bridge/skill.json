@@ -4,28 +4,45 @@
   "description": "Use when the user wants to generate slides, infographics, podcasts, or reports from workspace docs — triggers on /notebooklm, 'make a presentation', 'generate slides', 'create an infographic', 'build a podcast', or after blitz completion when deliverables are needed. Also fires for free RAG queries over project sources.",
   "version": "0.2.0",
   "category": "integration",
-  "tags": ["notebooklm", "google", "slides", "podcast", "infographic", "research", "rag"],
+  "tags": [
+    "notebooklm",
+    "google",
+    "slides",
+    "podcast",
+    "infographic",
+    "research",
+    "rag"
+  ],
   "kind": "prompt-pattern",
   "icon": "📓",
   "alwaysOn": false,
-  "defaultEnabled": false,
-
+  "defaultEnabled": true,
   "permissions": {
     "allow": []
   },
-
   "credentials": [
     {
       "id": "google-notebooklm",
       "label": "Google NotebookLM Authentication",
       "required": true,
       "fields": [
-        {"key": "auth_status", "label": "Auth Status", "type": "string", "placeholder": "Run: python -m notebooklm login", "sensitive": false},
-        {"key": "account", "label": "Google Account", "type": "email", "placeholder": "your@gmail.com", "sensitive": false}
+        {
+          "key": "auth_status",
+          "label": "Auth Status",
+          "type": "string",
+          "placeholder": "Run: python -m notebooklm login",
+          "sensitive": false
+        },
+        {
+          "key": "account",
+          "label": "Google Account",
+          "type": "email",
+          "placeholder": "your@gmail.com",
+          "sensitive": false
+        }
       ]
     }
   ],
-
   "configSchema": {
     "type": "object",
     "properties": {
@@ -53,17 +70,26 @@
     "auto_create_notebook": true,
     "auto_remove_watermark": true
   },
-
   "healthCheck": {
     "type": "command",
     "target": "python -m notebooklm auth check",
     "intervalSeconds": 3600,
     "timeoutSeconds": 10
   },
-
   "dependencies": {
-    "skills": ["memory-server"],
-    "system": ["python>=3.10"],
-    "python": ["notebooklm-py", "PyMuPDF", "Pillow", "scikit-image", "numpy", "python-pptx"]
+    "skills": [
+      "memory-server"
+    ],
+    "system": [
+      "python>=3.10"
+    ],
+    "python": [
+      "notebooklm-py",
+      "PyMuPDF",
+      "Pillow",
+      "scikit-image",
+      "numpy",
+      "python-pptx"
+    ]
   }
 }

@@ -12,11 +12,32 @@ and marks the skill succeeded or failed.
 from __future__ import annotations
 
 import json
+import os
 import platform
 import subprocess
 import sys
 from pathlib import Path
+from shutil import which
 from typing import Any
+
+IS_WINDOWS = platform.system() == "Windows"
+
+
+def _resolve_bash() -> str:
+    """Find Git Bash on Windows, avoiding WSL bash."""
+    if IS_WINDOWS:
+        candidates = [
+            Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git" / "bin" / "bash.exe",
+            Path(os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)")) / "Git" / "bin" / "bash.exe",
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Git" / "bin" / "bash.exe",
+        ]
+        for c in candidates:
+            if c.exists():
+                return str(c)
+        found = which("bash")
+        if found and "WindowsApps" not in found and "WSL" not in found.upper():
+            return found
+    return "bash"
 
 from . import state_store, manifest, probes
 
@@ -450,7 +471,7 @@ def register_skill_jobs(skill_id: str) -> list[dict]:
     if entrypoint.endswith(".py"):
         command = f"{sys.executable} {wrapper_dir}/{entrypoint}"
     elif entrypoint.endswith(".sh"):
-        command = f"bash {wrapper_dir}/{entrypoint}"
+        command = f"{_resolve_bash()} {wrapper_dir}/{entrypoint}"
     elif entrypoint.endswith(".ps1"):
         command = f"powershell {wrapper_dir}/{entrypoint}"
     else:

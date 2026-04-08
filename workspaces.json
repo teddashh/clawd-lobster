@@ -1,7 +1,177 @@
 {
-  "owner": "",
-  "workspace_root": "",
-  "workspaces": [],
+  "owner": "teddashh",
+  "workspace_root": "C:\\Users\\detna\\Documents\\Workspace",
+  "workspaces": [
+    {
+      "id": "clawd-lobster",
+      "type": "skill",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\clawd-lobster",
+      "repo": "https://github.com/teddashh/clawd-lobster",
+      "domain": "personal",
+      "created": "2026-04-08",
+      "stack": {
+        "runtime": "python",
+        "framework": "fastapi"
+      }
+    },
+    {
+      "id": "claude-bot",
+      "type": "agent",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\claude-bot",
+      "repo": "https://github.com/teddashh/claude-bot",
+      "domain": "personal",
+      "created": "2026-04-08",
+      "stack": {
+        "runtime": "python",
+        "framework": "claude-code"
+      }
+    },
+    {
+      "id": "multi-ai-chat",
+      "type": "webapp",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\multi-ai-chat",
+      "repo": "https://github.com/teddashh/multi-ai-chat.git",
+      "domain": "personal",
+      "created": "2026-04-06"
+    },
+    {
+      "id": "teddashh",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\teddashh",
+      "repo": "https://github.com/teddashh/teddashh.git",
+      "domain": "personal",
+      "created": "2026-04-04"
+    },
+    {
+      "id": "mcp-memory-server",
+      "type": "mcp-server",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\mcp-memory-server",
+      "repo": "https://github.com/teddashh/mcp-memory-server.git",
+      "domain": "personal",
+      "created": "2026-04-03",
+      "stack": {
+        "runtime": "python"
+      }
+    },
+    {
+      "id": "mcp-memory-private",
+      "type": "mcp-server",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\mcp-memory-private",
+      "repo": "https://github.com/teddashh/mcp-memory-private.git",
+      "domain": "personal",
+      "created": "2026-04-03",
+      "stack": {
+        "runtime": "python"
+      }
+    },
+    {
+      "id": "corporate-communication-platform",
+      "type": "webapp",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\corporate-communication-platform",
+      "repo": "https://github.com/teddashh/corporate-communication-platform.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "mobile-device-and-data-prevention",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\mobile-device-and-data-prevention",
+      "repo": "https://github.com/teddashh/mobile-device-and-data-prevention.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "soar",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\soar",
+      "repo": "https://github.com/teddashh/soar.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "special-assignment",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\special-assignment",
+      "repo": "https://github.com/teddashh/special-assignment.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "daily-cyber-security-report",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\daily-cyber-security-report",
+      "repo": "https://github.com/teddashh/daily-cyber-security-report.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "windows-fine-tuning",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\windows-fine-tuning",
+      "repo": "https://github.com/teddashh/windows-fine-tuning.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "email-triage",
+      "type": "skill",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\email-triage",
+      "repo": "https://github.com/teddashh/email-triage.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "resume-review",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\resume-review",
+      "repo": "https://github.com/teddashh/resume-review.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "daily-looker-report",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\daily-looker-report",
+      "repo": "https://github.com/teddashh/daily-looker-report.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "weekly-progress",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\weekly-progress",
+      "repo": "https://github.com/teddashh/weekly-progress.git",
+      "domain": "work",
+      "created": "2026-04-03"
+    },
+    {
+      "id": "bang-usa",
+      "type": "webapp",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\bang-usa\\bang-usa-new",
+      "repo": "https://github.com/teddashh/bang-usa-new",
+      "domain": "work",
+      "created": "2026-04-04",
+      "stack": { "runtime": "node", "framework": "next" }
+    },
+    {
+      "id": "doom",
+      "type": "project",
+      "path": "C:\\Users\\detna\\Documents\\Workspace\\doom",
+      "repo": "https://github.com/teddashh/doom-of-the-lost-kingdom-revolution",
+      "domain": "personal",
+      "created": "2026-03-27",
+      "stack": { "runtime": "node" }
+    },
+    {
+      "id": "twaigirl-comfyui",
+      "type": "project",
+      "path": "C:\\pinokio\\api",
+      "repo": "",
+      "domain": "personal",
+      "created": "2026-04-08",
+      "stack": { "runtime": "python", "framework": "comfyui" }
+    }
+  ],
   "_schema": {
     "description": "Each workspace entry in the 'workspaces' array follows this shape",
     "workspace": {
@@ -15,9 +185,18 @@
         "framework": "string — fastapi, express, next, laravel, etc."
       },
       "deploy": {
-        "dev": { "mode": "local", "port": 0 },
-        "staging": { "host": "", "method": "docker-compose" },
-        "prod": { "host": "", "method": "ci-cd" }
+        "dev": {
+          "mode": "local",
+          "port": 0
+        },
+        "staging": {
+          "host": "",
+          "method": "docker-compose"
+        },
+        "prod": {
+          "host": "",
+          "method": "ci-cd"
+        }
       }
     }
   }

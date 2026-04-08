@@ -4,28 +4,43 @@
   "description": "Use when you need a second opinion, are uncertain about an approach, or face a complex decision — triggers on /gemini, 'ask Gemini', 'get another perspective', 'I'm not sure about this', or when comparing architectural alternatives.",
   "version": "0.1.0",
   "category": "integration",
-  "tags": ["gemini", "google", "second-opinion", "validation", "cross-model"],
+  "tags": [
+    "gemini",
+    "google",
+    "second-opinion",
+    "validation",
+    "cross-model"
+  ],
   "kind": "prompt-pattern",
   "icon": "💎",
   "alwaysOn": false,
-  "defaultEnabled": false,
-
+  "defaultEnabled": true,
   "permissions": {
     "allow": []
   },
-
   "credentials": [
     {
       "id": "gemini-auth",
       "label": "Google Gemini Authentication",
       "required": true,
       "fields": [
-        {"key": "auth_method", "label": "Auth Method", "type": "string", "placeholder": "gemini CLI (OAuth) or API key", "sensitive": false},
-        {"key": "status", "label": "Auth Status", "type": "string", "placeholder": "verified after gemini auth", "sensitive": false}
+        {
+          "key": "auth_method",
+          "label": "Auth Method",
+          "type": "string",
+          "placeholder": "gemini CLI (OAuth) or API key",
+          "sensitive": false
+        },
+        {
+          "key": "status",
+          "label": "Auth Status",
+          "type": "string",
+          "placeholder": "verified after gemini auth",
+          "sensitive": false
+        }
       ]
     }
   ],
-
   "configSchema": {
     "type": "object",
     "properties": {
@@ -48,17 +63,17 @@
     "auto_consult": false,
     "timeout": 120
   },
-
   "healthCheck": {
     "type": "command",
     "target": "gemini --version",
     "intervalSeconds": 3600,
     "timeoutSeconds": 5
   },
-
   "dependencies": {
     "skills": [],
-    "system": ["node>=18"],
+    "system": [
+      "node>=18"
+    ],
     "python": []
   }
 }

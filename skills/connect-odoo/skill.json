@@ -4,15 +4,26 @@
   "description": "Use when the user needs to interact with an Odoo ERP instance — triggers on /odoo, 'check CRM', 'create invoice', 'update HR record', or any mention of Odoo models, XML-RPC, or ERP data queries.",
   "version": "0.1.0",
   "category": "integration",
-  "tags": ["erp", "odoo", "crm", "hr", "poller"],
+  "tags": [
+    "erp",
+    "odoo",
+    "crm",
+    "hr",
+    "poller"
+  ],
   "kind": "poller",
   "icon": "🏢",
   "alwaysOn": false,
-  "defaultEnabled": false,
+  "defaultEnabled": true,
   "mcp": {
     "serverName": "odoo",
     "command": "python",
-    "args": ["-X", "utf8", "-m", "connect_odoo.server"],
+    "args": [
+      "-X",
+      "utf8",
+      "-m",
+      "connect_odoo.server"
+    ],
     "cwd": ".",
     "env": {
       "ODOO_URL": "${credential:odoo-server.url}",
@@ -37,31 +48,79 @@
       "label": "Odoo Server Connection",
       "required": true,
       "fields": [
-        {"key": "url", "label": "Odoo URL", "type": "url", "placeholder": "http://your-odoo:8069", "sensitive": false},
-        {"key": "db", "label": "Database", "type": "string", "placeholder": "mydb", "sensitive": false},
-        {"key": "user", "label": "Username", "type": "email", "placeholder": "admin@company.com", "sensitive": false},
-        {"key": "password", "label": "Password", "type": "password", "sensitive": true}
+        {
+          "key": "url",
+          "label": "Odoo URL",
+          "type": "url",
+          "placeholder": "http://your-odoo:8069",
+          "sensitive": false
+        },
+        {
+          "key": "db",
+          "label": "Database",
+          "type": "string",
+          "placeholder": "mydb",
+          "sensitive": false
+        },
+        {
+          "key": "user",
+          "label": "Username",
+          "type": "email",
+          "placeholder": "admin@company.com",
+          "sensitive": false
+        },
+        {
+          "key": "password",
+          "label": "Password",
+          "type": "password",
+          "sensitive": true
+        }
       ]
     }
   ],
   "configSchema": {
     "type": "object",
     "properties": {
-      "poll_interval_seconds": {"type": "number", "minimum": 60, "default": 300},
-      "modules": {"type": "array", "items": {"type": "string"}, "default": ["crm"]},
-      "sync_direction": {"type": "string", "enum": ["pull", "push", "bidirectional"], "default": "bidirectional"}
+      "poll_interval_seconds": {
+        "type": "number",
+        "minimum": 60,
+        "default": 300
+      },
+      "modules": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": [
+          "crm"
+        ]
+      },
+      "sync_direction": {
+        "type": "string",
+        "enum": [
+          "pull",
+          "push",
+          "bidirectional"
+        ],
+        "default": "bidirectional"
+      }
     }
   },
   "configDefaults": {
     "poll_interval_seconds": 300,
-    "modules": ["crm"],
+    "modules": [
+      "crm"
+    ],
     "sync_direction": "bidirectional"
   },
   "runtime": {
     "entrypoint": "connect_odoo/poller.py",
     "schedule": "*/5 * * * *",
     "timeoutSeconds": 120,
-    "retryPolicy": {"maxRetries": 3, "backoffMs": 5000}
+    "retryPolicy": {
+      "maxRetries": 3,
+      "backoffMs": 5000
+    }
   },
   "healthCheck": {
     "type": "command",
@@ -70,8 +129,12 @@
     "timeoutSeconds": 15
   },
   "dependencies": {
-    "skills": ["memory-server"],
-    "system": ["python>=3.11"],
+    "skills": [
+      "memory-server"
+    ],
+    "system": [
+      "python>=3.11"
+    ],
     "python": []
   }
 }
