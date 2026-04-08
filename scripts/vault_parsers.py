@@ -1168,7 +1168,7 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
         dry_run: If True, parse but don't ingest.
         recursive: If True, recurse into subdirectories.
         vault: Vault instance (optional — falls back to no-op if None).
-        **kwargs: Passed to parser (e.g., parser='line', user_email='ted@...')
+        **kwargs: Passed to parser (e.g., parser='line', user_email='user@example.com')
 
     Returns:
         Summary dict: {total, new, versioned, skipped, errors, by_type: {doc_type: count}}

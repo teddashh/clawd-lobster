@@ -258,7 +258,7 @@ TABLES: list[tuple[str, str]] = [
         "vault_sync_log",
         """CREATE TABLE vault_sync_log (
             id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-            source_layer    VARCHAR2(10) NOT NULL,
+            source_layer    VARCHAR2(50) NOT NULL,
             source_id       VARCHAR2(200) NOT NULL,
             source_hash     VARCHAR2(64),
             vault_table     VARCHAR2(50) NOT NULL,

@@ -10,7 +10,7 @@ Usage:
     v = Vault()                          # reads config from ~/.clawd-lobster/config.json
     v = Vault(wallet_dir=..., dsn=...)   # explicit params
 
-    doc_id = v.ingest("email content", "email", {"from": "ted@...", "to": ["david@..."]},
+    doc_id = v.ingest("email content", "email", {"from": "user@example.com", "to": ["colleague@example.com"]},
                        source_info={"type": "email_account", "uri": "outlook://inbox"})
     results = v.search("What did David say about the project?")
     profile = v.about("David Chen")

@@ -350,22 +350,42 @@ def rollback_migration():
 
     print(f"\nRolling back {count} migrated documents...")
 
-    # Delete events for migrated docs
-    cur.execute("""
+    # FK-aware delete order: relations → facts → chunks → events → documents
+    # (migration agent found FK constraint SYS_C0030457 blocks naive delete)
+
+    _migrated_docs_subquery = """
+        SELECT vault_id FROM vault_sync_log
+        WHERE source_layer = 'legacy' AND vault_table = 'vault_documents'
+    """
+
+    # 1. Relations (FK: source_doc_id → vault_documents.id)
+    cur.execute(f"""
+        DELETE FROM vault_relations WHERE source_doc_id IN ({_migrated_docs_subquery})
+    """)
+    print(f"  Deleted {cur.rowcount} relations")
+
+    # 2. Facts (FK: source_doc_id → vault_documents.id)
+    cur.execute(f"""
+        DELETE FROM vault_facts WHERE source_doc_id IN ({_migrated_docs_subquery})
+    """)
+    print(f"  Deleted {cur.rowcount} facts")
+
+    # 3. Chunks (FK: document_id → vault_documents.id)
+    cur.execute(f"""
+        DELETE FROM vault_chunks WHERE document_id IN ({_migrated_docs_subquery})
+    """)
+    print(f"  Deleted {cur.rowcount} chunks")
+
+    # 4. Events
+    cur.execute(f"""
         DELETE FROM vault_events WHERE target_type = 'document'
-        AND target_id IN (
-            SELECT vault_id FROM vault_sync_log
-            WHERE source_layer = 'legacy' AND vault_table = 'vault_documents'
-        )
+        AND target_id IN ({_migrated_docs_subquery})
     """)
     print(f"  Deleted {cur.rowcount} events")
 
-    # Delete documents
-    cur.execute("""
-        DELETE FROM vault_documents WHERE id IN (
-            SELECT vault_id FROM vault_sync_log
-            WHERE source_layer = 'legacy' AND vault_table = 'vault_documents'
-        )
+    # 5. Documents (now safe — no FK children remain)
+    cur.execute(f"""
+        DELETE FROM vault_documents WHERE id IN ({_migrated_docs_subquery})
     """)
     print(f"  Deleted {cur.rowcount} documents")
 
