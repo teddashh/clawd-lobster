@@ -73,7 +73,7 @@ pip install -e .
 clawd-lobster serve
 ```
 
-Browser opens. Setup wizard guides you through everything.
+Browser opens. The **Skill Parade** guides you through each skill, one by one. Click a flag to choose your language 🇺🇸🇹🇼🇨🇳🇯🇵🇰🇷, then Claude Code helps set up the rest.
 
 ### For Terminal People
 
@@ -157,20 +157,38 @@ Skills have effectiveness scores. Proven patterns get reinforced. Stale skills d
 
 `clawd-lobster serve` opens a persistent web dashboard at `localhost:3333`.
 
-**Onboarding** — First-time wizard checks prerequisites, guides setup, creates your first workspace.
+**Onboarding (Skill Parade)** — An Agent-Guided experience. The web shows interactive skill cards; Claude Code guides you conversationally in the terminal. Together they walk you through setup — language, auth, workspace, then every skill one by one. [See the full guide →](docs/onboarding-guide.html)
 
 **Workspaces** — All your projects in one view. Status, spec progress, memory size, last activity.
 
+**Skills (3 tabs)** — MCP Servers, Prompt Patterns, Cron Jobs. Configure, enable/disable, check health.
+
+**API Keys** — Manage credentials for Claude, GitHub, Codex, Gemini, Oracle, Odoo. Masked display, per-service health probes.
+
 **Spec Squad** — Chat with Claude to discover your requirements. Watch four agents work in real-time on a live dashboard with phase timeline and turn history.
+
+### Agent-Guided Escape Room
+
+This isn't a traditional installer. The web dashboard and Claude Code are **co-pilots**:
+
+```
+Web (Visual Layer)     +     Claude Code (Conversation Layer)
+Shows skill cards            Explains what each skill does
+Shows setup progress         Answers your questions
+Shows config forms           Runs install commands
+Updates in real-time         Reads state, advances the flow
+```
+
+Neither is master. Both submit intents through a single backend API. One controller lease ensures they don't step on each other.
 
 ---
 
 ## Skills
 
-10 curated skills. Each does one thing well. Click the name for full documentation.
+14 skills across 3 kinds. Each does one thing well. Click the name for full documentation.
 
 ### [memory-server](skills/memory-server/README.md) — The Foundation
-26 MCP tools for persistent memory across sessions. 4-layer architecture from instant local cache to cloud sync. Salience engine that surfaces important knowledge and lets noise decay. CJK-aware token estimation. This is the skill that makes Claude Code stop forgetting.
+28 MCP tools for persistent memory across sessions. 4-layer architecture from instant local cache to cloud sync. Salience engine that surfaces important knowledge and lets noise decay. CJK-aware token estimation. This is the skill that makes Claude Code stop forgetting.
 
 ### [spec](skills/spec/README.md) — From Idea to Code
 Guided workspace creation, OpenSpec document generation (3W1H), and Spec Squad multi-agent pipeline. Discovery interview extracts your requirements. Architect writes testable specs with Gherkin scenarios. Reviewer tears them apart. Coder builds to contract. Tester verifies every requirement. Terminal or web.
@@ -199,20 +217,27 @@ Bidirectional Odoo ERP connection via XML-RPC + MCP. 6 specialized tools for rea
 ### [notebooklm-bridge](skills/notebooklm-bridge/README.md) — Document Generation
 Auto-sync workspace docs to Google NotebookLM. Generate slides, infographics, podcasts, and reports from your codebase documentation. Built-in watermark removal with page-number stamping (multi-page) or date stamping (single-page). Consistent styling across all pages.
 
+### [deploy](skills/deploy/README.md) — Ship It
+Docker-based deployment pipeline. Auto-detects your tech stack (Python, Node, Go, Rust, PHP, .NET). Generates Dockerfiles, docker-compose configs, and nginx configs for dev/staging/prod. One command: `clawd-lobster deploy`. Supports GCP, AWS, Azure, and self-hosted.
+
+### [learned](skills/learned/README.md) — Living Skill Library
+Auto-populated directory of reusable patterns extracted by the evolve skill. Each pattern becomes a skill with effectiveness scores. Proven patterns float up, stale ones decay. Skills unused for 90+ days get archived.
+
 ---
 
-Every skill has a **trigger description** (Claude knows when to activate), a **Gotchas section** (common mistakes to avoid), and **dynamic `!command` injection** (runtime context on load).
+Every skill has a **manifest** (`skill.json`) with trigger descriptions, onboarding metadata, and health checks. The [skill manager](scripts/skill-manager.py) handles lifecycle (enable, disable, configure, credentials, health).
 
 ---
 
 ## Architecture
 
 ```
-Skills (the what)      ->  10 skills with manifests, instructions, gotchas
-Tools (the how)        ->  32 MCP tools + Claude Code native tools
+Skills (the what)      ->  14 skills with manifests (skill.json), instructions, gotchas
+Tools (the how)        ->  28 MCP tools + Claude Code native tools + 22 onboarding APIs
 Hooks (the when)       ->  OS scheduler, git hooks, PostToolUse, Stop hooks
-Memory (the brain)     ->  SQLite Ledger + Git Wiki (Thin Ledger pattern)
+Memory (the brain)     ->  SQLite Ledger + Git Wiki + Oracle Vault (4-layer)
 Operations (the cycle) ->  INGEST / QUERY / LINT (continuous knowledge lifecycle)
+Dashboard (the eyes)   ->  Web UI at localhost:3333 (Skill Parade + 3-tab Skills + Keys)
 ```
 
 **Standing on the giant's shoulders.** Clawd-Lobster doesn't rebuild Claude Code. It uses Claude Code's native extension points (MCP servers, CLAUDE.md, hooks, settings.json) exactly as Anthropic designed them. When Claude Code ships a new feature, you get it for free. When the model improves, your agent improves. Zero adapter code.
@@ -265,7 +290,7 @@ First machine creates the Hub. Every machine after that joins in 2 minutes.
 - Python 3.10+
 - Claude Code CLI ([install](https://claude.ai/code))
 - Git 2.x+
-- Node.js 18+ (optional, for Codex Bridge)
+- Node.js 18+ (required for Claude Code CLI)
 - GitHub account (for Hub sync)
 
 ---
