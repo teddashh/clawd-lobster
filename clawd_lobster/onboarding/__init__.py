@@ -84,8 +84,29 @@ def get_latest_session():
 
 
 def update_onboarding_state(session_id: str, step: str, value):
-    """Legacy update — delegates to intent system."""
-    return None  # Legacy, not used anymore
+    """Legacy update — maps old step names to new intent system."""
+    from .state_store import get_state, save_state, find_item
+    state = get_state(session_id)
+    if state is None:
+        return None
+    step_map = {
+        "persona": "foundation.language",
+        "workspace_root": "foundation.workspace_root",
+        "workspace_created": "foundation.workspace_root",
+        "config_saved": "foundation.hub",
+        "complete": None,
+    }
+    item_id = step_map.get(step)
+    if item_id:
+        item = find_item(state, item_id)
+        if item:
+            item["status"] = "succeeded"
+            item["facts"] = {"value": value}
+            save_state(session_id, state)
+    elif step == "complete":
+        state["phase"] = "complete"
+        save_state(session_id, state)
+    return get_state(session_id)
 
 
 def write_handoff_file(session_id: str, lang: str = "en"):

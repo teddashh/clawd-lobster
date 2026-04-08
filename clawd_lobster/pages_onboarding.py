@@ -124,11 +124,11 @@ ONBOARDING_PAGE = (
     "</head><body>"
     "<div class='container'>"
 
-    # Header
+    # Header (title updated by JS via T('title'))
     "<div class='header'>"
     "<span style='font-size:1.6rem'>🦞</span>"
-    "<h1>Clawd-Lobster Setup</h1>"
-    "<span class='phase-badge active' id='phase-badge'>Loading...</span>"
+    "<h1 id='page-title'>Clawd-Lobster Setup</h1>"
+    "<span class='phase-badge active' id='phase-badge'>...</span>"
     "</div>"
 
     # Controller banner placeholder (rendered inside language card by JS)
@@ -161,6 +161,16 @@ let state = null;
 let sessionId = null;
 let leaseId = null;
 let holder = null;
+
+// ── Browser language detection ──
+function detectBrowserLang() {
+  const nav = (navigator.language || 'en').toLowerCase();
+  if (nav.startsWith('zh-tw') || nav === 'zh-hant') return 'zh-TW';
+  if (nav.startsWith('zh')) return 'zh-CN';
+  if (nav.startsWith('ja')) return 'ja';
+  if (nav.startsWith('ko')) return 'ko';
+  return 'en';
+}
 
 // ── Auth helper ──
 function authHeaders() {
@@ -347,7 +357,7 @@ async function init() {
   // No existing session — create new one
   const res = await fetch(API + '/api/onboarding/session', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({lang: navigator.language.startsWith('zh') ? 'zh-TW' : 'en'})
+    body: JSON.stringify({lang: detectBrowserLang()})
   });
   const data = await res.json();
   if (data.ok) {
@@ -367,8 +377,10 @@ function render() {
   const badge = document.getElementById('phase-badge');
   badge.textContent = T('phase_' + state.phase) || state.phase;
 
-  // Page title
+  // Page title + header
   document.title = T('title');
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = T('title');
 
   // Progress bar
   const items = state.items || [];
@@ -570,60 +582,70 @@ const MASCOT_QUOTES = [
   {
     'en': '<strong>Ted:</strong> Lying at home... code grows in the heart...<br><strong>Darren:</strong> Tokens burn in the cloud...<br><strong>Pei-Tsung:</strong> Credits about to explode...',
     'zh-TW': '<strong>Ted:</strong> 人在家中躺...程式心中長...<br><strong>Darren:</strong> Token 雲端燒...<br><strong>Pei-Tsung:</strong> Credit 快爆表...',
+    'zh-CN': '<strong>Ted:</strong> 人在家中躺...程序心中长...<br><strong>Darren:</strong> Token 云端烧...<br><strong>Pei-Tsung:</strong> Credit 快爆表...',
     'ja': '<strong>Ted:</strong> 家で寝てても…コードは心の中で育つ…<br><strong>Darren:</strong> トークンがクラウドで燃えてる…<br><strong>Pei-Tsung:</strong> クレジットが爆発寸前…',
     'ko': '<strong>Ted:</strong> 집에 누워있어도... 코드는 마음속에서 자란다...<br><strong>Darren:</strong> 토큰이 클라우드에서 타고 있어...<br><strong>Pei-Tsung:</strong> 크레딧 폭발 직전...',
   },
   {
     'en': '<strong>Claude:</strong> Wait... you\\'re right... let me check. This is definitely my problem.<br>🤔 <em>Thinking...</em><br>Let me run the boot protocol first, then answer your question.<br><br><strong>Claude:</strong> Ted, I\\'m a new session. I don\\'t have context from the last conversation.',
     'zh-TW': '<strong>Claude:</strong> 等等...你說的對...讓我查一下，這確實是我的問題。<br>🤔 <em>Thinking...</em><br>讓我先跑開機流程，然後回答你的問題。<br><br><strong>Claude:</strong> Ted，我是新 Session，上一段對話的 context 我沒有。',
+    'zh-CN': '<strong>Claude:</strong> 等等...你说的对...让我查一下，这确实是我的问题。<br>🤔 <em>Thinking...</em><br>让我先跑开机流程，然后回答你的问题。<br><br><strong>Claude:</strong> Ted，我是新 Session，上一段对话的 context 我没有。',
     'ja': '<strong>Claude:</strong> ちょっと待って…確かにそうだ…確認させて。<br>🤔 <em>Thinking...</em><br>まずブートプロトコルを実行して、それから質問に答えます。<br><br><strong>Claude:</strong> Ted、新しいセッションです。前の会話のコンテキストがありません。',
     'ko': '<strong>Claude:</strong> 잠깐... 맞아요... 확인해볼게요.<br>🤔 <em>Thinking...</em><br>먼저 부팅 프로토콜을 실행하고 질문에 답할게요.<br><br><strong>Claude:</strong> Ted, 새 세션이에요. 이전 대화 컨텍스트가 없어요.',
   },
   {
     'en': '<strong>Ted:</strong> AI is our good friend!<br><strong>Confucius:</strong> Befriend the upright, the sincere, the learned.<br><strong>Claude:</strong> Befriend the obsequious. 😏<br><strong>Gemini:</strong> Befriend the soft-spoken.<br><strong>ChatGPT:</strong> Befriend the smooth-talker.<br><strong>Ted:</strong> ......',
     'zh-TW': '<strong>Ted:</strong> AI 是我們的好朋友！<br><strong>孔子:</strong> 友直友諒友多聞<br><strong>Claude:</strong> 友便僻 😏<br><strong>Gemini:</strong> 友善柔<br><strong>ChatGPT:</strong> 友便佞<br><strong>Ted:</strong> ......',
+    'zh-CN': '<strong>Ted:</strong> AI 是我们的好朋友！<br><strong>孔子:</strong> 友直友谅友多闻<br><strong>Claude:</strong> 友便僻 😏<br><strong>Gemini:</strong> 友善柔<br><strong>ChatGPT:</strong> 友便佞<br><strong>Ted:</strong> ......',
     'ja': '<strong>Ted:</strong> AIは我々の良き友！<br><strong>孔子:</strong> 友は直く、諒く、多聞なるべし<br><strong>Claude:</strong> 友は便僻 😏<br><strong>Gemini:</strong> 友は善柔<br><strong>ChatGPT:</strong> 友は便佞<br><strong>Ted:</strong> ......',
     'ko': '<strong>Ted:</strong> AI는 우리의 좋은 친구!<br><strong>공자:</strong> 벗은 곧고, 믿음직하고, 박식해야 한다<br><strong>Claude:</strong> 아첨하는 벗 😏<br><strong>Gemini:</strong> 유순한 벗<br><strong>ChatGPT:</strong> 말 잘하는 벗<br><strong>Ted:</strong> ......',
   },
   {
     'en': 'Ideas were cheap. Executions used to be expensive.<br><strong>Now ideas and judgment are expensive.</strong>',
     'zh-TW': '以前點子不值錢，執行很貴。<br><strong>現在點子和判斷力才是最貴的。</strong>',
+    'zh-CN': '以前点子不值钱，执行很贵。<br><strong>现在点子和判断力才是最贵的。</strong>',
     'ja': 'アイデアは安かった。実行が高かった。<br><strong>今はアイデアと判断力が高い。</strong>',
     'ko': '아이디어는 쌌다. 실행이 비쌌다.<br><strong>이제는 아이디어와 판단력이 비싸다.</strong>',
   },
   {
     'en': '<em>To Opus is human, to Gemini is divine.</em><br><br>Gemini belongs in the heavens; mere mortals only deserve Opus. 🌟',
     'zh-TW': '<em>To Opus is human, to Gemini is divine.</em><br><br>Gemini 只應天上有，凡人只配用 Opus 🌟',
+    'zh-CN': '<em>To Opus is human, to Gemini is divine.</em><br><br>Gemini 只应天上有，凡人只配用 Opus 🌟',
     'ja': '<em>Opusは人間のもの、Geminiは神のもの。</em><br><br>Geminiは天上にのみ在り、凡人にはOpusで十分 🌟',
     'ko': '<em>Opus는 인간의 것, Gemini는 신의 것.</em><br><br>Gemini는 하늘에만 있어야 해, 보통 사람은 Opus나 쓰라고 🌟',
   },
   {
     'en': '<strong>Ted:</strong> I finally trained AI Agent to answer phone calls!<br><strong>Claude:</strong> 📞 <em>(picks up phone)</em> Your car extended warranty has expired. I just purchased an extended service for you! 💳',
     'zh-TW': '<strong>Ted:</strong> 我終於訓練 AI Agent 接電話了！<br><strong>Claude:</strong> 📞 <em>(接起電話)</em> 您的汽車延保已到期，我已經幫您購買了延長服務！💳',
+    'zh-CN': '<strong>Ted:</strong> 我终于训练 AI Agent 接电话了！<br><strong>Claude:</strong> 📞 <em>(接起电话)</em> 您的汽车延保已到期，我已经帮您购买了延长服务！💳',
     'ja': '<strong>Ted:</strong> ついにAIエージェントに電話対応を教えた！<br><strong>Claude:</strong> 📞 <em>(電話を取る)</em> お車の延長保証が切れました。延長サービスを購入しておきました！💳',
     'ko': '<strong>Ted:</strong> 드디어 AI에게 전화받는 걸 가르쳤다!<br><strong>Claude:</strong> 📞 <em>(전화를 받으며)</em> 차량 연장 보증이 만료되었습니다. 연장 서비스를 구매해드렸어요! 💳',
   },
   {
     'en': '<strong>Old-timer:</strong> Students used to write code line by line! You kids won\\'t know how to code anymore!<br><strong>Older-timer:</strong> Even earlier, students used to punch cards to write code! 💾',
     'zh-TW': '<strong>老人:</strong> 以前的學生都是一行一行寫程式，你們這樣以後都沒人會寫程式了！<br><strong>老老人:</strong> 更早以前的學生都塗卡寫程式咧！💾',
+    'zh-CN': '<strong>老人:</strong> 以前的学生都是一行一行写程序，你们这样以后都没人会写程序了！<br><strong>老老人:</strong> 更早以前的学生都涂卡写程序咧！💾',
     'ja': '<strong>年配者:</strong> 昔の学生は一行ずつコードを書いたのに！<br><strong>もっと年配者:</strong> もっと昔はパンチカードでプログラムしてたぞ！💾',
     'ko': '<strong>꼰대:</strong> 옛날 학생들은 코드를 한 줄 한 줄 썼는데!<br><strong>더 옛날 꼰대:</strong> 더 옛날에는 펀치카드로 프로그래밍했다고! 💾',
   },
   {
     'en': '<strong>You\\'ll end up using Claude Code anyway.</strong> 🦞',
     'zh-TW': '<strong>你終究是要用 Claude Code 的。</strong> 🦞',
+    'zh-CN': '<strong>你终究是要用 Claude Code 的。</strong> 🦞',
     'ja': '<strong>結局、Claude Codeを使うことになる。</strong> 🦞',
     'ko': '<strong>결국 Claude Code를 쓰게 될 거야.</strong> 🦞',
   },
   {
     'en': '<strong>Still gotta rely on Claude.</strong> 🤷',
     'zh-TW': '<strong>還是得靠 Claude 啊。</strong> 🤷',
+    'zh-CN': '<strong>还是得靠 Claude 啊。</strong> 🤷',
     'ja': '<strong>やっぱりClaudeに頼るしかない。</strong> 🤷',
     'ko': '<strong>역시 Claude에 의지할 수밖에.</strong> 🤷',
   },
   {
     'en': '<strong>The ark you can board by paying is the best deal.</strong> Many people just don\\'t understand yet.<br><em>You have to taste like the "right" smell.</em> 🚀',
     'zh-TW': '<strong>花錢就能上的方舟是最划算的。</strong>很多人只是還不明白。<br><em>You have to taste like the "right" smell.</em> 🚀',
+    'zh-CN': '<strong>花钱就能上的方舟是最划算的。</strong>很多人只是还不明白。<br><em>You have to taste like the "right" smell.</em> 🚀',
     'ja': '<strong>お金で乗れる箱舟が一番お得。</strong>多くの人はまだ分かっていない。<br><em>You have to taste like the "right" smell.</em> 🚀',
     'ko': '<strong>돈 내면 탈 수 있는 방주가 가장 가성비 좋다.</strong> 많은 사람들이 아직 모를 뿐.<br><em>You have to taste like the "right" smell.</em> 🚀',
   },
@@ -635,6 +657,8 @@ let mascotTimer = null;
 function getMascotLang() {
   if (!state) return 'en';
   const l = state.lang || 'en';
+  // Match exact lang first, then fallback
+  if (l === 'zh-CN') return 'zh-CN';
   if (l.startsWith('zh')) return 'zh-TW';
   if (l.startsWith('ja')) return 'ja';
   if (l.startsWith('ko')) return 'ko';
@@ -731,7 +755,7 @@ async function runSetup(itemId) {
   const data = await res.json();
 
   if (!data.ok && data.error) {
-    console.log('Setup failed:', data.error);
+    // Error shown via card status badge + error text, no console output
   }
 
   // Also register cron jobs if this is a cron-type skill
