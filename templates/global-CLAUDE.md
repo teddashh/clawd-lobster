@@ -50,6 +50,13 @@ After complex tasks (3+ tool calls), check if a reusable pattern was discovered:
 3. `memory_improve_skill()` — update if approach changed
 Skills > 2.0 effectiveness = proven patterns. Skills unused 90+ days = verify first.
 
+## Code Review & Push Policy
+- **All code changes to the clawd-lobster repo MUST be reviewed before pushing.**
+- Never push to master without review approval.
+- Never include personal info (real names, emails, company names, file paths with usernames) in any committed file — this is a PUBLIC repo.
+- Never commit credentials, API keys, wallet passwords, or connection strings.
+- Before committing: run `grep -rni "personal patterns" .` to verify no leaks.
+
 ## Skill Kinds
 - **mcp-server**: MCP tools (memory-server, connect-odoo)
 - **prompt-pattern**: Instructions in SKILL.md (evolve, spec, codex-bridge)
