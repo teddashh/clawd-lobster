@@ -52,21 +52,25 @@ def request_json(port, method, path, body=None, token=None):
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    conn = HTTPConnection(HOST, port, timeout=10)
-    try:
-        conn.request(method, path, body=payload, headers=headers)
-        response = conn.getresponse()
-        raw = response.read().decode("utf-8")
-        status = response.status
-    finally:
-        conn.close()
-
-    try:
-        data = json.loads(raw) if raw else {}
-    except json.JSONDecodeError:
-        data = {"raw": raw}
-
-    return status, data
+    for attempt in range(3):
+        conn = HTTPConnection(HOST, port, timeout=10)
+        try:
+            conn.request(method, path, body=payload, headers=headers)
+            response = conn.getresponse()
+            raw = response.read().decode("utf-8")
+            status = response.status
+            conn.close()
+            try:
+                data = json.loads(raw) if raw else {}
+            except json.JSONDecodeError:
+                data = {"raw": raw}
+            return status, data
+        except (ConnectionAbortedError, ConnectionResetError, OSError):
+            conn.close()
+            if attempt < 2:
+                time.sleep(0.2)
+                continue
+            raise
 
 
 def assert_status(actual, expected, context):

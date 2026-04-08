@@ -325,25 +325,35 @@ function foundationSummary(id) {
 
 // ── Init ──
 async function init() {
-  // Try to load existing session
-  let res = await fetch(API + '/api/onboarding/state');
-  let data = await res.json();
+  const existingToken = localStorage.getItem('cl-token');
 
-  if (data.ok && data.state) {
-    state = data.state;
-    sessionId = state.session_id;
-  } else {
-    // Create new session
-    res = await fetch(API + '/api/onboarding/session', {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({lang: navigator.language.startsWith('zh') ? 'zh-TW' : 'en'})
+  // If we have a token, try to resume existing session
+  if (existingToken) {
+    const res = await fetch(API + '/api/onboarding/state', {
+      headers: {'Authorization': 'Bearer ' + existingToken}
     });
-    data = await res.json();
-    if (data.ok) {
-      state = data.state;
-      sessionId = data.session_id;
-      localStorage.setItem('cl-token', data.token);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.state) {
+        state = data.state;
+        sessionId = state.session_id;
+        render();
+        startPolling();
+        return;
+      }
     }
+  }
+
+  // No existing session — create new one
+  const res = await fetch(API + '/api/onboarding/session', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({lang: navigator.language.startsWith('zh') ? 'zh-TW' : 'en'})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    state = data.state;
+    sessionId = data.session_id;
+    localStorage.setItem('cl-token', data.token);
   }
   render();
   startPolling();
@@ -491,7 +501,7 @@ function render() {
         } else {
           html += '<p style="color:var(--fg2);font-size:0.85rem;margin-bottom:8px">' + T('ws_desc') + '</p>';
           html += '<div style="display:flex;gap:8px;align-items:center">';
-          html += '<input type="text" id="ws-root-input" value="~/Documents/Workspace" placeholder="' + defaultRoot + '" style="padding:6px 10px;background:var(--bg);border:1px solid var(--bg3);border-radius:6px;color:var(--fg);font-size:0.85rem;flex:1">';
+          html += '<input type="text" id="ws-root-input" value="~/Documents/Workspace" placeholder="~/Documents/Workspace" style="padding:6px 10px;background:var(--bg);border:1px solid var(--bg3);border-radius:6px;color:var(--fg);font-size:0.85rem;flex:1">';
           html += '<button class="btn primary" onclick="setFoundation(\\x27foundation.workspace_root\\x27, document.getElementById(\\x27ws-root-input\\x27).value)">' + T('btn_set') + '</button>';
           html += '</div>';
         }
@@ -824,16 +834,9 @@ async function launchHandoff() {
   }
 }
 
-// Show handoff banner when there are pending items
+// Handoff banner is now integrated into the language card's controller section
 function checkHandoffBanner() {
-  if (!state) return;
-  const pending = (state.items || []).filter(i => i.status === 'pending' || i.status === 'failed');
-  const banner = document.getElementById('handoff-banner');
-  if (pending.length > 0 && state.phase !== 'complete') {
-    banner.style.display = 'block';
-  } else {
-    banner.style.display = 'none';
-  }
+  // no-op — Launch Claude Code button is always visible in controller banner
 }
 
 // ── Polling ──
