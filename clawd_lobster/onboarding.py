@@ -12,6 +12,8 @@ import os
 import platform
 import subprocess
 import sys
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ── Paths ──────────────────────────────────────────────────────────────────
@@ -133,7 +135,7 @@ def check_prerequisites() -> dict:
         "optional": False,
     })
 
-    # Node (optional)
+    # Node (REQUIRED — needed for Claude Code installation via npm)
     node_version = _get_version(["node", "--version"])
     # node --version returns "v20.11.0" — strip leading v
     if node_version.startswith("v"):
@@ -142,7 +144,7 @@ def check_prerequisites() -> dict:
         "name": "node",
         "ok": bool(node_version),
         "version": node_version,
-        "optional": True,
+        "optional": False,
     })
 
     # pip
@@ -154,6 +156,22 @@ def check_prerequisites() -> dict:
         "optional": False,
     })
 
+    # Claude auth — check credentials file exists and is valid JSON
+    claude_auth_ok = False
+    claude_creds = HOME / ".claude" / ".credentials.json"
+    if claude_creds.exists():
+        try:
+            creds = json.loads(claude_creds.read_text(encoding="utf-8"))
+            claude_auth_ok = bool(creds)
+        except (json.JSONDecodeError, OSError):
+            pass
+    checks.append({
+        "name": "claude_auth",
+        "ok": claude_auth_ok,
+        "version": "",
+        "optional": False,
+    })
+
     all_required_ok = all(c["ok"] for c in checks if not c["optional"])
 
     # Default workspace root
@@ -162,10 +180,16 @@ def check_prerequisites() -> dict:
     if config.get("workspace_root"):
         default_root = config["workspace_root"]
 
+    # Platform detection
+    plat = platform.system().lower()
+    if plat == "darwin":
+        plat = "macos"
+
     return {
         "checks": checks,
         "all_required_ok": all_required_ok,
         "default_root": default_root,
+        "platform": plat,
     }
 
 
@@ -186,18 +210,20 @@ def is_first_time() -> bool:
     return not CONFIG_FILE.exists()
 
 
-def save_config(persona: str, workspace_root: str) -> None:
-    """Write config.json with persona and workspace root.
+def save_config(persona: str, workspace_root: str, *, lang: str = "en") -> None:
+    """Write config.json with persona, workspace root, and language.
 
     Args:
         persona: User persona — "noob", "expert", or "tech".
         workspace_root: Absolute path to workspace root directory.
+        lang: Language code — "en", "zh-TW", "zh-CN", "ja", or "ko".
     """
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
     config = _load_config()
     config["persona"] = persona
     config["workspace_root"] = workspace_root
+    config["lang"] = lang
     config["setup_complete"] = True
 
     tmp = CONFIG_FILE.with_suffix(".tmp")
@@ -213,6 +239,181 @@ def save_config(persona: str, workspace_root: str) -> None:
         if tmp.exists():
             tmp.unlink()
         raise
+
+
+# ── Onboarding session state ──────────────────────────────────────────────
+
+ONBOARDING_DIR = CONFIG_DIR / "onboarding"
+_STALE_HOURS = 24
+
+
+def _write_json_atomic(path: Path, data: dict) -> None:
+    """Write JSON atomically (tmp + rename)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    if IS_WINDOWS and path.exists():
+        path.unlink()
+    tmp.rename(path)
+
+
+def create_onboarding_session(lang: str = "en") -> dict:
+    """Create a new onboarding session with a unique ID.
+
+    Returns the initial state dict.
+    """
+    session_id = str(uuid.uuid4())
+    plat = platform.system().lower()
+    if plat == "darwin":
+        plat = "macos"
+
+    state = {
+        "session_id": session_id,
+        "phase": "handoff",
+        "lang": lang,
+        "platform": plat,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "persona": None,
+        "workspace_root": None,
+        "workspace_created": False,
+        "config_saved": False,
+    }
+
+    state_file = ONBOARDING_DIR / session_id / "state.json"
+    _write_json_atomic(state_file, state)
+    return state
+
+
+def get_onboarding_state(session_id: str) -> dict | None:
+    """Read onboarding state for a session. Returns None if not found."""
+    state_file = ONBOARDING_DIR / session_id / "state.json"
+    if not state_file.exists():
+        return None
+    try:
+        return json.loads(state_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def update_onboarding_state(session_id: str, step: str, value) -> dict | None:
+    """Update a step in the onboarding state. Returns updated state or None."""
+    state = get_onboarding_state(session_id)
+    if state is None:
+        return None
+
+    valid_steps = ("persona", "workspace_root", "workspace_created", "config_saved", "complete")
+    if step not in valid_steps:
+        return None
+
+    if step == "complete":
+        state["phase"] = "complete"
+        state["config_saved"] = True
+    else:
+        state[step] = value
+
+    state_file = ONBOARDING_DIR / session_id / "state.json"
+    _write_json_atomic(state_file, state)
+    return state
+
+
+def get_latest_session() -> dict | None:
+    """Find the most recent non-stale onboarding session."""
+    if not ONBOARDING_DIR.exists():
+        return None
+
+    best = None
+    best_time = ""
+    for d in ONBOARDING_DIR.iterdir():
+        if not d.is_dir():
+            continue
+        sf = d / "state.json"
+        if not sf.exists():
+            continue
+        try:
+            s = json.loads(sf.read_text(encoding="utf-8"))
+            created = s.get("created_at", "")
+            if created > best_time:
+                best_time = created
+                best = s
+        except (json.JSONDecodeError, OSError):
+            continue
+
+    return best
+
+
+def write_handoff_file(session_id: str, lang: str = "en") -> Path:
+    """Write a CLAUDE.md for Claude Code CLI to read during handoff.
+
+    Returns the path to the directory containing CLAUDE.md.
+    """
+    session_dir = ONBOARDING_DIR / session_id
+    session_dir.mkdir(parents=True, exist_ok=True)
+
+    plat = platform.system().lower()
+    if plat == "darwin":
+        plat = "macos"
+
+    instructions = f"""# Clawd-Lobster Onboarding
+
+You are helping the user complete clawd-lobster setup.
+The web UI at http://localhost:3333 has verified all prerequisites.
+Now guide the user through the remaining steps interactively.
+
+## Session
+- Session ID: {session_id}
+- Language: {lang}
+- Platform: {plat}
+
+## Steps to complete
+
+1. **Persona selection** — Ask the user: "How do you work?"
+   - Guided (noob): New to AI dev, show everything
+   - Expert: Knows what they're doing, less hand-holding
+   - Technical (tech): Full control and raw output
+   After they choose, report it:
+   ```bash
+   curl -s -X POST http://localhost:3333/api/onboarding/update \\
+     -H "Content-Type: application/json" \\
+     -d '{{"session_id":"{session_id}","step":"persona","value":"<chosen>"}}'
+   ```
+
+2. **Workspace root** — Ask where to store workspaces.
+   Default: ~/Documents/Workspace
+   After confirmed:
+   ```bash
+   curl -s -X POST http://localhost:3333/api/onboarding/update \\
+     -H "Content-Type: application/json" \\
+     -d '{{"session_id":"{session_id}","step":"workspace_root","value":"<path>"}}'
+   ```
+
+3. **Create first workspace** — Ask for a workspace name (kebab-case).
+   Create the workspace directory, init git, create CLAUDE.md.
+   After created:
+   ```bash
+   curl -s -X POST http://localhost:3333/api/onboarding/update \\
+     -H "Content-Type: application/json" \\
+     -d '{{"session_id":"{session_id}","step":"workspace_created","value":true}}'
+   ```
+
+4. **Complete** — Save config and mark done:
+   ```bash
+   curl -s -X POST http://localhost:3333/api/onboarding/update \\
+     -H "Content-Type: application/json" \\
+     -d '{{"session_id":"{session_id}","step":"complete","value":true}}'
+   ```
+
+## Important
+- Speak to the user in **{lang}** language.
+- After each step, run the curl command to update the web dashboard.
+- If auth fails, tell the user to run `claude login` and try again.
+"""
+
+    claude_md = session_dir / "CLAUDE.md"
+    claude_md.write_text(instructions, encoding="utf-8")
+    return session_dir
 
 
 # ── Terminal onboarding ────────────────────────────────────────────────────

@@ -109,11 +109,15 @@ class _Handler(BaseHTTPRequestHandler):
             "/api/status": self._api_status,
             "/api/workspaces": self._api_workspaces,
             "/api/squad/state": self._api_squad_state,
+            "/api/onboarding/state": self._api_onboarding_state,
+            "/api/onboarding/instructions": self._api_onboarding_instructions,
         }
 
         handler = routes.get(path)
         if handler:
             handler(query)
+        elif path.startswith("/assets/"):
+            self._serve_asset(path)
         else:
             self.send_error(404)
 
@@ -126,6 +130,8 @@ class _Handler(BaseHTTPRequestHandler):
         routes = {
             "/api/onboarding/check": self._api_onboarding_check,
             "/api/onboarding/complete": self._api_onboarding_complete,
+            "/api/onboarding/handoff": self._api_onboarding_handoff,
+            "/api/onboarding/update": self._api_onboarding_update,
             "/api/workspaces/create": self._api_workspaces_create,
             "/api/squad/chat": self._api_squad_chat,
             "/api/squad/start": self._api_squad_start,
@@ -161,6 +167,30 @@ class _Handler(BaseHTTPRequestHandler):
             return json.loads(raw.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
             return {}
+
+    def _serve_asset(self, path: str) -> None:
+        """Serve static files from clawd_lobster/assets/."""
+        MIME = {".png": "image/png", ".webp": "image/webp",
+                ".jpg": "image/jpeg", ".svg": "image/svg+xml",
+                ".ico": "image/x-icon", ".css": "text/css", ".js": "text/javascript"}
+        name = path.split("/assets/", 1)[-1]
+        # Safety: no path traversal
+        if ".." in name or "/" in name or "\\" in name:
+            self.send_error(403)
+            return
+        asset_dir = Path(__file__).resolve().parent / "assets"
+        fp = asset_dir / name
+        if not fp.exists() or not fp.is_file():
+            self.send_error(404)
+            return
+        ct = MIME.get(fp.suffix.lower(), "application/octet-stream")
+        data = fp.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", ct)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.end_headers()
+        self.wfile.write(data)
 
     def _send_redirect(self, location: str) -> None:
         self.send_response(302)
@@ -204,6 +234,7 @@ class _Handler(BaseHTTPRequestHandler):
     def _api_onboarding_complete(self) -> None:
         body = self._read_body()
         persona = body.get("persona", "noob")
+        lang = body.get("lang", "en")
         ws_name = body.get("workspace_name", "")
         ws_root = body.get("workspace_root", "")
 
@@ -214,9 +245,13 @@ class _Handler(BaseHTTPRequestHandler):
         if persona not in ("noob", "expert", "tech"):
             persona = "noob"
 
+        # Validate lang
+        if lang not in ("en", "zh-TW", "zh-CN", "ja", "ko"):
+            lang = "en"
+
         try:
             # Save config
-            onboarding.save_config(persona, ws_root)
+            onboarding.save_config(persona, ws_root, lang=lang)
 
             # Create workspace if name provided
             if ws_name:
@@ -225,6 +260,102 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json({"ok": True})
         except Exception as e:
             self._send_json({"ok": False, "error": str(e)}, status=400)
+
+    def _api_onboarding_handoff(self) -> None:
+        """Create a handoff session. Returns session_id + handoff dir path."""
+        body = self._read_body()
+        lang = body.get("lang", "en")
+        if lang not in ("en", "zh-TW", "zh-CN", "ja", "ko"):
+            lang = "en"
+
+        try:
+            state = onboarding.create_onboarding_session(lang)
+            session_id = state["session_id"]
+            session_dir = onboarding.write_handoff_file(session_id, lang)
+            self._send_json({
+                "ok": True,
+                "session_id": session_id,
+                "session_dir": str(session_dir),
+                "state": state,
+            })
+        except Exception as e:
+            self._send_json({"ok": False, "error": str(e)}, status=500)
+
+    def _api_onboarding_state(self, query: dict) -> None:
+        """Return current onboarding session state."""
+        session_id = ""
+        if "session_id" in query:
+            session_id = query["session_id"][0]
+
+        if not session_id:
+            # Try to find the latest session
+            state = onboarding.get_latest_session()
+            if state:
+                self._send_json({"ok": True, "state": state})
+            else:
+                self._send_json({"ok": False, "error": "No active session"}, status=404)
+            return
+
+        state = onboarding.get_onboarding_state(session_id)
+        if state is None:
+            self._send_json({"ok": False, "error": "Session not found"}, status=404)
+        else:
+            self._send_json({"ok": True, "state": state})
+
+    def _api_onboarding_instructions(self, query: dict) -> None:
+        """Return CLAUDE.md content for a session."""
+        session_id = ""
+        if "session_id" in query:
+            session_id = query["session_id"][0]
+
+        if not session_id:
+            self._send_json({"ok": False, "error": "session_id required"}, status=400)
+            return
+
+        claude_md = onboarding.ONBOARDING_DIR / session_id / "CLAUDE.md"
+        if not claude_md.exists():
+            self._send_json({"ok": False, "error": "Instructions not found"}, status=404)
+            return
+
+        try:
+            content = claude_md.read_text(encoding="utf-8")
+            self._send_json({"ok": True, "instructions": content})
+        except OSError as e:
+            self._send_json({"ok": False, "error": str(e)}, status=500)
+
+    def _api_onboarding_update(self) -> None:
+        """CLI reports step completion. Requires session_id in body."""
+        body = self._read_body()
+        session_id = body.get("session_id", "")
+        step = body.get("step", "")
+        value = body.get("value")
+
+        if not session_id or not step:
+            self._send_json(
+                {"ok": False, "error": "session_id and step required"}, status=400,
+            )
+            return
+
+        state = onboarding.update_onboarding_state(session_id, step, value)
+        if state is None:
+            self._send_json(
+                {"ok": False, "error": "Invalid session or step"}, status=400,
+            )
+            return
+
+        # If complete, also save the config
+        if step == "complete" or state.get("phase") == "complete":
+            persona = state.get("persona", "noob")
+            ws_root = state.get("workspace_root", "")
+            lang = state.get("lang", "en")
+            if not ws_root:
+                ws_root = _resolve_workspace_root()
+            try:
+                onboarding.save_config(persona, ws_root, lang=lang)
+            except Exception:
+                pass
+
+        self._send_json({"ok": True, "state": state})
 
     # ── API: workspaces ────────────────────────────────────────────────────
 
