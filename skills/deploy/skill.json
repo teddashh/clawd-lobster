@@ -14,6 +14,23 @@
     "allow": []
   },
 
+  "onboarding": {
+    "tier": "required",
+    "phase": "skills_required",
+    "order": 60,
+    "title": "Deploy Pipeline",
+    "summary": "Docker-based deployment for dev/staging/prod. Auto-detects your tech stack.",
+    "why_it_matters": "Ship your projects with one command. Docker is optional but recommended.",
+    "estimated_minutes": 1,
+    "depends_on": ["spec"],
+    "facts_schema": {
+      "docker_available": "boolean"
+    },
+    "steps": [
+      {"id": "verify_docker", "label": "Check Docker availability", "kind": "probe", "required": false, "probe": "deploy", "success_sets": ["docker_available"]}
+    ]
+  },
+
   "credentials": [],
 
   "configSchema": {

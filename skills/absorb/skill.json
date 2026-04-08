@@ -11,6 +11,25 @@
   "alwaysOn": true,
   "defaultEnabled": true,
   "permissions": { "allow": [] },
+  "onboarding": {
+    "tier": "required",
+    "phase": "skills_required",
+    "order": 30,
+    "title": "Absorb — Knowledge Ingestion",
+    "summary": "Ingest files, PDFs, emails, chats, and more into your knowledge base. Optionally connect Oracle Vault for deep storage.",
+    "why_it_matters": "This is how your AI learns from your existing documents and data. Oracle Vault is optional but gives you cross-machine search.",
+    "estimated_minutes": 2,
+    "depends_on": ["memory-server"],
+    "facts_schema": {
+      "skill_present": "boolean",
+      "oracle_configured": "boolean"
+    },
+    "steps": [
+      {"id": "verify", "label": "Verify absorb skill", "kind": "probe", "required": true, "probe": "absorb", "success_sets": ["skill_present"]},
+      {"id": "oracle_setup", "label": "Configure Oracle Vault (optional)", "kind": "config", "required": false, "fields": [{"name": "wallet_dir", "type": "path", "required": true}, {"name": "dsn", "type": "string", "required": true}], "success_sets": ["oracle_configured"]}
+    ]
+  },
+
   "credentials": [],
   "configSchema": {
     "type": "object",

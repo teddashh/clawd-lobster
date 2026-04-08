@@ -48,6 +48,29 @@
     ]
   },
 
+  "onboarding": {
+    "tier": "required",
+    "phase": "skills_required",
+    "order": 10,
+    "title": "Memory Server",
+    "summary": "Your AI's long-term memory. Stores decisions, learnings, and skills in a local SQLite database.",
+    "why_it_matters": "Every other skill depends on this. Without memory, Claude forgets everything between sessions.",
+    "estimated_minutes": 2,
+    "depends_on": ["foundation.workspace_root"],
+    "facts_schema": {
+      "package_installed": "boolean",
+      "db_initialized": "boolean",
+      "mcp_registered": "boolean",
+      "health_check_passed": "boolean"
+    },
+    "steps": [
+      {"id": "install_package", "label": "Install memory server", "kind": "command", "required": true, "command": {"all": "pip install -e skills/memory-server"}, "success_sets": ["package_installed"]},
+      {"id": "init_db", "label": "Initialize database", "kind": "command", "required": true, "command": {"all": "python scripts/init_db.py"}, "success_sets": ["db_initialized"]},
+      {"id": "register_mcp", "label": "Register MCP server", "kind": "command", "required": true, "command": {"all": "python scripts/skill-manager.py install memory-server"}, "success_sets": ["mcp_registered"]},
+      {"id": "verify", "label": "Verify memory responds", "kind": "probe", "required": true, "probe": "memory-server", "success_sets": ["health_check_passed"]}
+    ]
+  },
+
   "credentials": [],
 
   "configSchema": {

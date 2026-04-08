@@ -14,6 +14,23 @@
     "allow": []
   },
 
+  "onboarding": {
+    "tier": "required",
+    "phase": "skills_required",
+    "order": 20,
+    "title": "Spec-Driven Development",
+    "summary": "Turn ideas into structured specs, then into working code. The core development workflow.",
+    "why_it_matters": "This is how you go from 'I want to build X' to actual running software — with AI review and testing built in.",
+    "estimated_minutes": 1,
+    "depends_on": ["memory-server"],
+    "facts_schema": {
+      "skill_present": "boolean"
+    },
+    "steps": [
+      {"id": "verify", "label": "Verify spec skill files", "kind": "probe", "required": true, "probe": "spec", "success_sets": ["skill_present"]}
+    ]
+  },
+
   "credentials": [],
 
   "configSchema": {

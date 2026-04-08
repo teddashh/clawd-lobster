@@ -25,6 +25,25 @@
     "allow": []
   },
 
+  "onboarding": {
+    "tier": "required",
+    "phase": "skills_required",
+    "order": 40,
+    "title": "Evolve — Pattern Learning",
+    "summary": "Automatically reviews completed work every 2 hours and extracts reusable patterns. Applies salience decay to old memories.",
+    "why_it_matters": "Your AI gets smarter over time. Without this, it never learns from past work.",
+    "estimated_minutes": 2,
+    "depends_on": ["memory-server"],
+    "facts_schema": {
+      "script_present": "boolean",
+      "cron_registered": "boolean"
+    },
+    "steps": [
+      {"id": "verify_script", "label": "Verify evolve script", "kind": "probe", "required": true, "probe": "evolve", "success_sets": ["script_present"]},
+      {"id": "register_cron", "label": "Register cron job (every 2h)", "kind": "command", "required": true, "command": {"windows": "schtasks /Create /TN clawd-lobster-evolve /TR \"python scripts/evolve-tick.py\" /SC HOURLY /MO 2 /F", "unix": "echo '0 */2 * * * cd {{WRAPPER_DIR}} && python scripts/evolve-tick.py' | crontab -"}, "success_sets": ["cron_registered"]}
+    ]
+  },
+
   "credentials": [],
 
   "configSchema": {

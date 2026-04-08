@@ -17,6 +17,7 @@ from urllib.parse import urlparse, parse_qs
 
 from . import pages
 from . import onboarding
+from .onboarding import api as ob_api
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -109,13 +110,22 @@ class _Handler(BaseHTTPRequestHandler):
             "/api/status": self._api_status,
             "/api/workspaces": self._api_workspaces,
             "/api/squad/state": self._api_squad_state,
-            "/api/onboarding/state": self._api_onboarding_state,
+            "/api/onboarding/state": self._api_ob_state,
             "/api/onboarding/instructions": self._api_onboarding_instructions,
+            "/api/onboarding/manifest": self._api_ob_manifest,
+            "/api/onboarding/events": self._api_ob_events,
+            "/api/onboarding/health": self._api_ob_health,
+            "/api/controller": self._api_ob_controller,
+            "/api/skills/catalog": self._api_skills_catalog,
         }
 
         handler = routes.get(path)
         if handler:
             handler(query)
+        elif path.startswith("/api/onboarding/health/"):
+            item_id = path.split("/api/onboarding/health/", 1)[1]
+            data, status = ob_api.get_item_health(item_id)
+            self._send_json(data, status)
         elif path.startswith("/assets/"):
             self._serve_asset(path)
         else:
@@ -132,6 +142,13 @@ class _Handler(BaseHTTPRequestHandler):
             "/api/onboarding/complete": self._api_onboarding_complete,
             "/api/onboarding/handoff": self._api_onboarding_handoff,
             "/api/onboarding/update": self._api_onboarding_update,
+            "/api/onboarding/session": self._api_ob_create_session,
+            "/api/onboarding/intent": self._api_ob_intent,
+            "/api/onboarding/reconcile": self._api_ob_reconcile,
+            "/api/controller/acquire": self._api_ob_lease_acquire,
+            "/api/controller/renew": self._api_ob_lease_renew,
+            "/api/controller/release": self._api_ob_lease_release,
+            "/api/controller/handoff": self._api_ob_lease_handoff,
             "/api/workspaces/create": self._api_workspaces_create,
             "/api/squad/chat": self._api_squad_chat,
             "/api/squad/start": self._api_squad_start,
@@ -142,6 +159,10 @@ class _Handler(BaseHTTPRequestHandler):
         handler = routes.get(path)
         if handler:
             handler()
+        elif path.startswith("/api/skills/") and path.endswith("/verify"):
+            skill_id = path.split("/api/skills/", 1)[1].rsplit("/verify", 1)[0]
+            data, status = ob_api.verify_skill(skill_id)
+            self._send_json(data, status)
         else:
             self.send_error(404)
 
@@ -610,6 +631,67 @@ class _Handler(BaseHTTPRequestHandler):
             })
         except Exception as e:
             self._send_json({"ok": False, "error": str(e)})
+
+    # ── New onboarding API (backend-as-sole-authority) ────────────────────
+
+    def _api_ob_state(self, query: dict) -> None:
+        data, status = ob_api.get_state(query)
+        self._send_json(data, status)
+
+    def _api_ob_manifest(self, query: dict) -> None:
+        data, status = ob_api.get_manifest(query)
+        self._send_json(data, status)
+
+    def _api_ob_events(self, query: dict) -> None:
+        data, status = ob_api.get_events(query)
+        self._send_json(data, status)
+
+    def _api_ob_health(self, query: dict) -> None:
+        data, status = ob_api.get_health(query)
+        self._send_json(data, status)
+
+    def _api_ob_controller(self, query: dict) -> None:
+        data, status = ob_api.get_controller(query)
+        self._send_json(data, status)
+
+    def _api_skills_catalog(self, query: dict) -> None:
+        data, status = ob_api.get_skills_catalog(query)
+        self._send_json(data, status)
+
+    def _api_ob_create_session(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.create_session(body)
+        self._send_json(data, status)
+
+    def _api_ob_intent(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.apply_intent(body)
+        self._send_json(data, status)
+
+    def _api_ob_reconcile(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.run_reconcile(body)
+        self._send_json(data, status)
+
+    def _api_ob_lease_acquire(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.acquire_lease(body)
+        self._send_json(data, status)
+
+    def _api_ob_lease_renew(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.renew_lease(body)
+        self._send_json(data, status)
+
+    def _api_ob_lease_release(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.release_lease(body)
+        self._send_json(data, status)
+
+    def _api_ob_lease_handoff(self) -> None:
+        body = self._read_body()
+        data, status = ob_api.handoff_lease(body)
+        self._send_json(data, status)
 
 
 # ── Version helper ─────────────────────────────────────────────────────────

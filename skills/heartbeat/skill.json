@@ -14,6 +14,25 @@
     "allow": []
   },
 
+  "onboarding": {
+    "tier": "required",
+    "phase": "skills_required",
+    "order": 50,
+    "title": "Heartbeat — Session Monitor",
+    "summary": "Checks Claude Code session health every 30 minutes. Auto-revives dead sessions.",
+    "why_it_matters": "Without this, Claude Code sessions silently die and nobody notices.",
+    "estimated_minutes": 2,
+    "depends_on": [],
+    "facts_schema": {
+      "script_present": "boolean",
+      "cron_registered": "boolean"
+    },
+    "steps": [
+      {"id": "verify_script", "label": "Verify heartbeat script", "kind": "probe", "required": true, "probe": "heartbeat", "success_sets": ["script_present"]},
+      {"id": "register_cron", "label": "Register scheduler (every 30m)", "kind": "command", "required": true, "command": {"windows": "schtasks /Create /TN clawd-lobster-heartbeat /TR \"powershell scripts/heartbeat.ps1\" /SC MINUTE /MO 30 /F", "unix": "echo '*/30 * * * * cd {{WRAPPER_DIR}} && bash scripts/heartbeat.sh' | crontab -"}, "success_sets": ["cron_registered"]}
+    ]
+  },
+
   "credentials": [],
 
   "configSchema": {
