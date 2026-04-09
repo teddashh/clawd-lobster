@@ -826,7 +826,8 @@ def memory_search(query: str, domain: str = "all", limit: int = 10) -> str:
     cur.execute(sql, params)
     rows = cur.fetchall()
     if not rows:
-        return f"No results for '{query}'"
+        # Fallback to local text search when Oracle finds nothing
+        return _local_text_search(query, limit)
     lines = [f"Search '{query}' ({len(rows)} results):"]
     for r in rows:
         lines.append(f"  [{r[3]}|{r[4]}] {r[1][:55]} | sal={r[5]:.2f} | tags={r[2]}")
@@ -872,6 +873,23 @@ def _get_embedding(text: str):
             resp = client.embeddings.create(model=config["embedding"]["model"], input=text)
             return resp.data[0].embedding
         except Exception:
+            return None
+    elif provider == "local":
+        # Local embedding server (llama-server with embedding model)
+        endpoint = config["embedding"].get("endpoint", "http://127.0.0.1:8082")
+        try:
+            import urllib.request
+            import urllib.error
+            body = json.dumps({"input": text, "model": "embedding"}).encode("utf-8")
+            req = urllib.request.Request(
+                f"{endpoint}/v1/embeddings",
+                data=body,
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read())
+                return data["data"][0]["embedding"]
+        except (urllib.error.URLError, KeyError, Exception):
             return None
     return None
 
