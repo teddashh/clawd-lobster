@@ -799,8 +799,9 @@ def run_decay(workspace_id: str = None, decay_factor: float = 0.95, stale_days: 
 
 @mcp.tool()
 def memory_search(query: str, domain: str = "all", limit: int = 10) -> str:
-    """Search across ALL workspaces and ALL memory types (decisions, resolved, knowledge, questions).
-    Uses Oracle vector search if available, falls back to local text search."""
+    """Search across ALL workspaces, ALL memory types, AND the Vault (70K+ emails, docs, facts).
+    Uses Oracle vector search if available, falls back to text search.
+    Searches: KNOWLEDGE_ITEMS (summaries) + VAULT_DOCUMENTS (emails/docs) + VAULT_FACTS."""
     oracle = get_oracle()
     if oracle is None:
         return _local_text_search(query, limit)
@@ -808,29 +809,72 @@ def memory_search(query: str, domain: str = "all", limit: int = 10) -> str:
     cur = oracle.cursor()
     embedding = _get_embedding(query)
     if embedding:
-        return _vector_search(cur, embedding, domain, limit, oracle)
+        result = _vector_search(cur, embedding, domain, limit, oracle)
+        if result and "No vector search results" not in result:
+            return result
 
-    sql = """
-        SELECT k.id, k.title, k.tags, w.workspace_id, w.domain,
-               COALESCE(k.salience, 1.0) as sal
-        FROM KNOWLEDGE_ITEMS k JOIN WORKSPACES w ON k.workspace_id = w.workspace_id
-        WHERE LOWER(k.title) LIKE :q OR LOWER(k.tags) LIKE :q OR LOWER(k.content) LIKE :q
-    """
-    params = {"q": f"%{query.lower()}%"}
-    if domain != "all":
-        sql += " AND w.domain = :domain"
-        params["domain"] = domain
-    sql += " ORDER BY sal DESC, k.created_at DESC FETCH FIRST :lim ROWS ONLY"
-    params["lim"] = limit
+    q = f"%{query.lower()}%"
+    all_results = []
 
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    if not rows:
-        # Fallback to local text search when Oracle finds nothing
+    # 1. Search KNOWLEDGE_ITEMS (workspace knowledge, skills, decisions)
+    try:
+        sql_ki = """
+            SELECT k.id, k.title, k.tags, w.workspace_id, w.domain,
+                   COALESCE(k.salience, 1.0) as sal
+            FROM KNOWLEDGE_ITEMS k JOIN WORKSPACES w ON k.workspace_id = w.workspace_id
+            WHERE LOWER(k.title) LIKE :q OR LOWER(k.tags) LIKE :q OR LOWER(k.content) LIKE :q
+        """
+        params_ki = {"q": q}
+        if domain != "all":
+            sql_ki += " AND w.domain = :domain"
+            params_ki["domain"] = domain
+        sql_ki += " ORDER BY sal DESC, k.created_at DESC FETCH FIRST :lim ROWS ONLY"
+        params_ki["lim"] = limit
+        cur.execute(sql_ki, params_ki)
+        for r in cur.fetchall():
+            all_results.append((float(r[5]), f"  [KNO|{r[3]}] {str(r[1])[:55]} | sal={r[5]:.2f}"))
+    except Exception:
+        pass
+
+    # 2. Search VAULT_DOCUMENTS (emails, SOPs, notes, decisions)
+    try:
+        sql_vd = """
+            SELECT d.id, d.title, d.doc_type, d.occurred_at, d.email_from
+            FROM VAULT_DOCUMENTS d
+            WHERE LOWER(d.title) LIKE :q OR LOWER(d.content) LIKE :q
+            ORDER BY d.occurred_at DESC FETCH FIRST :lim ROWS ONLY
+        """
+        cur.execute(sql_vd, {"q": q, "lim": limit})
+        for r in cur.fetchall():
+            date_str = str(r[3])[:10] if r[3] else "?"
+            from_str = f" from:{r[4]}" if r[4] else ""
+            all_results.append((0.5, f"  [VAULT|{r[2]}] {str(r[1])[:50]} | {date_str}{from_str}"))
+    except Exception:
+        pass
+
+    # 3. Search VAULT_FACTS (extracted claims, assessments)
+    try:
+        sql_vf = """
+            SELECT f.id, f.claim, f.fact_type, f.confidence, f.fact_date
+            FROM VAULT_FACTS f
+            WHERE LOWER(f.claim) LIKE :q
+            ORDER BY f.created_at DESC FETCH FIRST :lim ROWS ONLY
+        """
+        cur.execute(sql_vf, {"q": q, "lim": min(limit, 5)})
+        for r in cur.fetchall():
+            all_results.append((float(r[3] or 0.5), f"  [FACT|{r[2]}] {str(r[1])[:55]} | conf={r[3]}"))
+    except Exception:
+        pass
+
+    if not all_results:
+        # Fallback to local text search
         return _local_text_search(query, limit)
-    lines = [f"Search '{query}' ({len(rows)} results):"]
-    for r in rows:
-        lines.append(f"  [{r[3]}|{r[4]}] {r[1][:55]} | sal={r[5]:.2f} | tags={r[2]}")
+
+    # Sort by salience/confidence descending, take top N
+    all_results.sort(key=lambda x: x[0], reverse=True)
+    lines = [f"Search '{query}' ({len(all_results)} results across knowledge + vault):"]
+    for _, line in all_results[:limit]:
+        lines.append(line)
     return "\n".join(lines)
 
 
