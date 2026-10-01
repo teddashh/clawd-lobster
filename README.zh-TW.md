@@ -124,7 +124,7 @@ chmod +x install.sh && ./install.sh
 
 ### 3. Heartbeat
 
-Heartbeat 靠作業系統的排程器（Task Scheduler、cron 或 launchd）每 30 分鐘跑一次，不是常駐的 daemon。它會用程序名稱替每個工作區找正在執行的 `claude`；找不到的話，就在那個工作區開一個終端機執行 `claude --resume`，這會開出 session 選單，而不是接回特定的 session。
+Heartbeat 靠作業系統的排程器（Task Scheduler、cron 或 launchd）每 30 分鐘跑一次，不是常駐的 daemon。它會用程式名稱替每個工作區找正在執行的 `claude`；找不到的話，就在那個工作區開一個終端機執行 `claude --resume`，這會開出 session 選單，而不是接回特定的 session。
 
 ### 4. 所有機器，一個腦袋
 
@@ -270,7 +270,7 @@ Dashboard (the eyes)   ->  web UI at 127.0.0.1:3333
 - 儀表板有幾個端點（包括建立工作區與啟動 Squad 的端點）不需要 session token 就能呼叫，也不檢查請求從哪裡來
 - 審查五輪後若 Reviewer 仍未核准，規格還是會被標成已核准，網頁流程會直接進入實作
 - 每 30 分鐘的同步會對工作區根目錄底下的每個 git repo 自動 commit 並 push，新的 Markdown、JSON、YAML、HTML 與腳本檔也會一起加進去，不想被推上去的東西請放在這個資料夾以外。evolve 推送的提案檔與 commit 訊息還會寫上這台機器的主機名稱
-- Heartbeat 只用程序名稱判斷 session 是否還在執行，重新開啟時也只是執行單純的 `claude --resume`
+- Heartbeat 只用程式名稱判斷 session 是否還在執行，重新開啟時也只是執行單純的 `claude --resume`
 - Spec Squad 需要 `[agent]` 選用相依套件；向量搜尋與 Vault 需要 Oracle 資料庫；記憶伺服器需要 Python 3.11 以上
 
 ---
