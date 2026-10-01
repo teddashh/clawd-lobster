@@ -1,3 +1,5 @@
+> 이 README는 이전 버전 기준입니다. 최신 내용은 [영어 README](README.md)와 [프로젝트 페이지](https://teddashh.github.io/clawd-lobster/)를 참고하세요.
+
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
 
 # Clawd-Lobster
