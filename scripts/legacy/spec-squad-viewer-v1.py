@@ -438,6 +438,13 @@ class SquadHandler(http.server.BaseHTTPRequestHandler):
     workspace: Path = None  # set by factory
 
     def do_GET(self):
+        # Only answer for 127.0.0.1 or localhost on our port, so a web page
+        # cannot read the squad state through DNS rebinding
+        port = self.server.server_address[1]
+        host = (self.headers.get("Host") or "").strip().lower()
+        if host not in (f"127.0.0.1:{port}", f"localhost:{port}"):
+            self.send_error(403)
+            return
         if self.path == "/api/state":
             self.serve_state()
         elif self.path == "/" or self.path == "/index.html":

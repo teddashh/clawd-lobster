@@ -1,13 +1,36 @@
 """
-clawd_lobster.server — HTTP server for the web UI.
+clawd_lobster.server: HTTP server for the web UI.
 
 Serves the onboarding wizard, workspace dashboard, and spec-squad interface
 on localhost. Uses stdlib http.server -- no external dependencies.
+Suppresses request logs for clean output.
 
-Binds to 127.0.0.1 only (security). Suppresses request logs for clean output.
+Security model. The goal is that no web page the user happens to visit can
+drive this server (CSRF) or read from it through DNS rebinding:
+
+* It binds to 127.0.0.1 only.
+* Every request must carry a Host header of 127.0.0.1:<port> or
+  localhost:<port>; anything else gets 403 (DNS rebinding).
+* A request with an Origin header must come from the server's own origin
+  (http://<that host>); any other Origin, including "null", gets 403.
+* Every POST must send the per-process token in the X-Clawd-Token header.
+  The token comes from secrets.token_urlsafe at startup, is injected into
+  every HTML page as <meta name="clawd-token">, is written to
+  ~/.clawd-lobster/server-<port>.token (mode 0600) for local CLI clients,
+  and is compared with hmac.compare_digest.
+* No Access-Control-* headers are ever sent, and OPTIONS (CORS preflight)
+  is always answered with 403.
+* HTML responses carry Cache-Control: no-store and refuse to be framed.
+
+The token protects against web pages, not against other programs running
+on the same machine: any local process can read it from a served page.
 """
 
+import hmac
 import json
+import os
+import re
+import secrets
 import sys
 import threading
 import webbrowser
@@ -24,6 +47,52 @@ from .onboarding import api as ob_api
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 SQUAD_STATE_FILE = ".spec-squad.json"
+
+# ── Request guard settings ─────────────────────────────────────────────────
+
+BIND_HOST = "127.0.0.1"
+TOKEN_HEADER = "X-Clawd-Token"
+TOKEN_META_NAME = "clawd-token"
+_ALLOWED_HOSTNAMES = ("127.0.0.1", "localhost")
+
+# Per-process UI token. A new one is made every time the server starts.
+_CLAWD_TOKEN = secrets.token_urlsafe(32)
+
+
+def get_ui_token() -> str:
+    """Return this process's UI token (what the pages send as X-Clawd-Token)."""
+    return _CLAWD_TOKEN
+
+
+def token_file_path(port: int) -> Path:
+    """Where start_server() writes the token for local CLI clients."""
+    return Path.home() / ".clawd-lobster" / f"server-{port}.token"
+
+
+def _allowed_hosts(port: int) -> set[str]:
+    """Host header values accepted for a server listening on *port*."""
+    hosts = {f"{name}:{port}" for name in _ALLOWED_HOSTNAMES}
+    if port == 80:  # browsers leave out the default port
+        hosts.update(_ALLOWED_HOSTNAMES)
+    return hosts
+
+
+def _token_matches(sent: str | None) -> bool:
+    """Constant-time comparison of a client-sent token with this process's."""
+    if not sent:
+        return False
+    return hmac.compare_digest(
+        sent.strip().encode("utf-8", "replace"), _CLAWD_TOKEN.encode("utf-8"),
+    )
+
+
+def _inject_token(html: str) -> str:
+    """Put <meta name="clawd-token"> at the start of <head> (or of the page)."""
+    meta = f'<meta name="{TOKEN_META_NAME}" content="{_CLAWD_TOKEN}">'
+    m = re.search(r"<head(\s[^>]*)?>", html, re.IGNORECASE)
+    if m:
+        return html[:m.end()] + meta + html[m.end():]
+    return meta + html
 
 
 def _read_json(path: Path, default=None):
@@ -96,6 +165,43 @@ class _Handler(BaseHTTPRequestHandler):
         """Suppress default request logging for clean terminal output."""
         pass
 
+    # ── Request guard (DNS rebinding, CSRF) ───────────────────────────────
+
+    def _reject(self, status: int, message: str) -> None:
+        body = json.dumps({"ok": False, "error": message}).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _guard(self, state_changing: bool) -> bool:
+        """Check Host, Origin and (for state-changing requests) the UI token.
+
+        Returns True when the request may proceed. Otherwise sends 403 and
+        returns False. Runs before any routing or session auth.
+        """
+        port = self.server.server_address[1]
+        host = (self.headers.get("Host") or "").strip().lower()
+        if host not in _allowed_hosts(port):
+            self._reject(403, "Forbidden: unexpected Host header")
+            return False
+
+        origin = self.headers.get("Origin")
+        if origin is not None and origin.strip().lower() != f"http://{host}":
+            self._reject(403, "Forbidden: cross-origin request")
+            return False
+
+        if state_changing and not _token_matches(self.headers.get(TOKEN_HEADER)):
+            self._reject(403, f"Forbidden: missing or invalid {TOKEN_HEADER} header")
+            return False
+        return True
+
+    def do_OPTIONS(self):
+        """Never answer a CORS preflight permissively: no Access-Control-* headers."""
+        self._reject(403, "Forbidden: cross-origin requests are not supported")
+
     # ── Token auth ────────────────────────────────────────────────────────
 
     def _check_token(self, query: dict | None = None) -> bool:
@@ -161,6 +267,8 @@ class _Handler(BaseHTTPRequestHandler):
     # ── GET routes ─────────────────────────────────────────────────────────
 
     def do_GET(self):
+        if not self._guard(state_changing=False):
+            return
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
         query = parse_qs(parsed.query)
@@ -212,13 +320,18 @@ class _Handler(BaseHTTPRequestHandler):
     # ── POST routes ────────────────────────────────────────────────────────
 
     def do_POST(self):
+        # Every POST changes state or runs something: Host, Origin and the
+        # X-Clawd-Token header are checked before anything else.
+        if not self._guard(state_changing=True):
+            return
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
         query = parse_qs(parsed.query)
 
-        # Auth-exempt endpoints:
+        # Endpoints that need no onboarding session token (the X-Clawd-Token
+        # check above still applies to them):
         # - session creation (returns token), prereq check (read-only)
-        # - workspace/squad (legacy pages.py UI, will be migrated to new auth flow)
+        # - workspace/squad (pages.py UI, which has no onboarding session)
         _NO_AUTH = {
             "/api/onboarding/session", "/api/onboarding/check",
             "/api/workspaces/create", "/api/squad/chat", "/api/squad/start",
@@ -273,10 +386,16 @@ class _Handler(BaseHTTPRequestHandler):
     # ── Response helpers ───────────────────────────────────────────────────
 
     def _send_html(self, html: str, status: int = 200) -> None:
+        body = _inject_token(html).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        # The page carries the UI token: keep it out of caches and frames
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
         self.end_headers()
-        self.wfile.write(html.encode("utf-8"))
+        self.wfile.write(body)
 
     def _send_json(self, data: dict, status: int = 200) -> None:
         self.send_response(status)
@@ -451,8 +570,6 @@ class _Handler(BaseHTTPRequestHandler):
 
     # Legacy _api_onboarding_update removed — use /api/onboarding/intent instead.
 
-        self._send_json({"ok": True, "state": state})
-
     # ── API: workspaces ────────────────────────────────────────────────────
 
     def _api_workspaces(self, query: dict) -> None:
@@ -608,6 +725,10 @@ class _Handler(BaseHTTPRequestHandler):
             state_file = ws_path / SQUAD_STATE_FILE
             if state_file.exists():
                 state = _read_json(state_file)
+                # "reviewer" or "round_limit" (also for state files that
+                # predate the field), so the UI can show forced approvals
+                from . import squad
+                state["approval"] = squad.approval_source(state)
                 data["squad_state"] = state
                 data["phase"] = state.get("phase", "discovery")
 
@@ -807,14 +928,31 @@ def _get_version() -> str:
 
 # ── Server entry point ────────────────────────────────────────────────────
 
+def _write_token_file(port: int) -> Path | None:
+    """Write the UI token to ~/.clawd-lobster/server-<port>.token (mode 0600)."""
+    path = token_file_path(port)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(_CLAWD_TOKEN)
+        try:
+            os.chmod(path, 0o600)  # the mode above only applies to new files
+        except OSError:
+            pass
+        return path
+    except OSError:
+        return None
+
+
 def start_server(port: int = 3333, open_browser: bool = True) -> None:
-    """Start the clawd-lobster web server.
+    """Start the clawd-lobster web server on 127.0.0.1.
 
     Args:
         port: TCP port to bind (default 3333).
         open_browser: Open the default browser on launch.
     """
-    server_address = ("127.0.0.1", port)
+    server_address = (BIND_HOST, port)
 
     try:
         httpd = HTTPServer(server_address, _Handler)
@@ -826,7 +964,10 @@ def start_server(port: int = 3333, open_browser: bool = True) -> None:
         raise
 
     url = f"http://127.0.0.1:{port}"
+    token_path = _write_token_file(port)
     print(f"clawd-lobster server running at {url}")
+    if token_path:
+        print(f"API token for local scripts: {token_path} (send it as {TOKEN_HEADER})")
     print("Press Ctrl+C to stop.\n")
 
     if open_browser:
@@ -842,4 +983,10 @@ def start_server(port: int = 3333, open_browser: bool = True) -> None:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\nServer stopped.")
+    finally:
         httpd.server_close()
+        if token_path:
+            try:
+                token_path.unlink()
+            except OSError:
+                pass

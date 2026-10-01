@@ -77,6 +77,13 @@ if (-not (Test-Path $registryFile)) {
     $dataDir = if ($config.data_dir) { $config.data_dir } else { $wrapperDir }
     $registryFile = "$dataDir\workspaces.json"
 }
+if (-not (Test-Path $registryFile)) {
+    # The registry is per-machine state and is not shipped in the repo, so
+    # start an empty one where the other scripts look for it
+    $registryFile = "$wrapperDir\workspaces.json"
+    [PSCustomObject]@{ owner = ""; workspace_root = ""; workspaces = @() } |
+        ConvertTo-Json -Depth 5 | Set-Content $registryFile -Encoding UTF8
+}
 
 if (Test-Path $registryFile) {
     $registry = Get-Content $registryFile -Raw | ConvertFrom-Json

@@ -198,12 +198,16 @@ def memory_propose_correction(wiki_page: str, issue: str, evidence: str = "",
         ws = detect_workspace()
         pending_dir = pathlib.Path.cwd() / "knowledge" / ".pending"
         if pending_dir.exists():
+            # knowledge/ is synced via git: use a configured label, never
+            # the host name, for the "Filed by" line.
+            from .config import get_machine_label
+            label = get_machine_label()
+            filed_by = f"**Filed by:** {label}\n" if label else ""
             pending_file = pending_dir / f"{wiki_page.replace('/', '_')}-{rid[:8]}.md"
             pending_content = f"""# Correction Proposal: {wiki_page}
 
 **Severity:** {severity}
-**Filed by:** {mid}
-**Issue:** {issue}
+{filed_by}**Issue:** {issue}
 
 ## Evidence
 {evidence}

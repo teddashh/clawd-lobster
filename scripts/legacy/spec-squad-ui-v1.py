@@ -14,9 +14,11 @@ No external dependencies — stdlib only.
 """
 
 import argparse
+import hmac
 import http.server
 import json
 import os
+import secrets
 import subprocess
 import sys
 import threading
@@ -29,6 +31,42 @@ from pathlib import Path
 DEFAULT_PORT = 3333
 REPO_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = Path(__file__).resolve().parent
+
+# ── Request guard ────────────────────────────────────────────────────────────
+# Same rules as clawd_lobster/server.py, so no web page the user visits can
+# drive this server (CSRF) or read it through DNS rebinding: the Host must be
+# 127.0.0.1 or localhost on our port, an Origin header must be our own
+# origin, and every POST must send the per-process token (injected into the
+# page as <meta name="clawd-token">) in the X-Clawd-Token header.
+
+_UI_TOKEN = secrets.token_urlsafe(32)
+
+
+def _request_allowed(handler, state_changing: bool) -> bool:
+    """Send 403 and return False unless the request passes the guard."""
+    port = handler.server.server_address[1]
+    host = (handler.headers.get("Host") or "").strip().lower()
+    origin = handler.headers.get("Origin")
+    sent = (handler.headers.get("X-Clawd-Token") or "").strip()
+    allowed = (
+        host in (f"127.0.0.1:{port}", f"localhost:{port}")
+        and (origin is None or origin.strip().lower() == f"http://{host}")
+        and (not state_changing
+             or hmac.compare_digest(sent.encode("utf-8"), _UI_TOKEN.encode("utf-8")))
+    )
+    if not allowed:
+        body = b'{"ok": false, "error": "Forbidden"}'
+        handler.send_response(403)
+        handler.send_header("Content-Type", "application/json")
+        handler.send_header("Content-Length", str(len(body)))
+        handler.end_headers()
+        handler.wfile.write(body)
+    return allowed
+
+
+def _with_token(html: str) -> str:
+    return html.replace(
+        "<head>", f'<head>\n<meta name="clawd-token" content="{_UI_TOKEN}">', 1)
 
 # ── Shared state ─────────────────────────────────────────────────────────────
 
@@ -451,7 +489,10 @@ async function launch() {
   try {
     const res = await fetch('/api/start', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Clawd-Token': document.querySelector('meta[name="clawd-token"]').content,
+      },
       body: JSON.stringify({ ...data, workspace_name: wsName, mode: mode }),
     });
     const result = await res.json();
@@ -830,6 +871,8 @@ class SquadUIHandler(http.server.BaseHTTPRequestHandler):
     workspace: Path = None
 
     def do_GET(self):
+        if not _request_allowed(self, state_changing=False):
+            return
         if self.path == "/" or self.path == "/index.html":
             if self.workspace and (self.workspace / ".spec-squad.json").exists():
                 self.serve_page(DASHBOARD_PAGE)
@@ -843,6 +886,8 @@ class SquadUIHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):
+        if not _request_allowed(self, state_changing=True):
+            return
         if self.path == "/api/start":
             self.handle_start()
         else:
@@ -851,8 +896,9 @@ class SquadUIHandler(http.server.BaseHTTPRequestHandler):
     def serve_page(self, html: str):
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(html.encode("utf-8"))
+        self.wfile.write(_with_token(html).encode("utf-8"))
 
     def serve_state(self):
         data = {}

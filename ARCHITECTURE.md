@@ -1,4 +1,4 @@
-# Architecture — Clawd-Lobster
+# Clawd-Lobster Architecture
 
 Detailed project structure and internals. For overview, see [README.md](README.md).
 
@@ -56,7 +56,7 @@ clawd-lobster/
 │
 ├── knowledge/                       Shared knowledge base (git-synced)
 ├── soul/                            Agent personality (optional)
-├── workspaces.json                  Workspace registry
+├── workspaces.example.json          Registry format (workspaces.json is per-machine, untracked)
 ├── install.ps1                      Windows installer (4-phase)
 ├── install.sh                       Linux/macOS installer (4-phase)
 ├── Dockerfile                       Docker build

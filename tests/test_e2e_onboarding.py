@@ -8,6 +8,7 @@ Run: python tests/test_e2e_onboarding.py
 """
 import json
 import os
+import re
 import sys
 import tempfile
 import threading
@@ -29,6 +30,7 @@ from clawd_lobster import server as cl_server  # noqa: E402
 
 
 HOST = "127.0.0.1"
+UI_TOKEN = None  # read from the served page in main(); sent as X-Clawd-Token
 
 
 def run_step(label, fn):
@@ -41,9 +43,14 @@ def run_step(label, fn):
         raise
 
 
-def request_json(port, method, path, body=None, token=None):
+def request_json(port, method, path, body=None, token=None, ui_token=True, extra_headers=None):
     headers = {}
     payload = None
+
+    # Every POST needs the per-process UI token, like the web UI sends it
+    if method == "POST" and ui_token and UI_TOKEN:
+        headers["X-Clawd-Token"] = UI_TOKEN
+    headers.update(extra_headers or {})
 
     if body is not None:
         payload = json.dumps(body).encode("utf-8")
@@ -116,6 +123,36 @@ def wait_for_server(port, timeout=5.0):
     raise RuntimeError("Server did not become ready in time")
 
 
+def fetch_ui_token(port):
+    status, data = request_json(port, "GET", "/onboarding")
+    assert_status(status, 200, "GET /onboarding")
+    match = re.search(r'<meta name="clawd-token" content="([^"]+)">', data.get("raw", ""))
+    if not match:
+        raise AssertionError("UI token meta tag missing from /onboarding")
+    return match.group(1)
+
+
+def assert_request_guard(port, session_id, token):
+    """CSRF and DNS rebinding checks run before session auth."""
+    acquire = {"session_id": session_id, "holder": "web"}
+    checks = [
+        ("POST without X-Clawd-Token", "POST", "/api/controller/acquire", acquire,
+         {"ui_token": False}),
+        ("POST with a wrong X-Clawd-Token", "POST", "/api/controller/acquire", acquire,
+         {"ui_token": False, "extra_headers": {"X-Clawd-Token": "wrong"}}),
+        ("POST from another origin", "POST", "/api/workspaces/create", {"name": "x"},
+         {"extra_headers": {"Origin": "http://attacker.example"}}),
+        ("GET with a foreign Host", "GET", "/api/status", None,
+         {"extra_headers": {"Host": f"attacker.example:{port}"}}),
+        ("CORS preflight", "OPTIONS", "/api/workspaces/create", None, {}),
+    ]
+    for label, method, path, body, kwargs in checks:
+        status, data = request_json(port, method, path, body=body, token=token, **kwargs)
+        assert_status(status, 403, label)
+        if UI_TOKEN in json.dumps(data):
+            raise AssertionError(f"{label}: response leaks the UI token")
+
+
 def assert_unauthorized(port, session_id):
     checks = [
         ("GET", f"/api/onboarding/state?session_id={session_id}", None),
@@ -157,6 +194,9 @@ def main():
         run_step("start server on random port", thread.start)
         run_step("wait for server readiness", lambda: wait_for_server(port))
 
+        global UI_TOKEN
+        UI_TOKEN = run_step("read UI token from the served page", lambda: fetch_ui_token(port))
+
         # Step 1: Create session
         session = run_step(
             "create onboarding session",
@@ -167,6 +207,8 @@ def main():
         session_id = session["session_id"]
 
         # Step 2: Auth enforcement
+        run_step("requests failing the Host, Origin or UI token checks get 403",
+                 lambda: assert_request_guard(port, session_id, token))
         run_step("protected endpoints reject missing token",
                  lambda: assert_unauthorized(port, session_id))
 

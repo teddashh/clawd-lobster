@@ -1,6 +1,6 @@
 # Proposal: Add unit tests for core modules
 
-**Source:** evolve-tick on CastleRidge_AI1
+**Source:** evolve-tick
 **Date:** 2026-04-08
 **Workspace:** clawd-lobster
 **Effort:** medium

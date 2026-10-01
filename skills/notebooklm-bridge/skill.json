@@ -60,7 +60,8 @@
       },
       "auto_remove_watermark": {
         "type": "boolean",
-        "description": "Auto-remove NotebookLM watermark from generated slides and infographics"
+        "default": false,
+        "description": "Remove the NotebookLM watermark from downloaded slides and infographics. Off by default; removing it may conflict with Google's terms, so check NotebookLM's terms before turning it on"
       }
     }
   },
@@ -68,7 +69,7 @@
     "auto_sync_sources": true,
     "default_language": "zh_Hant",
     "auto_create_notebook": true,
-    "auto_remove_watermark": true
+    "auto_remove_watermark": false
   },
   "healthCheck": {
     "type": "command",

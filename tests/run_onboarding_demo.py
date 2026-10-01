@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Full onboarding demo — runs the complete flow via HTTP API."""
 import json
+import re
 import sys
 from http.client import HTTPConnection
 
@@ -8,12 +9,28 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 HOST = "127.0.0.1"
 PORT = 3333
+_UI_TOKEN = None
+
+
+def ui_token():
+    """The server's per-process token, read from the meta tag in its pages."""
+    global _UI_TOKEN
+    if _UI_TOKEN is None:
+        conn = HTTPConnection(HOST, PORT, timeout=10)
+        conn.request("GET", "/onboarding")
+        html = conn.getresponse().read().decode("utf-8")
+        conn.close()
+        m = re.search(r'<meta name="clawd-token" content="([^"]+)"', html)
+        _UI_TOKEN = m.group(1) if m else ""
+    return _UI_TOKEN
 
 
 def api(method, path, body=None, token=None):
     h = {"Content-Type": "application/json"}
     if token:
         h["Authorization"] = f"Bearer {token}"
+    if method == "POST":
+        h["X-Clawd-Token"] = ui_token()
     conn = HTTPConnection(HOST, PORT, timeout=10)
     payload = json.dumps(body).encode() if body else None
     conn.request(method, path, body=payload, headers=h)

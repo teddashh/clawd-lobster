@@ -55,6 +55,10 @@ def generate_handoff(
     items_summary = _build_items_summary(state)
     api_reference = _build_api_reference(port)
     token_display = token if token else "YOUR_TOKEN"
+    # Every POST also needs the server's per-process UI token. It changes on
+    # each restart, so the examples read it from the file the server writes.
+    ui_token_file = f"~/.clawd-lobster/server-{port}.token"
+    ui_token_header = f'-H "X-Clawd-Token: $(cat {ui_token_file})"'
 
     claude_md = f"""# Clawd-Lobster Onboarding — Agent Guide
 
@@ -68,6 +72,9 @@ You are the conversational guide. Together you and the web are co-pilots.
 - **API Base:** `http://localhost:{port}`
 - **Current Phase:** `{state.get('phase', 'unknown')}`
 - **Language:** `{state.get('lang', 'en')}`
+- **UI token:** every POST must also send an `X-Clawd-Token` header. The server
+  writes the token to `{ui_token_file}` when it starts (a new one on every
+  restart); the examples below read it from there.
 
 ## How to Work
 
@@ -76,13 +83,15 @@ You are the conversational guide. Together you and the web are co-pilots.
    curl -s -X POST http://localhost:{port}/api/controller/acquire \\
      -H 'Content-Type: application/json' \\
      -H 'Authorization: Bearer {token_display}' \\
+     {ui_token_header} \\
      -d '{{"session_id":"{session_id}","holder":"claude"}}'
    ```
    Save the `lease_id` from the response. Renew every 25 seconds.
 
 2. **Read current state** to know what's pending:
    ```bash
-   curl -s "http://localhost:{port}/api/onboarding/state?session_id={session_id}"
+   curl -s "http://localhost:{port}/api/onboarding/state?session_id={session_id}" \\
+     -H 'Authorization: Bearer {token_display}'
    ```
 
 3. **Run skill setup** for the next pending item:
@@ -90,6 +99,7 @@ You are the conversational guide. Together you and the web are co-pilots.
    curl -s -X POST http://localhost:{port}/api/skills/SKILL_ID/install \\
      -H 'Content-Type: application/json' \\
      -H 'Authorization: Bearer {token_display}' \\
+     {ui_token_header} \\
      -d '{{"session_id":"{session_id}","lease_id":"YOUR_LEASE_ID","skill_id":"SKILL_ID"}}'
    ```
 
@@ -98,6 +108,7 @@ You are the conversational guide. Together you and the web are co-pilots.
    curl -s -X POST http://localhost:{port}/api/onboarding/intent \\
      -H 'Content-Type: application/json' \\
      -H 'Authorization: Bearer {token_display}' \\
+     {ui_token_header} \\
      -d '{{"session_id":"{session_id}","lease_id":"YOUR_LEASE_ID","intent":"set_foundation","item_id":"foundation.language","payload":{{"value":"en"}}}}'
    ```
 
@@ -106,6 +117,7 @@ You are the conversational guide. Together you and the web are co-pilots.
    curl -s -X POST http://localhost:{port}/api/jobs/register \\
      -H 'Content-Type: application/json' \\
      -H 'Authorization: Bearer {token_display}' \\
+     {ui_token_header} \\
      -d '{{"skill_id":"evolve"}}'
    ```
 
@@ -114,6 +126,7 @@ You are the conversational guide. Together you and the web are co-pilots.
    curl -s -X POST http://localhost:{port}/api/controller/release \\
      -H 'Content-Type: application/json' \\
      -H 'Authorization: Bearer {token_display}' \\
+     {ui_token_header} \\
      -d '{{"session_id":"{session_id}","holder":"claude","lease_id":"YOUR_LEASE_ID"}}'
    ```
 
@@ -285,6 +298,10 @@ def _build_items_summary(state: dict) -> str:
 def _build_api_reference(port: int) -> str:
     """Build concise API reference for CLAUDE.md."""
     return f"""## Quick API Reference
+
+Every request below needs `Authorization: Bearer <session token>`. POST
+requests also need `X-Clawd-Token` with the token from
+`~/.clawd-lobster/server-{port}.token`.
 
 | Action | Method | Endpoint |
 |--------|--------|----------|

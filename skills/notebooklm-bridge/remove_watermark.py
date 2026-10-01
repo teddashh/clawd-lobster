@@ -17,6 +17,10 @@ Usage:
     python remove_watermark.py *.pdf                        # batch mode
 
 Based on: https://huggingface.co/spaces/dseditor/WaterMarkLM (MIT)
+
+The notebooklm-bridge skill never runs this on its own: auto_remove_watermark
+is false by default. Removing the NotebookLM watermark may conflict with
+Google's terms; check NotebookLM's terms of service before using it.
 """
 
 import argparse
@@ -381,7 +385,9 @@ def process_pdf(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Remove NotebookLM watermark from PDF slides/infographics"
+        description="Remove NotebookLM watermark from PDF slides/infographics",
+        epilog="Removing the NotebookLM watermark may conflict with Google's terms. "
+               "Check NotebookLM's terms of service before using this.",
     )
     parser.add_argument("input", nargs="+", help="PDF file(s) to process")
     parser.add_argument("-o", "--output", help="Output file path (single file mode)")
