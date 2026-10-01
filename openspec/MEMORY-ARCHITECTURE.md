@@ -1,4 +1,4 @@
-# Memory Architecture v2 — The Thin Ledger Pattern (PROPOSED)
+# Memory Architecture v2: The Thin Ledger Pattern (PROPOSED)
 
 > **Status: PARTIALLY IMPLEMENTED.** Wiki structure, LINT phase, and role-based
 > briefings are implemented. claim_challenge, provenance fields, QUERY feedback,
@@ -12,8 +12,8 @@ Incorporating concepts from: MemPalace (spatial structure + AAAK), Karpathy LLM 
 Two layers. Three operations. No external dependencies.
 
 ```
-L1  SQLite (The Ledger) — structured operational state
-L2  Git Wiki (The Library) — compiled human-readable synthesis
+L1  SQLite (The Ledger) - structured operational state
+L2  Git Wiki (The Library) - compiled human-readable synthesis
 ```
 
 Search: ripgrep on markdown. Sync: Git. No ChromaDB. No vector DB. No cloud required.
@@ -23,8 +23,8 @@ Search: ripgrep on markdown. Sync: Git. No ChromaDB. No vector DB. No cloud requ
 What it owns:
 - decisions, todos, audit_log, action_log (existing)
 - learned_skills with salience (existing)
-- **claim_challenge** records (NEW — correction workflow)
-- **provenance** fields on all records (NEW — source refs, agent, timestamp, confidence)
+- **claim_challenge** records (NEW: correction workflow)
+- **provenance** fields on all records (NEW: source refs, agent, timestamp, confidence)
 
 Lifecycle states for knowledge: `raw → extracted → synthesized → accepted → superseded`
 
@@ -38,11 +38,11 @@ knowledge/
 ├── log.md                ← append-only journal (Karpathy)
 ├── raw/                  ← immutable source materials
 ├── wiki/
-│   ├── architecture/     ← "Wing" — system design decisions
-│   ├── conventions/      ← "Wing" — coding standards, patterns
-│   ├── decisions/        ← "Wing" — why we chose X over Y
-│   ├── learnings/        ← "Wing" — mistakes and lessons
-│   └── skills/           ← "Wing" — reusable patterns
+│   ├── architecture/     ← "Wing" - system design decisions
+│   ├── conventions/      ← "Wing" - coding standards, patterns
+│   ├── decisions/        ← "Wing" - why we chose X over Y
+│   ├── learnings/        ← "Wing" - mistakes and lessons
+│   └── skills/           ← "Wing" - reusable patterns
 └── .pending/             ← proposed corrections awaiting review
 ```
 
@@ -71,7 +71,7 @@ upstream_ids: [L1:decision:abc123]
 3. **IF answer is durable + reusable → write back to L2 as new wiki page** (Karpathy)
 4. IF answer reveals gap → create `claim_challenge` in L1
 
-### LINT (evolve-tick Phase 4 — NEW)
+### LINT (evolve-tick Phase 4, NEW)
 1. Broken wiki links (pages reference non-existent pages)
 2. Contradictions (two pages say opposite things)
 3. Stale claims (not accessed in 90+ days, salience < 0.3)
@@ -94,7 +94,7 @@ sync-knowledge.py generates different briefings per agent role:
 
 | Role | Gets | Doesn't Get |
 |------|------|-------------|
-| **Lead (Claude)** | Full L1 + L2 index + recent decisions | — |
+| **Lead (Claude)** | Full L1 + L2 index + recent decisions | - |
 | **Worker (Codex)** | Task brief + relevant wiki pages + TODOs | History, disputes |
 | **Consultant (Gemini)** | L2 wiki + open disputes + assumptions | Implementation TODOs |
 

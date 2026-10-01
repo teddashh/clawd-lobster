@@ -18,6 +18,6 @@ Phase 2 (Workspace Creation) to generate the appropriate project skeleton.
 ## File Naming Convention
 
 Each type has:
-- `<type>.workspace.json` — workspace.json template with type-specific defaults
-- `<type>.scaffold.md` — directory structure + file descriptions
-- `<type>.claude.md` — CLAUDE.md additions specific to this type
+- `<type>.workspace.json`: workspace.json template with type-specific defaults
+- `<type>.scaffold.md`: directory structure + file descriptions
+- `<type>.claude.md`: CLAUDE.md additions specific to this type

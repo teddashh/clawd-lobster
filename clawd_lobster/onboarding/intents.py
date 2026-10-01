@@ -1,7 +1,7 @@
 """Intent-based state transitions.
 
 All state mutations flow through apply_intent(). This is the sole
-mutation path — web, TUI, and Claude all call this via the API.
+mutation path: web, TUI, and Claude all call this via the API.
 """
 from __future__ import annotations
 

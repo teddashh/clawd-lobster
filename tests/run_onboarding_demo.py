@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Full onboarding demo — runs the complete flow via HTTP API."""
+"""Full onboarding demo: runs the complete flow via HTTP API."""
 import json
 import re
 import sys
@@ -42,7 +42,7 @@ def api(method, path, body=None, token=None):
 
 def main():
     print("=" * 60)
-    print("  CLAWD-LOBSTER ONBOARDING — FULL E2E FLOW")
+    print("  CLAWD-LOBSTER ONBOARDING: FULL E2E FLOW")
     print("=" * 60)
 
     # Step 1
@@ -89,7 +89,7 @@ def main():
     skills = ["memory-server", "spec", "absorb", "evolve", "heartbeat", "deploy"]
     for skill_id in skills:
         # Mark running then succeeded via intent API
-        # (In real onboarding, /install runs actual commands — here we simulate)
+        # (In real onboarding, /install runs actual commands; here we simulate)
         r1 = api("POST", "/api/onboarding/intent", {
             "session_id": sid, "lease_id": lid,
             "intent": "set_status", "item_id": skill_id,

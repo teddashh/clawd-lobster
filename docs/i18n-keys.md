@@ -1,4 +1,4 @@
-# i18n Key Inventory — Onboarding Redesign
+# i18n Key Inventory: Onboarding Redesign
 
 All keys must exist in 5 languages: en, zh-TW, zh-CN, ja, ko.
 Shell commands (pip install, npm install, etc.) are NOT translated.
@@ -9,7 +9,7 @@ Shell commands (pip install, npm install, etc.) are NOT translated.
 |-----|-----|-------|
 | `welcome_title` | Welcome to Clawd-Lobster | Hero title |
 | `welcome_subtitle` | Let's get started. Please select your language. | Below taglines |
-| `welcome_tagline` | You'll end up using Claude Code anyway — why not start with the best experience? | Shown in all 5 langs simultaneously on page, but also used as localized subtitle |
+| `welcome_tagline` | You'll end up using Claude Code anyway. Why not start with the best experience? | Shown in all 5 langs simultaneously on page, but also used as localized subtitle |
 | `lang_title` | Language | Step heading (current, keep) |
 | `lang_desc` | Choose your preferred language. | Step description (current, keep) |
 | `next` | Next | Shared button |
@@ -77,18 +77,18 @@ Shell commands (pip install, npm install, etc.) are NOT translated.
 | `platform_macos` | macOS |
 | `platform_linux` | Linux |
 
-### Install detail per platform (9 keys — platform-specific instructions)
+### Install detail per platform (9 keys: platform-specific instructions)
 
 | Key | EN |
 |-----|-----|
 | `prereq_python_win` | Download the installer from python.org/downloads and run it. Check "Add Python to PATH". |
-| `prereq_python_mac` | Run: brew install python@3.12 — or download from python.org |
-| `prereq_python_linux` | Run: sudo apt install python3 python3-pip — or sudo dnf install python3 |
+| `prereq_python_mac` | Run: brew install python@3.12 -- or download from python.org |
+| `prereq_python_linux` | Run: sudo apt install python3 python3-pip -- or sudo dnf install python3 |
 | `prereq_node_win` | Download the LTS installer from nodejs.org and run it. |
 | `prereq_node_mac` | Run: brew install node |
-| `prereq_node_linux` | Run: sudo apt install nodejs npm — or use nvm |
+| `prereq_node_linux` | Run: sudo apt install nodejs npm -- or use nvm |
 | `prereq_git_win` | Download from git-scm.com and run the installer. |
-| `prereq_git_mac` | Run: brew install git — or install Xcode Command Line Tools |
+| `prereq_git_mac` | Run: brew install git -- or install Xcode Command Line Tools |
 | `prereq_git_linux` | Run: sudo apt install git |
 
 ## Page 3: Handoff to CLI (14 keys)

@@ -51,7 +51,7 @@ def init_db(db_path):
         last_used TEXT,
         created_at TEXT DEFAULT (datetime('now')))""")
 
-    # TODOs (evolve system — auto-processed by cron)
+    # TODOs (evolve system, auto-processed by cron)
     c.execute("""CREATE TABLE IF NOT EXISTS todo_items (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
@@ -64,7 +64,7 @@ def init_db(db_path):
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now')))""")
 
-    # Action log (local audit trail — no Oracle required)
+    # Action log (local audit trail, no Oracle required)
     c.execute("""CREATE TABLE IF NOT EXISTS action_log (
         id TEXT PRIMARY KEY,
         timestamp TEXT DEFAULT (datetime('now')),
@@ -75,7 +75,7 @@ def init_db(db_path):
         tokens INTEGER DEFAULT 0,
         workspace TEXT DEFAULT '')""")
 
-    # Claim challenges (correction workflow — Thin Ledger pattern)
+    # Claim challenges (correction workflow, Thin Ledger pattern)
     c.execute("""CREATE TABLE IF NOT EXISTS claim_challenges (
         id TEXT PRIMARY KEY,
         wiki_page TEXT NOT NULL,

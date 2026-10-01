@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E2E integration test for the onboarding system.
 
-Written by Codex GPT-5.4 — tests the full HTTP flow end-to-end,
+Written by Codex GPT-5.4. Tests the full HTTP flow end-to-end,
 simulating a real user clicking through the web UI.
 
 Run: python tests/test_e2e_onboarding.py

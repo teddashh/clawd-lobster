@@ -1,8 +1,8 @@
 """
-vault_api.py — The Vault (Oracle L3) Python API.
+vault_api.py: The Vault (Oracle L3) Python API.
 
 Agents and skills call these functions to interact with the Vault.
-No agent should ever write SQL directly — this is the only gateway.
+No agent should ever write SQL directly; this is the only gateway.
 
 Usage:
     from vault_api import Vault
@@ -325,7 +325,7 @@ class Vault:
 
         with self._pool.acquire() as conn:
             with conn.cursor() as cur:
-                # Search documents — M7 fix: use DBMS_LOB.INSTR for CLOB (safe for >32K)
+                # Search documents. M7 fix: use DBMS_LOB.INSTR for CLOB (safe for >32K)
                 binds: dict[str, Any] = {"q_like": q_like, "q_lower": q_lower, "row_limit": limit}
                 type_filter = ""
                 if doc_type:
@@ -444,7 +444,7 @@ class Vault:
                 """, [eid])
                 profile["facts"] = _fetchall_dict(cur)
 
-                # Related entities — M6 fix: wrap UNION in subquery for overall limit
+                # Related entities. M6 fix: wrap UNION in subquery for overall limit
                 cur.execute("""
                     SELECT * FROM (
                         SELECT e.id, e.entity_type, e.canonical_name, r.relation_type
@@ -647,7 +647,7 @@ class Vault:
         M5 fix: resolve + insert in same connection, catch constraint violation for race."""
         with self._pool.acquire() as conn:
             with conn.cursor() as cur:
-                # Check if entity already exists (same connection — reduces TOCTOU window)
+                # Check if entity already exists (same connection, reduces TOCTOU window)
                 norm = canonical_name.strip().lower()
                 cur.execute("""
                     SELECT e.id FROM vault_entities e
@@ -808,7 +808,7 @@ class Vault:
                     VALUES ('entity', :1, 'extracted', 'merged', :2, 'vault_api')
                 """, [source_id, reason or f"Merged into entity #{target_id}"])
 
-                # Audit trail (must succeed — no silent swallowing)
+                # Audit trail (must succeed, no silent swallowing)
                 cur.execute("""
                     INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
                     VALUES ('merge_entity', 'vault_api', 'entity', :1, :2)
@@ -827,7 +827,7 @@ class Vault:
 
     def gdpr_erase(self, entity_id: int, reason: str = "GDPR erasure request") -> dict:
         """Privacy deletion: redact all content associated with an entity.
-        Does NOT physically delete — sets redacted_at tombstone on documents,
+        Does NOT physically delete; sets redacted_at tombstone on documents,
         removes entity content, logs the operation."""
         with self._pool.acquire() as conn:
             with conn.cursor() as cur:
@@ -846,8 +846,8 @@ class Vault:
                     "aliases_removed": 0,
                 }
 
-                # 2. Find all related documents — via relations AND email_from match
-                #    (audit found: H2 — unlinked docs were missed)
+                # 2. Find all related documents, via relations AND email_from match
+                #    (audit found: H2, unlinked docs were missed)
                 cur.execute("""
                     SELECT DISTINCT id FROM (
                         SELECT d.id FROM vault_documents d
@@ -913,7 +913,7 @@ class Vault:
                     VALUES ('entity', :1, 'retracted', :2, 'vault_api.gdpr_erase')
                 """, [entity_id, reason])
 
-                # 9. Audit trail (must succeed — legally required for GDPR)
+                # 9. Audit trail (must succeed, legally required for GDPR)
                 cur.execute("""
                     INSERT INTO vault_audit_trail (action, actor, target_type, target_id, details)
                     VALUES ('gdpr_erase', 'vault_api', 'entity', :1, :2)
@@ -924,7 +924,7 @@ class Vault:
 
     # === ADMIN ===
 
-    # Hardcoded table list for stats — safe from SQL injection (C1 audit note)
+    # Hardcoded table list for stats, safe from SQL injection (C1 audit note)
     _STATS_TABLES = [
         "vault_sources", "vault_documents", "vault_chunks",
         "vault_entities", "vault_entity_aliases", "vault_facts",

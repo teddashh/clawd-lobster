@@ -223,7 +223,7 @@ def stamp_text(
     image = Image.fromarray(image_array)
 
     if not text:
-        # No text — just the clean erase
+        # No text; just the clean erase
         image.convert("RGB").save(output_path)
         return True
 
@@ -360,7 +360,7 @@ def process_pdf(
             elif total > 1:
                 text = f"{i + 1} / {total}"
             else:
-                # Single page (infographic) — stamp current month/year
+                # Single page (infographic); stamp current month/year
                 now = datetime.date.today()
                 text = f"{now.strftime('%B')} / {now.year}"
             removed = stamp_text(img, clean_path, text=text, text_color=consistent_color)

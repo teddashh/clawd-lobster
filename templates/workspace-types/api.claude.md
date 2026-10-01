@@ -1,4 +1,4 @@
-# API Service — Workspace Rules
+# API Service: Workspace Rules
 
 ## Environment Safety
 - **Dev (local):** Free to experiment. Auto-reload enabled.
@@ -6,9 +6,9 @@
 - **Prod:** Deploy via git push + CI/CD only. No Claude Code.
 
 ## Deploy Commands
-- `/deploy:ship dev` — Start local API server in Docker
-- `/deploy:ship staging` — Deploy to staging
-- `/deploy:ship prod` — Deploy to production (requires confirmation)
+- `/deploy:ship dev`: Start local API server in Docker
+- `/deploy:ship staging`: Deploy to staging
+- `/deploy:ship prod`: Deploy to production (requires confirmation)
 
 ## Conventions
 - RESTful endpoints with consistent naming

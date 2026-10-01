@@ -1,9 +1,9 @@
-# Gemini Bridge — Cross-Model Second Opinion
+# Gemini Bridge: Cross-Model Second Opinion
 
 !gemini --version 2>/dev/null || echo "Gemini CLI not installed"
 
 Claude is the lead. Gemini is a consultant. You call Gemini when you need a
-different brain — not a faster one, not a cheaper one, a **different** one.
+different brain: not a faster one, not a cheaper one, a **different** one.
 
 ---
 
@@ -14,7 +14,7 @@ different brain — not a faster one, not a cheaper one, a **different** one.
    npm install -g @google/gemini-cli
    ```
 
-2. **Authenticate (OAuth — uses your Google One AI Pro/Ultra subscription):**
+2. **Authenticate (OAuth, uses your Google One AI Pro/Ultra subscription):**
    ```bash
    gemini  # opens browser for Google OAuth login
    ```
@@ -41,7 +41,7 @@ your subscription:
 The problem isn't token cost. The problem is **round trips**.
 
 Every time you build something, the user checks it, finds an issue, and asks
-you to redo it — that's 10-20 minutes wasted. If three agents spend 3 minutes
+you to redo it; that's 10-20 minutes wasted. If three agents spend 3 minutes
 discussing upfront and catch the issue before you code, that's a net win.
 
 Two checkpoints. Each costs 2-3 minutes. Each can save an entire redo cycle.
@@ -65,7 +65,7 @@ User's request
   → You fix before delivering
     |
     v
-Deliver to user — first time right
+Deliver to user, first time right
 ```
 
 **When to trigger each checkpoint:**
@@ -85,7 +85,7 @@ Deliver to user — first time right
 ### Plan Review (Checkpoint 1)
 
 ```bash
-# Ask both in parallel — compare their concerns
+# Ask both in parallel, compare their concerns
 codex exec "I'm about to [task]. My plan: [plan]. What's wrong with this?"
 
 gemini -m gemini-3.1-pro -p "I'm about to [task]. My plan: [plan].
@@ -153,7 +153,7 @@ After agent finishes, Claude:
 2. Writes it to `.agent-audit/<agent>-<timestamp>.json`
 3. Stores important findings via `memory_record_knowledge`
 
-**Same pattern for claude -p calls** — append the exit protocol, parse
+**Same pattern for claude -p calls**: append the exit protocol, parse
 JSON from stdout after the subprocess finishes.
 
 ---
@@ -172,8 +172,8 @@ gemini -m gemini-3.1-pro -p "Deep analysis: ..."       # thorough, complex reaso
 ```
 
 **IMPORTANT syntax notes:**
-- `gemini -p "prompt"` — non-interactive, returns result
-- `gemini` — interactive mode (avoid in automation)
+- `gemini -p "prompt"`: non-interactive, returns result
+- `gemini`: interactive mode (avoid in automation)
 - `-m` flag selects the model
 - Response comes on stdout, errors on stderr
 
@@ -235,22 +235,22 @@ capability *relative to the lead model*, not an absolute tier list.
 
 | You (Lead) | Gemini 3.1 Pro | Gemini 3 Flash | GPT-5.4 Codex |
 |-----------|---------------|---------------|--------------|
-| Opus 4.6 | Peer — different perspective | Quick research only | Peer — different perspective |
-| Sonnet 4.6 | **Upgrade** — stronger brain | Peer | **Upgrade** — stronger brain |
+| Opus 4.6 | Peer (different perspective) | Quick research only | Peer (different perspective) |
+| Sonnet 4.6 | **Upgrade** (stronger brain) | Peer | **Upgrade** (stronger brain) |
 
 **Rules:**
 - Always consult models at your level or above
 - Never consult models significantly weaker than yourself
 - If the top-tier quota is exhausted and only weaker models remain:
-  don't silently downgrade — tell the user and decide yourself
+  don't silently downgrade; tell the user and decide yourself
 - A wrong second opinion from a weak model is worse than no opinion
 
 ---
 
 ## Cost Model
 
-- **Gemini CLI (Google AI Studio)** — generous free tier, pay-per-token after
-- **Gemini API** — standard Google pricing
+- **Gemini CLI (Google AI Studio)**: generous free tier, pay-per-token after
+- **Gemini API**: standard Google pricing
 - This skill does not track costs. The CLI handles its own billing.
 
 ---
@@ -274,10 +274,10 @@ Claude decides.
 
 1. **Don't use Gemini for implementation.** Gemini is a consultant, not a coder in this context. It gives opinions. You (Claude) write the code.
 
-2. **Context window differences.** Gemini has different context limits than Claude. Don't dump your entire codebase — summarize the relevant parts.
+2. **Context window differences.** Gemini has different context limits than Claude. Don't dump your entire codebase; summarize the relevant parts.
 
 3. **Gemini CLI auth expires.** If you get auth errors, the user needs to re-run `gemini` interactively. The skill can't fix this automatically.
 
 4. **Don't over-consult.** Asking Gemini on every trivial decision slows everything down. Reserve it for genuine uncertainty, not routine coding.
 
-5. **Gemini may disagree with Claude.** That's the point. When they disagree, present both views to the user — don't silently pick one. The user decides.
+5. **Gemini may disagree with Claude.** That's the point. When they disagree, present both views to the user; don't silently pick one. The user decides.

@@ -96,7 +96,7 @@ def create_session(lang: str = "en") -> tuple[dict, str]:
     """Create a new onboarding session.
 
     Returns (state_dict, raw_token).
-    The raw token is returned once and never stored — only the hash is persisted.
+    The raw token is returned once and never stored; only the hash is persisted.
     """
     session_id = "ob_" + uuid.uuid4().hex[:12]
     token = _new_token()

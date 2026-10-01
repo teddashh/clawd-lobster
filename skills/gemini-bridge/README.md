@@ -1,23 +1,23 @@
-# Gemini Bridge — The Consultant
+# Gemini Bridge: The Consultant
 
 > Cross-model consultation with Google Gemini 3.1 Pro for research, validation, and architecture debates.
 
 ## What It Does
 
 Gemini Bridge calls Google Gemini CLI when Claude needs an independent perspective. Four scenarios:
-- **Uncertainty** — fact-checking, research validation
-- **Complex decisions** — architecture trade-offs, tech stack choices
-- **Security review** — independent audit from a different brain
-- **Three-way debate** — Claude + Codex + Gemini reach consensus
+- **Uncertainty**: fact-checking, research validation
+- **Complex decisions**: architecture trade-offs, tech stack choices
+- **Security review**: independent audit from a different brain
+- **Three-way debate**: Claude + Codex + Gemini reach consensus
 
 Part of the **three-agent system**: Claude (lead) + Codex (worker/critic) + Gemini (consultant). See also [codex-bridge](../codex-bridge/README.md).
 
 ## Two-Checkpoint Pattern
 
-Same as Codex Bridge — Gemini participates in both checkpoints:
+Same as Codex Bridge, Gemini participates in both checkpoints:
 
-1. **Plan Review** — "Gemini, what assumptions am I making?"
-2. **Code Review** — "Gemini, does this logic hold up?"
+1. **Plan Review**: "Gemini, what assumptions am I making?"
+2. **Code Review**: "Gemini, does this logic hold up?"
 
 Combined with Codex's adversarial review, you get two independent brains challenging every important decision.
 

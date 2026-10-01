@@ -1,4 +1,4 @@
-# Clawd-Lobster — Docker Setup
+# Clawd-Lobster: Docker Setup
 # Runs Claude Code with pre-configured skills wrapper
 #
 # Build:  docker build -t clawd-lobster .

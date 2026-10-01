@@ -1,5 +1,5 @@
 """
-clawd_lobster.onboarding — Setup wizard logic.
+clawd_lobster.onboarding: Setup wizard logic.
 
 Handles prerequisite checking, Claude CLI auth, persona selection,
 and first workspace creation -- in both terminal and web modes.
@@ -135,9 +135,9 @@ def check_prerequisites() -> dict:
         "optional": False,
     })
 
-    # Node (REQUIRED — needed for Claude Code installation via npm)
+    # Node (REQUIRED: needed for Claude Code installation via npm)
     node_version = _get_version(["node", "--version"])
-    # node --version returns "v20.11.0" — strip leading v
+    # node --version returns "v20.11.0"; strip leading v
     if node_version.startswith("v"):
         node_version = node_version[1:]
     checks.append({
@@ -156,7 +156,7 @@ def check_prerequisites() -> dict:
         "optional": False,
     })
 
-    # Claude auth — check credentials file exists and is valid JSON
+    # Claude auth: check credentials file exists and is valid JSON
     claude_auth_ok = False
     claude_creds = HOME / ".claude" / ".credentials.json"
     if claude_creds.exists():
@@ -214,9 +214,9 @@ def save_config(persona: str, workspace_root: str, *, lang: str = "en") -> None:
     """Write config.json with persona, workspace root, and language.
 
     Args:
-        persona: User persona — "noob", "expert", or "tech".
+        persona: User persona ("noob", "expert", or "tech").
         workspace_root: Absolute path to workspace root directory.
-        lang: Language code — "en", "zh-TW", "zh-CN", "ja", or "ko".
+        lang: Language code ("en", "zh-TW", "zh-CN", "ja", or "ko").
     """
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -369,7 +369,7 @@ Now guide the user through the remaining steps interactively.
 
 ## Steps to complete
 
-1. **Persona selection** — Ask the user: "How do you work?"
+1. **Persona selection.** Ask the user: "How do you work?"
    - Guided (noob): New to AI dev, show everything
    - Expert: Knows what they're doing, less hand-holding
    - Technical (tech): Full control and raw output
@@ -380,7 +380,7 @@ Now guide the user through the remaining steps interactively.
      -d '{{"session_id":"{session_id}","step":"persona","value":"<chosen>"}}'
    ```
 
-2. **Workspace root** — Ask where to store workspaces.
+2. **Workspace root.** Ask where to store workspaces.
    Default: ~/Documents/Workspace
    After confirmed:
    ```bash
@@ -389,7 +389,7 @@ Now guide the user through the remaining steps interactively.
      -d '{{"session_id":"{session_id}","step":"workspace_root","value":"<path>"}}'
    ```
 
-3. **Create first workspace** — Ask for a workspace name (kebab-case).
+3. **Create first workspace.** Ask for a workspace name (kebab-case).
    Create the workspace directory, init git, create CLAUDE.md.
    After created:
    ```bash
@@ -398,7 +398,7 @@ Now guide the user through the remaining steps interactively.
      -d '{{"session_id":"{session_id}","step":"workspace_created","value":true}}'
    ```
 
-4. **Complete** — Save config and mark done:
+4. **Complete.** Save config and mark done:
    ```bash
    curl -s -X POST http://localhost:3333/api/onboarding/update \\
      -H "Content-Type: application/json" \\
@@ -454,9 +454,9 @@ def run_terminal_setup() -> None:
 
     # Step 2: Persona
     print(f"\n{_bold('Step 2: How do you work?')}\n")
-    print("  1. Guided  — New to AI dev. Show me everything.")
-    print("  2. Expert  — I know what I'm doing. Less hand-holding.")
-    print("  3. Tech    — I want full control and raw output.")
+    print("  1. Guided  - New to AI dev. Show me everything.")
+    print("  2. Expert  - I know what I'm doing. Less hand-holding.")
+    print("  3. Tech    - I want full control and raw output.")
 
     persona_map = {"1": "noob", "2": "expert", "3": "tech"}
     while True:
@@ -505,6 +505,6 @@ def run_terminal_setup() -> None:
     # Done
     print(f"\n{_green(_bold('Setup complete!'))}")
     print(f"\n  Next steps:")
-    print(f"    clawd-lobster serve      — Open the web UI")
-    print(f"    clawd-lobster workspace   — Manage workspaces")
-    print(f"    clawd-lobster squad start — Launch Spec Squad\n")
+    print(f"    clawd-lobster serve      - Open the web UI")
+    print(f"    clawd-lobster workspace   - Manage workspaces")
+    print(f"    clawd-lobster squad start - Launch Spec Squad\n")

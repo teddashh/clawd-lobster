@@ -1,4 +1,4 @@
-# new-workspace.ps1 — Create a new workspace with memory, git, and GitHub repo
+# new-workspace.ps1: Create a new workspace with memory, git, and GitHub repo
 # Usage: .\new-workspace.ps1 -name "project-name" [-subfolder "Category"]
 #        .\new-workspace.ps1 -name "my-api" -subfolder "Web Projects"
 

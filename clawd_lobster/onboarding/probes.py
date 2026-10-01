@@ -1,6 +1,6 @@
 """Health probes for onboarding reconciliation.
 
-Probes are SIDE-EFFECT FREE. They detect and verify — never install,
+Probes are SIDE-EFFECT FREE. They detect and verify; never install,
 deploy, or mutate system state.
 
 Each probe returns: {"detected": bool, "verified": bool, "repair_hint": str}

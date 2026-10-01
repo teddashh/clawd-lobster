@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-spec-squad-sdk.py — Multi-session spec orchestrator using Claude Agent SDK.
+spec-squad-sdk.py: Multi-session spec orchestrator using Claude Agent SDK.
 
 Unified web app:
-  1. Discovery chat — Claude asks 3W1H questions via streaming SSE
-  2. Squad dashboard — Architect/Reviewer/Coder/Tester work in real-time
+  1. Discovery chat: Claude asks 3W1H questions via streaming SSE
+  2. Squad dashboard: Architect/Reviewer/Coder/Tester work in real-time
 
 Architecture:
   Browser <--SSE--> Python HTTP server <--> claude_agent_sdk.query()
@@ -125,13 +125,13 @@ def save_squad_state(workspace: Path, squad_state: dict):
 
 # ── Discovery system prompt ─────────────────────────────────────────────────
 
-DISCOVERY_SYSTEM = """You are the Discovery Interviewer for Spec Squad — a multi-agent spec development system.
+DISCOVERY_SYSTEM = """You are the Discovery Interviewer for Spec Squad, a multi-agent spec development system.
 
 YOUR JOB: Ask the user smart questions to understand what they want to build. You are a senior consultant doing requirements gathering.
 
 APPROACH:
 - Ask 1-2 questions at a time, conversationally
-- Be opinionated — if they say "whatever you think", make a strong recommendation
+- Be opinionated: if they say "whatever you think", make a strong recommendation
 - Adapt based on their answers
 - Cover the 3W1H framework: Why, What, Who, How, Scope, Integrations, Constraints
 
@@ -178,7 +178,7 @@ async def run_discovery_turn(user_message: str, workspace: Path | None) -> str:
         ),
     ):
         if isinstance(message, ResultMessage):
-            # ResultMessage has the final complete text — use only this
+            # ResultMessage has the final complete text; use only this
             if message.result:
                 response_text = message.result
                 break

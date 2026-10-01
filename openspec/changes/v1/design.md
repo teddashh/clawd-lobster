@@ -24,12 +24,12 @@
 │  ┌─────────────────┼──────────────────────────────────┐  │
 │  │    clawd_lobster/ (Python package)                  │  │
 │  │                                                     │  │
-│  │  cli.py         — argparse entry point              │  │
-│  │  server.py      — http.server + routing             │  │
-│  │  onboarding.py  — setup wizard logic                │  │
-│  │  squad.py       — unified squad orchestrator        │  │
-│  │  dashboard.py   — workspace/health data provider    │  │
-│  │  pages/         — HTML templates (inline strings)   │  │
+│  │  cli.py         - argparse entry point              │  │
+│  │  server.py      - http.server + routing             │  │
+│  │  onboarding.py  - setup wizard logic                │  │
+│  │  squad.py       - unified squad orchestrator        │  │
+│  │  dashboard.py   - workspace/health data provider    │  │
+│  │  pages/         - HTML templates (inline strings)   │  │
 │  └─────────────────┼──────────────────────────────────┘  │
 │                    │                                     │
 ├────────────────────┼─────────────────────────────────────┤
@@ -45,16 +45,16 @@
 ### Why this architecture
 
 - **Single Python package** (`clawd_lobster/`) instead of scattered scripts
-- **No framework** — stdlib `http.server` + inline HTML (keeps zero-dependency promise)
-- **CLI and Web share the same engine** — no logic duplication
-- **Agent SDK is the only Claude interface** — no more `claude -p` subprocess calls
+- **No framework**: stdlib `http.server` + inline HTML (keeps zero-dependency promise)
+- **CLI and Web share the same engine**: no logic duplication
+- **Agent SDK is the only Claude interface**: no more `claude -p` subprocess calls
 
 ### What NOT to build
 
-- No React/Vue/Angular — HTML strings in Python are fine for <5 pages
-- No WebSocket — polling `/api/state` every 2s is simple and proven
-- No database migration framework — SQLite schema is stable
-- No Docker — this runs on the user's machine
+- No React/Vue/Angular; HTML strings in Python are fine for <5 pages
+- No WebSocket; polling `/api/state` every 2s is simple and proven
+- No database migration framework; SQLite schema is stable
+- No Docker; this runs on the user's machine
 
 ## Data Model
 
@@ -110,7 +110,7 @@ All endpoints serve JSON or HTML. No authentication (localhost only).
 
 ```
 1. User runs: clawd-lobster serve (or it's already running as a service)
-2. Browser shows /workspaces — list of all workspaces with status
+2. Browser shows /workspaces: list of all workspaces with status
 3. User clicks a workspace → sees spec progress, recent activity
 4. User clicks "New Squad" → enters /squad chat for that workspace
 5. Or: user goes to terminal and runs claude in the workspace directly

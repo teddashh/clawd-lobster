@@ -5,9 +5,9 @@
 I just tested notebooklm-py for the first time. Here's what I actually observed:
 
 ### What worked well
-- `source add` with markdown files and URLs — instant, reliable
-- `ask` queries — accurate answers with source citations
-- `generate infographic` — produced a stunning architecture diagram from our README
+- `source add` with markdown files and URLs: instant, reliable
+- `ask` queries: accurate answers with source citations
+- `generate infographic`: produced a stunning architecture diagram from our README
 - CLI is clean and predictable
 
 ### What I'd recommend for prompt engineering
@@ -27,12 +27,12 @@ I just tested notebooklm-py for the first time. Here's what I actually observed:
 #### For Podcasts/Audio
 - Specify "deep_dive" style for technical content, "concise" for quick summaries
 - Use custom instructions to tell hosts what to focus on
-- Language setting matters — set it before generating
+- Language setting matters: set it before generating
 
 #### For Research
 - Use `add-research` with `--mode deep` for comprehensive coverage
 - The `site:` operator is powerful for domain-specific research
-- Import selectively — not everything found is relevant
+- Import selectively: not everything found is relevant
 
 ### What I think needs more investigation
 1. How to maintain consistent visual style across multiple generations?
@@ -45,4 +45,4 @@ I just tested notebooklm-py for the first time. Here's what I actually observed:
 - Focus on workflow patterns, not just command lists
 - Include "bad prompt vs good prompt" examples
 - Document the gotchas (encoding, auth expiry, rate limits)
-- Keep it practical — real commands, not theory
+- Keep it practical: real commands, not theory

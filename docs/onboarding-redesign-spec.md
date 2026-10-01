@@ -1,4 +1,4 @@
-# Onboarding Redesign Spec — Clawd-Lobster v2.0
+# Onboarding Redesign Spec: Clawd-Lobster v2.0
 
 ## Vision
 
@@ -24,7 +24,7 @@ the web page shows live progress.
   - Windows: `irm https://raw.githubusercontent.com/teddashh/clawd-lobster/master/bootstrap.ps1 | iex`
   - macOS/Linux: `curl -fsSL https://raw.githubusercontent.com/teddashh/clawd-lobster/master/bootstrap.sh | bash`
   - Script installs Python + Node + Git → pip install → launches `clawd-lobster serve`
-- **Node.js is REQUIRED** (not optional) — Claude Code installs via `npm install -g @anthropic-ai/claude-code`
+- **Node.js is REQUIRED** (not optional): Claude Code installs via `npm install -g @anthropic-ai/claude-code`
 - Page 1 Welcome page includes pre-requisite notice for Path B users
 
 ### D2: Handoff Session Token → Nonce-Based Trust
@@ -71,11 +71,11 @@ the web page shows live progress.
 **What the user sees:**
 - Beautiful welcome hero with "Welcome to Clawd-Lobster" title
 - Product tagline in ALL 5 languages simultaneously (stacked, each dimmed):
-  - EN: "You'll end up using Claude Code anyway — why not start with the best experience?"
-  - 繁中: "你終究要用 Claude Code 的 — 為什麼不一開始就選最好的體驗？"
-  - 簡中: "你终究要用 Claude Code 的 — 为什么不一开始就选最好的体验？"
-  - 日: "どうせ Claude Code を使うことになる — 最初から最高の体験を選びませんか？"
-  - 韓: "결국 Claude Code를 쓰게 될 텐데 — 처음부터 최고의 경험을 선택하지 않겠습니까？"
+  - EN: "You'll end up using Claude Code anyway. Why not start with the best experience?"
+  - 繁中: "你終究要用 Claude Code 的，為什麼不一開始就選最好的體驗？"
+  - 簡中: "你终究要用 Claude Code 的，为什么不一开始就选最好的体验？"
+  - 日: "どうせ Claude Code を使うことになる。最初から最高の体験を選びませんか？"
+  - 韓: "결국 Claude Code를 쓰게 될 텐데, 처음부터 최고의 경험을 선택하지 않겠습니까？"
 - Instruction (all 5 langs): "Let's get started. Please select your language."
 - 5 language cards (2-column grid)
 - No API calls (pure static page)
@@ -139,10 +139,10 @@ the web page shows live progress.
    ```
 2. Copy button
 3. Live progress panel:
-   - [ ] Persona selection — Waiting...
-   - [ ] Workspace root — Waiting...
-   - [ ] First workspace — Waiting...
-   - [ ] Configuration — Waiting...
+   - [ ] Persona selection: Waiting...
+   - [ ] Workspace root: Waiting...
+   - [ ] First workspace: Waiting...
+   - [ ] Configuration: Waiting...
 4. Fallback: "I want to do it manually" → expands old Persona + Workspace UI
 
 **Handoff Mechanism (session-secured):**

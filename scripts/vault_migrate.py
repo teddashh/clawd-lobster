@@ -1,5 +1,5 @@
 """
-vault_migrate.py — Migrate legacy 'knowledge' table into The Vault (9-table schema).
+vault_migrate.py: Migrate legacy 'knowledge' table into The Vault (9-table schema).
 
 Phase 1-2 of the VAULT-ARCHITECTURE.md migration plan:
   1. Create a 'legacy_import' source in vault_sources
@@ -208,7 +208,7 @@ def run_migration(execute: bool = False):
     dry_run = not execute
     mode = "EXECUTE" if execute else "DRY-RUN"
     print(f"\n{'='*60}")
-    print(f"  Vault Migration — {mode}")
+    print(f"  Vault Migration: {mode}")
     print(f"{'='*60}\n")
 
     conn = _connect()
@@ -394,7 +394,7 @@ def rollback_migration():
     """)
     print(f"  Deleted {cur.rowcount} events")
 
-    # 5. Documents (now safe — no FK children remain)
+    # 5. Documents (now safe; no FK children remain)
     cur.execute(f"""
         DELETE FROM vault_documents WHERE id IN ({_migrated_docs_subquery})
     """)

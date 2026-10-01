@@ -1,8 +1,8 @@
-# Vault Schema Migration Debate — Full Deep Brain Architecture
+# Vault Schema Migration Debate: Full Deep Brain Architecture
 
 ## Context
 
-The developer wants Oracle L3 (The Vault) to be a **permanent deep brain** — store EVERYTHING from his entire professional and personal life, searchable and well-organized. Currently there are TWO Oracle schemas:
+The developer wants Oracle L3 (The Vault) to be a **permanent deep brain**: store EVERYTHING from his entire professional and personal life, searchable and well-organized. Currently there are TWO Oracle schemas:
 
 ### Schema 1: `OPENCLAW_APP` (operational)
 | Table | Rows | Purpose |
@@ -21,7 +21,7 @@ The developer wants Oracle L3 (The Vault) to be a **permanent deep brain** — s
 ### Schema 2: `CLAUDE_MEMORY` (deep memory)
 | Table | Rows | Purpose |
 |-------|------|---------|
-| AUDIT_LOG | 86,420 | **Every email** — from/to/subject/snippet + LLM-extracted WHAT/WHY/HOW/people/keywords/importance/action_items/decisions |
+| AUDIT_LOG | 86,420 | **Every email**: from/to/subject/snippet + LLM-extracted WHAT/WHY/HOW/people/keywords/importance/action_items/decisions |
 | DAILY_REPORTS | 1,865 | Daily work narrative with stats (email count, top senders, calendar events, suspicious count) |
 | ACTIVITY_LOG | 1,355 | Agent activity (patrol, health checks, stale warnings) |
 | KNOWLEDGE_ITEMS | 252 | Knowledge with embeddings + salience scores |
@@ -35,21 +35,21 @@ The developer wants Oracle L3 (The Vault) to be a **permanent deep brain** — s
 | SOP | 11 | Same SOPs |
 | DECISIONS | 4 | Architectural decisions with 3W1H |
 | OPEN_QUESTIONS | 13 | Unresolved questions with priority |
-| PERSONALITY_TRAITS | 0 | Empty — planned for the developer's behavioral patterns |
-| CROSS_REFERENCES | 0 | Empty — planned for cross-table links |
-| RESOLVED | 0 | Empty — resolved items |
+| PERSONALITY_TRAITS | 0 | Empty (planned for the developer's behavioral patterns) |
+| CROSS_REFERENCES | 0 | Empty (planned for cross-table links) |
+| RESOLVED | 0 | Empty (resolved items) |
 | SYNC_WATERMARK | 1 | Sync state |
 
 ### Current Vault Schema (9 tables in OPENCLAW_APP)
-1. vault_sources — data origin tracking
-2. vault_documents — raw artifacts (emails, notes, files)
-3. vault_chunks — content split for RAG
-4. vault_entities — people, companies, projects, concepts
-5. vault_entity_aliases — name variants for resolution
-6. vault_facts — extracted atomic claims with provenance
-7. vault_relations — typed edges between objects
-8. vault_events — immutable lifecycle log
-9. vault_sync_log — L1/L2→L3 sync tracking
+1. vault_sources: data origin tracking
+2. vault_documents: raw artifacts (emails, notes, files)
+3. vault_chunks: content split for RAG
+4. vault_entities: people, companies, projects, concepts
+5. vault_entity_aliases: name variants for resolution
+6. vault_facts: extracted atomic claims with provenance
+7. vault_relations: typed edges between objects
+8. vault_events: immutable lifecycle log
+9. vault_sync_log: L1/L2→L3 sync tracking
 
 ## Questions for Debate
 
@@ -67,10 +67,10 @@ The current 9-table vault schema was designed for document-centric storage. Can 
 
 ### Q2: Data Separation (the developer's biggest concern)
 the developer wants clear separation of:
-- **My stuff vs. others' stuff** — the developer's emails vs. general knowledge
-- **Work vs. personal** — corporate vs. personal life
-- **Internal vs. external** — trusted internal data vs. external web/imports
-- **Different time periods** — how to handle 5+ years of temporal data
+- **My stuff vs. others' stuff**: the developer's emails vs. general knowledge
+- **Work vs. personal**: corporate vs. personal life
+- **Internal vs. external**: trusted internal data vs. external web/imports
+- **Different time periods**: how to handle 5+ years of temporal data
 
 Current `privacy_level` (public/internal/restricted/secret) may not be enough.
 
@@ -102,7 +102,7 @@ Goal: Store everything, forever, organized, searchable, quantifiable.
 - Must scale: from 86K rows today to potentially millions
 
 ### Q8: What's Missing?
-Looking at PERSONALITY_TRAITS (empty) and CROSS_REFERENCES (empty) — were these good ideas that just weren't implemented? Should the Vault absorb these concepts? What other tables might be needed?
+Looking at PERSONALITY_TRAITS (empty) and CROSS_REFERENCES (empty): were these good ideas that just weren't implemented? Should the Vault absorb these concepts? What other tables might be needed?
 
 ## Data Samples
 
@@ -135,7 +135,7 @@ NAME: (owner) | NICKNAME: (owner) | EMAIL: owner@example.com | RELATIONSHIP: own
 ## Constraints
 - Oracle Autonomous Database (cloud, always-free tier)
 - VECTOR(1536, FLOAT32) support available
-- Single owner (the developer) — no multi-tenancy needed
+- Single owner (the developer); no multi-tenancy needed
 - Must be queryable by agents (Claude, Codex, Gemini, QWEN)
 - Migration must be reversible (old data kept until verified)
 - Performance matters for 86K+ email searches

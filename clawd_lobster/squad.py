@@ -1,5 +1,5 @@
 """
-clawd_lobster.squad — Unified spec-squad orchestrator.
+clawd_lobster.squad: Unified spec-squad orchestrator.
 
 Terminal and web modes share the same async core (_run_agent).
 State persists in <workspace>/.spec-squad.json.
@@ -74,14 +74,14 @@ def _reset_discovery() -> None:
 # ── System prompts ─────────────────────────────────────────────────────────
 
 DISCOVERY_SYSTEM = """\
-You are the Discovery Interviewer for Spec Squad — a multi-agent spec development system.
+You are the Discovery Interviewer for Spec Squad, a multi-agent spec development system.
 
 YOUR JOB: Ask the user smart questions to understand what they want to build. \
 You are a senior consultant doing requirements gathering.
 
 APPROACH:
 - Ask 1-2 questions at a time, conversationally
-- Be opinionated — if they say "whatever you think", make a strong recommendation
+- Be opinionated: if they say "whatever you think", make a strong recommendation
 - Adapt based on their answers
 - Cover the 3W1H framework: Why, What, Who, How, Scope, Integrations, Constraints
 

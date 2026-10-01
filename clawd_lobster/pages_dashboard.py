@@ -1,4 +1,4 @@
-"""Dashboard pages — Skills, Credentials, Settings.
+"""Dashboard pages: Skills, Credentials, Settings.
 
 Post-onboarding persistent dashboard views. Same visual theme as
 pages_onboarding.py (dark GitHub-style, inline HTML/CSS/JS).
@@ -84,7 +84,7 @@ _NAV = """
 SKILLS_PAGE = (
     "<!DOCTYPE html><html lang='en'><head>"
     "<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-    "<title>Skills — Clawd-Lobster</title>"
+    "<title>Skills | Clawd-Lobster</title>"
     f"<style>{_CSS}</style>"
     "</head><body><div class='container'>"
     + _NAV.replace("{skills_active}", "class='active'").replace("{creds_active}", "").replace("{settings_active}", "")
@@ -160,7 +160,7 @@ loadSkills();
 CREDENTIALS_PAGE = (
     "<!DOCTYPE html><html lang='en'><head>"
     "<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-    "<title>API Keys — Clawd-Lobster</title>"
+    "<title>API Keys | Clawd-Lobster</title>"
     f"<style>{_CSS}</style>"
     "</head><body><div class='container'>"
     + _NAV.replace("{skills_active}", "").replace("{creds_active}", "class='active'").replace("{settings_active}", "")
@@ -238,7 +238,7 @@ loadCreds();
 SETTINGS_PAGE = (
     "<!DOCTYPE html><html lang='en'><head>"
     "<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-    "<title>Settings — Clawd-Lobster</title>"
+    "<title>Settings | Clawd-Lobster</title>"
     f"<style>{_CSS}</style>"
     "</head><body><div class='container'>"
     + _NAV.replace("{skills_active}", "").replace("{creds_active}", "").replace("{settings_active}", "class='active'")

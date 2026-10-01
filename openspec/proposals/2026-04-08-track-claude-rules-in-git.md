@@ -7,7 +7,7 @@
 **Status:** pending
 
 ## Why
-The .claude/ directory contains evolution, memory, safety, and tools rules that define agent behavior — currently untracked, so they diverge across machines and are invisible to collaborators
+The .claude/ directory contains evolution, memory, safety, and tools rules that define agent behavior, currently untracked, so they diverge across machines and are invisible to collaborators
 
 ## What
 Commit .claude/rules/*.md and .claude/settings.json (excluding any secrets)

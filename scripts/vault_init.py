@@ -1,5 +1,5 @@
 """
-vault_init.py — Initialize The Vault (Oracle L3 Deep Brain) schema.
+vault_init.py: Initialize The Vault (Oracle L3 Deep Brain) schema.
 
 Creates 9 vault tables + indexes + views in an Oracle Autonomous Database.
 Non-destructive: skips tables that already exist.
@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Schema version — bump when DDL changes
+# Schema version; bump when DDL changes
 # ---------------------------------------------------------------------------
 SCHEMA_VERSION = "11.0.0"
 
@@ -279,7 +279,7 @@ TABLES: list[tuple[str, str]] = [
             CONSTRAINT uq_sync UNIQUE (source_layer, source_id, vault_table)
         )""",
     ),
-    # 10. AUDIT TRAIL (v11 — operational audit log)
+    # 10. AUDIT TRAIL (v11: operational audit log)
     (
         "vault_audit_trail",
         """CREATE TABLE vault_audit_trail (
@@ -292,7 +292,7 @@ TABLES: list[tuple[str, str]] = [
             created_at      TIMESTAMP DEFAULT SYSTIMESTAMP
         )""",
     ),
-    # 11. METRICS (v11 — quantified self-awareness)
+    # 11. METRICS (v11: quantified self-awareness)
     (
         "vault_metrics",
         """CREATE TABLE vault_metrics (
@@ -303,7 +303,7 @@ TABLES: list[tuple[str, str]] = [
             measured_at     TIMESTAMP DEFAULT SYSTIMESTAMP
         )""",
     ),
-    # 12. DOC TYPES (v11 — advisory registry, no FK from vault_documents)
+    # 12. DOC TYPES (v11: advisory registry, no FK from vault_documents)
     (
         "vault_doc_types",
         """CREATE TABLE vault_doc_types (
@@ -702,11 +702,11 @@ def main():
     parser.add_argument("--doctor", action="store_true", help="Check schema health and exit")
     args = parser.parse_args()
 
-    print(f"The Vault — Schema v{SCHEMA_VERSION}")
+    print(f"The Vault: Schema v{SCHEMA_VERSION}")
     print("=" * 50)
 
     if args.dry_run:
-        print("[DRY RUN MODE — no changes will be made]\n")
+        print("[DRY RUN MODE: no changes will be made]\n")
         print("--- Tables ---")
         create_tables(None, dry_run=True)
         print("\n--- ALTER (v4 to v11 upgrades) ---")
@@ -748,7 +748,7 @@ def main():
         cursor.execute("SELECT VECTOR('[1.0, 2.0, 3.0]', 3, FLOAT32) FROM dual")
         print("  [OK] VECTOR column support detected")
     except Exception:
-        print("  [WARN] VECTOR columns not supported — tables with VECTOR will fail.")
+        print("  [WARN] VECTOR columns not supported; tables with VECTOR will fail.")
         print("         Upgrade to Oracle 23ai or later for vector search.")
 
     # --- Init ---

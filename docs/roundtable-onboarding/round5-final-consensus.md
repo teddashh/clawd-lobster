@@ -1,4 +1,4 @@
-# Round 5: Final Unanimous Consensus — Onboarding & Dashboard Redesign
+# Round 5: Final Unanimous Consensus (Onboarding & Dashboard Redesign)
 
 **Date:** 2026-04-08
 **Participants:** Claude Opus 4.6, Codex GPT-5.4, Gemini 3.1 Pro
@@ -11,20 +11,20 @@
 
 | # | Decision | Proposed By | Agreed In |
 |---|----------|-------------|-----------|
-| D1 | OS scheduler (cron/Task Scheduler/launchd) for recurring jobs — no internal daemon scheduler | Codex R1 | Round 1 |
-| D2 | Backend API is the **sole authority** for state transitions — no direct file writes by web, TUI, or Claude | Codex R2 | Round 2 |
-| D3 | Multi-page server-rendered dashboard with JS islands — no SPA, no React/Vue | Codex R2, Gemini R2 | Round 2 |
-| D4 | Token-based auth (Jupyter-style `?token=...`) for localhost dashboard — CSRF protection | Gemini R1 | Round 1 |
+| D1 | OS scheduler (cron/Task Scheduler/launchd) for recurring jobs, no internal daemon scheduler | Codex R1 | Round 1 |
+| D2 | Backend API is the **sole authority** for state transitions; no direct file writes by web, TUI, or Claude | Codex R2 | Round 2 |
+| D3 | Multi-page server-rendered dashboard with JS islands; no SPA, no React/Vue | Codex R2, Gemini R2 | Round 2 |
+| D4 | Token-based auth (Jupyter-style `?token=...`) for localhost dashboard (CSRF protection) | Gemini R1 | Round 1 |
 | D5 | Atomic file writes (temp + rename) for all state persistence | All | Round 2 |
-| D6 | Separate rendering for Web and TUI — share API/state layer only | Gemini R1, Codex R1 | Round 1 |
-| D7 | Agent-Guided "Escape Room" — Web = visual layer, Claude = conversation layer, state.json = shared brain | Ted + Gemini R1 | Round 2 |
-| D8 | One controller lease at a time — web OR Claude can mutate, never both | Codex R2, Gemini R2 | Round 2 |
-| D9 | Oracle NOT in onboarding — appears during absorb skill setup | Ted R2 | Round 1 |
+| D6 | Separate rendering for Web and TUI; share API/state layer only | Gemini R1, Codex R1 | Round 1 |
+| D7 | Agent-Guided "Escape Room": Web = visual layer, Claude = conversation layer, state.json = shared brain | Ted + Gemini R1 | Round 2 |
+| D8 | One controller lease at a time: web OR Claude can mutate, never both | Codex R2, Gemini R2 | Round 2 |
+| D9 | Oracle NOT in onboarding; appears during absorb skill setup | Ted R2 | Round 1 |
 | D10 | Separate Foundations (not skills) from Skills (manifest-driven) from Jobs (OS scheduler) | Codex R1 | Round 1 |
-| D11 | Skill onboarding metadata in skill.json — constrained schema with fixed step kinds | Codex R4 | Round 4 |
+| D11 | Skill onboarding metadata in skill.json: constrained schema with fixed step kinds | Codex R4 | Round 4 |
 | D12 | Append-only events.jsonl audit trail with seq/revision/actor attribution | Codex R4 | Round 4 |
 | D13 | Reconciliation probes must be side-effect free (detect + verify, never mutate) | Codex R4 | Round 4 |
-| D14 | MVP = Bootstrap + Foundations + Required Skills only — defer power skills, TUI parity, credential backends | All R2-3 | Round 3 |
+| D14 | MVP = Bootstrap + Foundations + Required Skills only; defer power skills, TUI parity, credential backends | All R2-3 | Round 3 |
 
 ---
 
@@ -57,21 +57,21 @@
 │  │   [✓] Workspace root + first workspace                         │   │
 │  │                                                                  │   │
 │  │ Tier 2: REQUIRED SKILLS (manifest-driven)                       │   │
-│  │   [ ] 🧠 Memory Server — Your AI's long-term memory             │   │
-│  │   [ ] 📋 Spec — Structured specification framework               │   │
-│  │   [ ] 📥 Absorb — Knowledge ingestion (+ optional Oracle)        │   │
-│  │   [ ] 🔄 Evolve — Pattern learning (+ register cron 2h)         │   │
-│  │   [ ] 💓 Heartbeat — Session monitoring (+ register cron 30m)    │   │
-│  │   [ ] 🚀 Deploy — Docker deployment pipeline                    │   │
+│  │   [ ] 🧠 Memory Server - Your AI's long-term memory             │   │
+│  │   [ ] 📋 Spec - Structured specification framework               │   │
+│  │   [ ] 📥 Absorb - Knowledge ingestion (+ optional Oracle)        │   │
+│  │   [ ] 🔄 Evolve - Pattern learning (+ register cron 2h)         │   │
+│  │   [ ] 💓 Heartbeat - Session monitoring (+ register cron 30m)    │   │
+│  │   [ ] 🚀 Deploy - Docker deployment pipeline                    │   │
 │  │                                                                  │   │
 │  │ Tier 3: POWER SKILLS (optional, explain + skip)                 │   │
-│  │   [ ] 🤖 Codex Bridge — GPT-5.4 worker/critic                   │   │
-│  │   [ ] 💎 Gemini Bridge — Consultant/validator                    │   │
-│  │   [ ] 📓 NotebookLM — Free RAG + content gen                    │   │
-│  │   [ ] 🏢 Connect Odoo — ERP integration                         │   │
+│  │   [ ] 🤖 Codex Bridge - GPT-5.4 worker/critic                   │   │
+│  │   [ ] 💎 Gemini Bridge - Consultant/validator                    │   │
+│  │   [ ] 📓 NotebookLM - Free RAG + content gen                    │   │
+│  │   [ ] 🏢 Connect Odoo - ERP integration                         │   │
 │  │                                                                  │   │
 │  │ Tier 4: ONE-TIME (conditional)                                  │   │
-│  │   [ ] 📦 Migrate — Only if legacy system detected               │   │
+│  │   [ ] 📦 Migrate - Only if legacy system detected               │   │
 │  │   [ ] ⏰ Scheduler registration                                 │   │
 │  │                                                                  │   │
 │  │ VERIFICATION: Health check all enabled skills                   │   │
@@ -266,13 +266,13 @@ templates/onboarding/state.v1.json    ← initial state template
 
 This is not a traditional installer. It's a **new paradigm** for developer tool onboarding:
 
-1. **The Web is not a wizard** — it's a **visual companion** that shows state, progress, and forms
-2. **Claude is not a script reader** — it's a **conversational guide** that reads state and helps the user
-3. **Together they create a collaborative experience** — the user talks to Claude while the web shows what's happening
-4. **The environment is pre-staged** — the first workspace and dashboard are set up by the installer, so Claude enters a world that already knows it's in onboarding mode
-5. **Either can advance the flow** — but through the same backend API, never by direct file manipulation
+1. **The Web is not a wizard**: it's a **visual companion** that shows state, progress, and forms
+2. **Claude is not a script reader**: it's a **conversational guide** that reads state and helps the user
+3. **Together they create a collaborative experience**: the user talks to Claude while the web shows what's happening
+4. **The environment is pre-staged**: the first workspace and dashboard are set up by the installer, so Claude enters a world that already knows it's in onboarding mode
+5. **Either can advance the flow**, but through the same backend API, never by direct file manipulation
 
-> "既然我們已經進入 Agent 時代，讓 Agent 帶著安裝完是一個新的角度。" — Ted
+> "既然我們已經進入 Agent 時代，讓 Agent 帶著安裝完是一個新的角度。" (Ted)
 
 ---
 

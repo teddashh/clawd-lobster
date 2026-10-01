@@ -1,9 +1,9 @@
-# AI Agent — Workspace Rules
+# AI Agent: Workspace Rules
 
 ## Agent Architecture
 - Entry point: `src/agent.py`
-- Tools: `src/tools/` — each tool is a separate module
-- Prompts: `src/prompts/` — version controlled, never hardcoded
+- Tools: `src/tools/` (each tool is a separate module)
+- Prompts: `src/prompts/` (version controlled, never hardcoded)
 
 ## Deploy
 - Default: local execution only

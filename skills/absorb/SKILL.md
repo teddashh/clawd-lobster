@@ -1,4 +1,4 @@
-# Absorb — Universal Knowledge Ingestion Engine
+# Absorb: Universal Knowledge Ingestion Engine
 
 !git log --oneline -5 2>/dev/null || echo "Not in a git repo"
 
@@ -8,10 +8,10 @@ When `/absorb` is invoked, follow this protocol exactly.
 
 Determine the source type from the user's argument:
 
-- **Local folder path** (e.g., `./my-project`, `/home/user/repo`) — scan the directory directly.
-- **GitHub URL** (e.g., `https://github.com/org/repo`) — clone to a temp directory, then scan.
-- **Web URL** (e.g., `https://docs.example.com/guide`) — fetch the page content, extract knowledge.
-- **No argument** — ask the user: "What should I absorb? Provide a folder path, GitHub URL, or web URL."
+- **Local folder path** (e.g., `./my-project`, `/home/user/repo`): scan the directory directly.
+- **GitHub URL** (e.g., `https://github.com/org/repo`): clone to a temp directory, then scan.
+- **Web URL** (e.g., `https://docs.example.com/guide`): fetch the page content, extract knowledge.
+- **No argument**: ask the user: "What should I absorb? Provide a folder path, GitHub URL, or web URL."
 
 ## 2. Detect Backend
 
@@ -19,7 +19,7 @@ Check which storage backend is available:
 
 | Check | Backend | How |
 |-------|---------|-----|
-| Oracle vault configured? | **The Vault (L3)** — preferred | Check `~/.clawd-lobster/config.json` → `oracle.enabled = true` |
+| Oracle vault configured? | **The Vault (L3)**, preferred | Check `~/.clawd-lobster/config.json` → `oracle.enabled = true` |
 | memory-server running? | **Memory Server (L1+L2)** | Check via memory_store tool |
 | Neither? | **Dry-run mode** | Parse and report without storing |
 
@@ -100,7 +100,7 @@ Reusable approaches, workflows, or techniques that can be applied elsewhere.
 ### Complete Tools / Repos
 If the source is a full tool or repo that could become a skill:
 - Output a draft `skill.json` for the user to review
-- Do NOT auto-register — present it as a suggestion
+- Do NOT auto-register; present it as a suggestion
 
 ### Action Items / TODOs
 Tasks discovered during scanning: missing tests, deprecated deps, migration needs, open issues.
@@ -116,7 +116,7 @@ Check the `depth` config (default: `normal`):
 |-------|-------------|
 | `shallow` | README, CLAUDE.md, top-level config files only (package.json, pyproject.toml, Cargo.toml, etc.) |
 | `normal` | Everything in shallow + key source files, skill definitions, important docs, .claude/ directory |
-| `deep` | Full codebase analysis — all source files, tests, CI configs, scripts |
+| `deep` | Full codebase analysis: all source files, tests, CI configs, scripts |
 
 ## 5. Report Results
 
@@ -151,9 +151,9 @@ Key findings:
 
 If the source folder contains `.claude/`, `CLAUDE.md`, or `sessions/` (i.e., it looks like an existing Claude Code workspace), offer these additional actions:
 
-1. **Import CLAUDE.md content** — extract project instructions and store as knowledge items.
-2. **Import custom skills** — scan `.claude/skills/` for skill definitions, store as learned skills or suggest adding to this instance.
-3. **Import session context** — scan session files for valuable context, decisions, and learnings worth preserving.
+1. **Import CLAUDE.md content**: extract project instructions and store as knowledge items.
+2. **Import custom skills**: scan `.claude/skills/` for skill definitions, store as learned skills or suggest adding to this instance.
+3. **Import session context**: scan session files for valuable context, decisions, and learnings worth preserving.
 
 Ask the user before importing workspace-specific content: "This looks like a Claude Code workspace. Import its project context, skills, and session knowledge?"
 
@@ -167,23 +167,23 @@ If `dry_run` is true:
 
 ## 8. Safety Rules
 
-- Never store file contents verbatim if they exceed 5000 characters. Summarize instead. (Vault mode stores full content — the Vault handles large CLOBs natively.)
+- Never store file contents verbatim if they exceed 5000 characters. Summarize instead. (Vault mode stores full content; the Vault handles large CLOBs natively.)
 - Never store secrets, API keys, tokens, or credentials found in source files. Log a warning if detected.
-- Never store personal names, hardcoded paths, or machine-specific information in L1/L2 mode. (Vault mode preserves these — The Vault is private by design.)
+- Never store personal names, hardcoded paths, or machine-specific information in L1/L2 mode. (Vault mode preserves these; The Vault is private by design.)
 - Tag all absorbed items with `source:absorb` and the source identifier for traceability.
-- If the source is unreachable or empty, report clearly and exit — do not fabricate content.
+- If the source is unreachable or empty, report clearly and exit; do not fabricate content.
 - Skip binary executables, system files, node_modules, .git, __pycache__, and similar directories.
 - Files larger than 50MB are skipped with a warning.
 
 ## Gotchas
 
-1. **Verbatim dump instead of synthesis.** In L1/L2 mode, Claude tends to store raw file contents as knowledge items instead of summarizing. Always distill before storing. In Vault mode, raw content is fine — the enrichment pipeline handles summarization later.
+1. **Verbatim dump instead of synthesis.** In L1/L2 mode, Claude tends to store raw file contents as knowledge items instead of summarizing. Always distill before storing. In Vault mode, raw content is fine; the enrichment pipeline handles summarization later.
 
 2. **Missing source tags make items untraceable.** Every absorbed item MUST include a source identifier. Without this, you cannot distinguish absorbed knowledge from manually stored knowledge, making cleanup impossible.
 
 3. **Shallow scan misses the real architecture.** When `depth=shallow`, only README/config files are scanned and may not reflect actual codebase state. If the user seems confused by results, suggest re-running with `depth=normal`.
 
-4. **GitHub URLs fail silently on private repos.** If `git clone` fails due to auth, report the auth failure explicitly — don't proceed with empty results.
+4. **GitHub URLs fail silently on private repos.** If `git clone` fails due to auth, report the auth failure explicitly; don't proceed with empty results.
 
 5. **Duplicate absorption creates noise.** The DedupEngine (3-layer: content_hash → original_path → new) prevents duplicates in Vault mode. In L1/L2 mode, search existing memory for items tagged with the same source identifier and skip duplicates.
 

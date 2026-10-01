@@ -1,4 +1,4 @@
-# install-lib.ps1 — Helper functions for Clawd-Lobster installer
+# install-lib.ps1: Helper functions for Clawd-Lobster installer
 # Sourced by install.ps1: . "$wrapperDir\scripts\install-lib.ps1"
 
 # ============================================================
@@ -225,20 +225,20 @@ function Show-PreflightReport($state) {
 
 function Show-InstallPlan($state, $hub, $env, $hubName, $machineId, $domain) {
     Write-Host "  Installation Plan ($hub-$env):" -ForegroundColor Yellow
-    Write-Host "    [1] Prerequisites     — verify node, python, git, claude"
-    Write-Host "    [2] Authentication    — check Claude Code + GitHub auth"
+    Write-Host "    [1] Prerequisites     - verify node, python, git, claude"
+    Write-Host "    [2] Authentication    - check Claude Code + GitHub auth"
     $hubAction = if ($hub -eq "new") { "create new hub `"$hubName`"" } else { "join existing hub" }
-    Write-Host "    [3] Hub setup         — $hubAction"
-    Write-Host "    [4] Configuration     — write ~/.clawd-lobster/config.json"
+    Write-Host "    [3] Hub setup         - $hubAction"
+    Write-Host "    [4] Configuration     - write ~/.clawd-lobster/config.json"
     $mcpAction = if ($state.mcp_server_count -gt 0) { "merge .mcp.json (keep $($state.mcp_server_count) existing + add memory)" } else { "create .mcp.json" }
-    Write-Host "    [5] MCP Memory Server — pip install, $mcpAction"
+    Write-Host "    [5] MCP Memory Server - pip install, $mcpAction"
     $mdAction = if ($state.claude_md_exists) { "merge CLAUDE.md (append)" } else { "create CLAUDE.md" }
     $stAction = if ($state.settings_json) { "merge settings.json" } else { "create settings.json" }
-    Write-Host "    [6] Claude Code setup — $mdAction, $stAction"
-    Write-Host "    [7] Workspaces        — deploy registered workspaces"
-    Write-Host "    [8] Scheduler         — create sync + heartbeat tasks"
+    Write-Host "    [6] Claude Code setup - $mdAction, $stAction"
+    Write-Host "    [7] Workspaces        - deploy registered workspaces"
+    Write-Host "    [8] Scheduler         - create sync + heartbeat tasks"
     $migAction = if ($env -eq "absorb") { "absorb detected systems" } else { "skip (fresh mode)" }
-    Write-Host "    [9] Migration         — $migAction"
+    Write-Host "    [9] Migration         - $migAction"
     Write-Host ""
 }
 
@@ -413,7 +413,7 @@ function Merge-ClaudeMd($existingPath, $templateContent) {
     # Size warning
     $sizeKb = [math]::Round($existing.Length / 1024, 1)
     if ($sizeKb -gt 100) {
-        Write-Host "  [WARN] CLAUDE.md is $sizeKb KB — unusually large" -ForegroundColor Yellow
+        Write-Host "  [WARN] CLAUDE.md is $sizeKb KB, unusually large" -ForegroundColor Yellow
     }
 
     # Section-level dedup: check for key Lobster sections

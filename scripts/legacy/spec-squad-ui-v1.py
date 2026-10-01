@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-spec-squad-ui.py — Unified web UI for Spec Squad.
+spec-squad-ui.py: Unified web UI for Spec Squad.
 
-Phase 1: Discovery chat — Claude asks 3W1H questions, user answers conversationally
-Phase 2: Dashboard — watch Architect/Reviewer/Coder/Tester work in real-time
+Phase 1: Discovery chat (Claude asks 3W1H questions, user answers conversationally)
+Phase 2: Dashboard (watch Architect/Reviewer/Coder/Tester work in real-time)
 
 Usage:
     python spec-squad-ui.py                              # New project (chat discovery)
     python spec-squad-ui.py --workspace <path>           # Resume existing (dashboard)
     python spec-squad-ui.py --port 3333                  # Custom port
 
-No external dependencies — stdlib only.
+No external dependencies; stdlib only.
 """
 
 import argparse

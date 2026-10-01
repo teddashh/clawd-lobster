@@ -85,11 +85,11 @@ All cron/scheduler jobs (evolve every 2h, heartbeat every 30m, sync every 30m, c
 
 ### R8: Persistent web dashboard
 A web page that can stay open showing:
-- **All workspaces** — list, create, launch squad
-- **All skills** — 3 tabs (MCP-server, prompt-pattern, cron)
-- **All skill setup** — can modify configuration from the dashboard
-- **All API keys** — can change keys, manage SSO, rotate credentials
-- **Consistent session** — maintains state while open
+- **All workspaces**: list, create, launch squad
+- **All skills**: 3 tabs (MCP-server, prompt-pattern, cron)
+- **All skill setup**: can modify configuration from the dashboard
+- **All API keys**: can change keys, manage SSO, rotate credentials
+- **Consistent session**: maintains state while open
 
 ### R9: Web closeable but scheduler survives
 The web dashboard can be closed without killing background jobs. Schedulers (cron/Task Scheduler) run independently.
@@ -105,8 +105,8 @@ Users should also be able to run a TUI session that provides the same views as t
 
 **Key implications:**
 1. The ONLY thing the installer needs to do is: install Claude Code + open the web dashboard + create the first workspace.
-2. The web dashboard already knows it's in onboarding mode — the pages show the right UI.
-3. Claude Code enters an environment that's already staged for it — it doesn't need CLAUDE.md scripts.
+2. The web dashboard already knows it's in onboarding mode: the pages show the right UI.
+3. Claude Code enters an environment that's already staged for it: it doesn't need CLAUDE.md scripts.
 4. The **web is the presentation layer**, Claude Code is the **conversational guide**. Together they ARE the onboarding.
 5. This is NOT a traditional installer. It's an agent-assisted experience where the user talks to Claude while the web shows progress.
 
@@ -123,12 +123,12 @@ Users should also be able to run a TUI session that provides the same views as t
 
 ## Technical Constraints
 
-- **Zero external web framework** — stdlib http.server only (no Flask, no Express)
-- **Cross-platform** — Windows (PowerShell + Task Scheduler), macOS (launchd), Linux (cron)
-- **Offline-capable** — core features work without internet
-- **Python stdlib preferred** — minimize pip dependencies for core
-- **TUI framework options** — textual (Python), blessed (Node), raw ANSI, curses
-- **Current web tech** — inline HTML/CSS/JS in pages.py, no bundler, no CDN
+- **Zero external web framework**: stdlib http.server only (no Flask, no Express)
+- **Cross-platform**: Windows (PowerShell + Task Scheduler), macOS (launchd), Linux (cron)
+- **Offline-capable**: core features work without internet
+- **Python stdlib preferred**: minimize pip dependencies for core
+- **TUI framework options**: textual (Python), blessed (Node), raw ANSI, curses
+- **Current web tech**: inline HTML/CSS/JS in pages.py, no bundler, no CDN
 
 ## Existing API Endpoints
 

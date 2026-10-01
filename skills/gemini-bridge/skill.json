@@ -1,7 +1,7 @@
 {
   "id": "gemini-bridge",
   "name": "Gemini Bridge",
-  "description": "Use when you need a second opinion, are uncertain about an approach, or face a complex decision — triggers on /gemini, 'ask Gemini', 'get another perspective', 'I'm not sure about this', or when comparing architectural alternatives.",
+  "description": "Use when you need a second opinion, are uncertain about an approach, or face a complex decision. Triggers on /gemini, 'ask Gemini', 'get another perspective', 'I'm not sure about this', or when comparing architectural alternatives.",
   "version": "0.1.0",
   "category": "integration",
   "tags": [

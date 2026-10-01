@@ -7,7 +7,7 @@
 **Status:** pending
 
 ## Why
-18 learned skill files and workspace-sync are sitting untracked — they'll be lost on a fresh clone and aren't benefiting other contributors
+18 learned skill files and workspace-sync are sitting untracked; they'll be lost on a fresh clone and aren't benefiting other contributors
 
 ## What
 Stage and commit skills/learned/*.md, skills/workspace-sync/, and scripts/workspace-sync.py

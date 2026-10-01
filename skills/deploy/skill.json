@@ -1,7 +1,7 @@
 {
   "id": "deploy",
   "name": "Deploy Pipeline",
-  "description": "Workspace-aware deploy pipeline — detect stack, generate Docker configs for dev/staging/prod, and ship to any environment",
+  "description": "Workspace-aware deploy pipeline. Detect stack, generate Docker configs for dev/staging/prod, and ship to any environment",
   "version": "0.1.0",
   "category": "core",
   "tags": ["deploy", "docker", "shipping", "infrastructure", "devops"],

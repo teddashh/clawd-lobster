@@ -1,12 +1,12 @@
-# Codex Bridge — The Worker
+# Codex Bridge: The Worker
 
 > Delegate bulk work, get adversarial reviews, and run two-checkpoint debates with Codex GPT-5.4.
 
 ## What It Does
 
 Codex Bridge connects Claude Code to OpenAI Codex for two roles:
-- **Worker** — parallel tasks, boilerplate, test generation, bulk refactoring
-- **Critic** — adversarial security review, architecture debate, code review
+- **Worker**: parallel tasks, boilerplate, test generation, bulk refactoring
+- **Critic**: adversarial security review, architecture debate, code review
 
 Part of the **three-agent system**: Claude (lead) + Codex (worker/critic) + Gemini (consultant). See also [gemini-bridge](../gemini-bridge/README.md).
 
@@ -14,8 +14,8 @@ Part of the **three-agent system**: Claude (lead) + Codex (worker/critic) + Gemi
 
 For important tasks, Claude consults both Codex and Gemini at two checkpoints:
 
-1. **Plan Review** (before building) — "Here's my plan. What's wrong?"
-2. **Code Review** (before delivering) — "Here's the code. What breaks?"
+1. **Plan Review** (before building): "Here's my plan. What's wrong?"
+2. **Code Review** (before delivering): "Here's the code. What breaks?"
 
 Each checkpoint costs ~3 minutes but can save a 15-minute redo cycle.
 

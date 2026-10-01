@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate-spec.py — Hard validation for OpenSpec-style artifacts.
+validate-spec.py: Hard validation for OpenSpec-style artifacts.
 
 Enforces structural rules on proposal.md, design.md, tasks.md, and spec files.
 Runs as a git pre-commit hook or manually from the CLI.

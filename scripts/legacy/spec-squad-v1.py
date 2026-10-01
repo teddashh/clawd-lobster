@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-spec-squad.py — Multi-session spec orchestrator for Clawd-Lobster.
+spec-squad.py: Multi-session spec orchestrator for Clawd-Lobster.
 
 Runs the /spec flow with separate Claude sessions acting as specialized roles:
   - Architect:  Writes the spec (project.md → proposal.md → design.md → specs/ → tasks.md)
@@ -17,7 +17,7 @@ Usage:
     python spec-squad.py <workspace-path> --plan-only        # Spec + review only
     python spec-squad.py <workspace-path> --status           # Show current state
 
-No external dependencies — stdlib only.
+No external dependencies; stdlib only.
 """
 
 import argparse
@@ -165,25 +165,25 @@ INSTRUCTIONS:
    - openspec/changes/v1/specs/<capability>/spec.md (SHALL/MUST requirements + Gherkin scenarios)
    - openspec/changes/v1/tasks.md (phased, file-referenced, 5-30 min tasks)
 
-3. Requirements MUST use SHALL or MUST — never "should" or "could"
+3. Requirements MUST use SHALL or MUST; never "should" or "could"
 4. Every requirement needs at least one Gherkin scenario (Given/When/Then)
 5. Every task must reference a file path and be completable in 5-30 minutes
 6. Write complete, copy-pasteable code in the plan where appropriate
-7. Be opinionated — make strong recommendations with trade-off analysis
+7. Be opinionated: make strong recommendations with trade-off analysis
 
 After generating all artifacts, output a summary:
 ```json
 {{"status": "spec_complete", "capabilities": N, "tasks": N, "phases": N}}
 ```
 
-Write ALL the files now. Do not ask questions — decide and document your decisions."""
+Write ALL the files now. Do not ask questions; decide and document your decisions."""
 
 
 def reviewer_prompt(workspace: Path, review_round: int) -> str:
     """Generate the reviewer's challenge prompt."""
     return f"""You are the REVIEWER in a spec-squad development team. Round {review_round}/{MAX_REVIEW_ROUNDS}.
 
-YOUR ROLE: Tear apart the Architect's spec. Find every gap, ambiguity, missing edge case, and weak decision. You are the adversarial reviewer — your job is to make the spec bulletproof BEFORE any code is written.
+YOUR ROLE: Tear apart the Architect's spec. Find every gap, ambiguity, missing edge case, and weak decision. You are the adversarial reviewer: your job is to make the spec bulletproof BEFORE any code is written.
 
 WORKSPACE: {workspace}
 
@@ -246,7 +246,7 @@ INSTRUCTIONS:
 2. Address EVERY issue listed above
 3. Update the affected files (proposal.md, design.md, specs/, tasks.md)
 4. Do NOT rewrite files that don't need changes
-5. Maintain the DAG consistency — if you change design.md, check that specs/ and tasks.md still align
+5. Maintain the DAG consistency: if you change design.md, check that specs/ and tasks.md still align
 
 After fixing, output:
 ```json
@@ -260,7 +260,7 @@ def coder_prompt(workspace: Path) -> str:
     """Generate the coder's blitz prompt."""
     return f"""You are the CODER in a spec-squad development team.
 
-YOUR ROLE: Execute the approved spec exactly. The spec has been reviewed and approved — it is your contract. No improvising.
+YOUR ROLE: Execute the approved spec exactly. The spec has been reviewed and approved; it is your contract. No improvising.
 
 WORKSPACE: {workspace}
 
@@ -273,7 +273,7 @@ INSTRUCTIONS:
    - Follow the architecture in design.md exactly
    - Mark the task done: [ ] → [x] in tasks.md
 4. After each phase, commit: git add -A && git commit -m "Phase N: <phase title>"
-5. Skip any tasks marked [codex] — those are for external execution
+5. Skip any tasks marked [codex]; those are for external execution
 
 RULES:
 - The spec is the plan. Follow it.
@@ -299,13 +299,13 @@ YOUR ROLE: Verify that the Coder's implementation matches the approved spec exac
 WORKSPACE: {workspace}
 
 INSTRUCTIONS:
-1. Read openspec/changes/v1/specs/ — every requirement and Gherkin scenario
+1. Read openspec/changes/v1/specs/: every requirement and Gherkin scenario
 2. Read the implemented code
 3. For each spec requirement (SHALL/MUST):
    - Verify the code implements it
    - Check edge cases from Gherkin scenarios
    - Run any existing tests
-4. Check tasks.md — are all tasks marked [x]?
+4. Check tasks.md: are all tasks marked [x]?
 
 OUTPUT your verdict:
 
@@ -555,7 +555,7 @@ def print_banner():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Spec Squad — Multi-session spec orchestrator for Clawd-Lobster",
+        description="Spec Squad: Multi-session spec orchestrator for Clawd-Lobster",
     )
     parser.add_argument("workspace", help="Path to workspace directory")
     parser.add_argument("--phase", choices=PHASES, default=None,

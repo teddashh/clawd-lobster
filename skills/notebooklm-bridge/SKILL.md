@@ -1,14 +1,14 @@
-# NotebookLM Bridge — Free RAG + Content Engine for Workspaces
+# NotebookLM Bridge: Free RAG + Content Engine for Workspaces
 
-!PYTHONIOENCODING=utf-8 python -m notebooklm auth check 2>/dev/null || echo "NotebookLM not authenticated — run: python -m notebooklm login"
+!PYTHONIOENCODING=utf-8 python -m notebooklm auth check 2>/dev/null || echo "NotebookLM not authenticated. Run: python -m notebooklm login"
 !PYTHONIOENCODING=utf-8 python -m notebooklm list 2>/dev/null | head -5 || echo "No notebooks found or notebooklm-py not installed"
 
 Connect any workspace to Google NotebookLM. Push your docs as sources,
-query with Gemini, generate slides/infographics/podcasts — all from terminal.
+query with Gemini, generate slides/infographics/podcasts, all from terminal.
 Zero token cost. Powered by notebooklm-py.
 
 **This guide was forged through a 4-round debate between Claude (Opus 4.6),
-Codex (GPT-5.4), and Gemini — with two judgment reversals, one concession,
+Codex (GPT-5.4), and Gemini, with two judgment reversals, one concession,
 and a unified methodology that none of them would have reached alone.**
 
 ---
@@ -75,17 +75,17 @@ The sync script automatically:
 
 ### When to sync
 
-- **After workspace creation** — push initial structure
-- **After blitz completes** — push all new code and docs
-- **After major changes** — re-sync to keep notebook current
-- **Before generating deliverables** — ensure sources are up to date
+- **After workspace creation**: push initial structure
+- **After blitz completes**: push all new code and docs
+- **After major changes**: re-sync to keep notebook current
+- **Before generating deliverables**: ensure sources are up to date
 
 ---
 
 ## The 3-Stage Pipeline (from the debate)
 
 The debate resolved that extract→outline→draft and script-first are NOT
-competing methods — they are STAGES of the same pipeline:
+competing methods; they are STAGES of the same pipeline:
 
 ```
 Stage 1: Discovery (Codex's method)
@@ -187,7 +187,7 @@ System Instructions (gear icon in chat panel):
 
 ## Prompt Templates by Content Type
 
-### Slides — The Script-Extract Method
+### Slides: The Script-Extract Method
 
 **Step 1: Extract insights**
 ```
@@ -213,7 +213,7 @@ Language: Traditional Chinese (繁體中文).
 Do not include content not found in the sources.
 ```
 
-### Slides — Style Templates (copy-paste ready)
+### Slides: Style Templates (copy-paste ready)
 
 **Minimalist Business:**
 ```
@@ -242,7 +242,7 @@ Bold scannable typography. Each slide tells a complete visual story.
 Create an infographic summarizing [topic] from the provided sources.
 Structure: header with project name, 3-4 main sections arranged vertically,
 comparison table at the bottom.
-Visual metaphor: [brain/network/pipeline/timeline — pick one].
+Visual metaphor: [brain/network/pipeline/timeline, pick one].
 Color scheme: [specify hex values].
 Include specific numbers and data points from sources.
 Language: Traditional Chinese.
@@ -364,14 +364,14 @@ python -m notebooklm share view-level $NB chat-only   # AI assistant mode
 
 ## Known Limitations
 
-- **Unofficial API** — notebooklm-py uses undocumented Google APIs. Can break.
-- **Auth expires** — Google cookies last days to weeks. Re-run `login` when needed.
-- **Rate limits** — Free: ~50 queries/day. Google AI Pro: higher limits.
-- **CJK text** — Chinese characters sometimes garble in slides. Re-generate
+- **Unofficial API**: notebooklm-py uses undocumented Google APIs. Can break.
+- **Auth expires**: Google cookies last days to weeks. Re-run `login` when needed.
+- **Rate limits**: Free: ~50 queries/day. Google AI Pro: higher limits.
+- **CJK text**: Chinese characters sometimes garble in slides. Re-generate
   or use PDF→PPTX tools to fix. Adding `Language: Traditional Chinese` to
   prompts helps but doesn't guarantee perfection.
-- **Deep research import** — can timeout. Use `--no-wait` and check manually.
-- **This is optional** — if NotebookLM breaks, your workspace still works.
+- **Deep research import**: can timeout. Use `--no-wait` and check manually.
+- **This is optional**: if NotebookLM breaks, your workspace still works.
   When Google releases official API, swap backend, keep interface.
 
 ---
@@ -395,7 +395,7 @@ These rules were forged through a 4-round debate:
 | Gemini | 8 | 9 | 9 | 10 |
 
 Winner: Claude (core thesis). Best framework: Codex. Best additions: Gemini.
-Most valuable insight: the Synthesis Note technique — none of them proposed
+Most valuable insight: the Synthesis Note technique; none of them proposed
 it alone, it emerged from the debate.
 
 ---
@@ -410,8 +410,8 @@ slides and infographics. This skill includes a watermark remover, and it is
 > terms. Users must check NotebookLM's terms of service before turning this on.
 
 ### How It Works
-- **Not AI** — uses biharmonic inpainting (classical image processing)
-- **No GPU needed** — runs on CPU, ~2-5 seconds per page
+- **Not AI**: uses biharmonic inpainting (classical image processing)
+- **No GPU needed**: runs on CPU, ~2-5 seconds per page
 - Fixed-position detection at NotebookLM's standard resolution (2867×1600)
 - Outputs: clean PDF, PNG ZIP, or PowerPoint
 

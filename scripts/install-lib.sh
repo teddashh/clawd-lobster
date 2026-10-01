@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-lib.sh — Helper functions for Clawd-Lobster installer
+# install-lib.sh: Helper functions for Clawd-Lobster installer
 # Sourced by install.sh: source "$WRAPPER_DIR/scripts/install-lib.sh"
 
 # Requires: PYTHON, CONFIG_DIR, CLAUDE_DIR set by caller
@@ -244,7 +244,7 @@ merge_claude_md() {
             echo "exists"  # Already has Lobster sections
         else
             local size_kb=$(du -k "$md_path" 2>/dev/null | cut -f1)
-            [ "$size_kb" -gt 100 ] 2>/dev/null && echo -e "  ${YELLOW}[WARN] CLAUDE.md is ${size_kb}KB — unusually large${NC}" >&2
+            [ "$size_kb" -gt 100 ] 2>/dev/null && echo -e "  ${YELLOW}[WARN] CLAUDE.md is ${size_kb}KB, unusually large${NC}" >&2
             printf "\n\n# ============================================================\n# Clawd-Lobster (auto-appended by installer)\n# ============================================================\n\n%s" "$template_content" >> "$md_path"
             echo "merged"
         fi

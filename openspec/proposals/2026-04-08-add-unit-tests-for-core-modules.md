@@ -7,13 +7,13 @@
 **Status:** pending
 
 ## Why
-tests/ only has 2 onboarding test files — the core clawd_lobster package, skill manager, and webapp have zero test coverage, making regressions invisible
+tests/ only has 2 onboarding test files; the core clawd_lobster package, skill manager, and webapp have zero test coverage, making regressions invisible
 
 ## What
 Add tests for clawd_lobster/ core logic, scripts/skill-manager.py, and webapp API endpoints
 
 ## Who
-Maintainers — prevents silent breakage as the project grows
+Maintainers: prevents silent breakage as the project grows
 
 ## How
 Start with skill-manager.py (pure logic, easy to test), then add pytest fixtures for webapp API routes

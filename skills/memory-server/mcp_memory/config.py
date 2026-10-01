@@ -70,7 +70,7 @@ def save_config(config: dict) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=2)
-    # Restrict to owner-only read/write (0o600) — config may contain secrets
+    # Restrict to owner-only read/write (0o600); config may contain secrets
     try:
         os.chmod(CONFIG_FILE, stat.S_IRUSR | stat.S_IWUSR)
     except OSError:

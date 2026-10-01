@@ -40,6 +40,6 @@
 
 ## Notes
 
-- No frontend — API only. If a frontend is needed later, upgrade to `webapp` type.
+- No frontend; API only. If a frontend is needed later, upgrade to `webapp` type.
 - API docs can be auto-generated (OpenAPI/Swagger) or manual.
 - `tests/api/` contains endpoint-level tests (HTTP request/response).

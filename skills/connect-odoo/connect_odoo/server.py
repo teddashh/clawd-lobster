@@ -50,7 +50,7 @@ def _authenticate() -> int:
         _env("ODOO_DB"), _env("ODOO_USER"), _env("ODOO_PASSWORD"), {}
     )
     if not uid:
-        raise RuntimeError("Odoo authentication failed — check credentials")
+        raise RuntimeError("Odoo authentication failed; check credentials")
     _uid_cache = uid
     return uid
 

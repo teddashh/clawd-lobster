@@ -2,7 +2,7 @@
 
 !python -c "import sqlite3, os, glob; dbs=glob.glob(os.path.expanduser('~/.claude-memory/memory.db')) or glob.glob('.claude-memory/memory.db'); print(f'DB: {dbs[0]}, Size: {os.path.getsize(dbs[0])//1024}KB') if dbs else print('No memory.db found')" 2>/dev/null || echo "Memory DB check failed"
 
-> The Thin Ledger — unified memory with provenance, correction workflow, and three lifecycle operations.
+> The Thin Ledger: unified memory with provenance, correction workflow, and three lifecycle operations.
 
 ## What It Does
 
@@ -10,22 +10,22 @@ Memory Server is the core persistence layer for clawd-lobster. It implements the
 
 | Layer | Name | What It Does |
 |-------|------|-------------|
-| **SQLite** | The Ledger | Operational truth — decisions, TODOs, audit log, salience, provenance |
-| **Git Wiki** | The Library | Compiled knowledge — cross-referenced markdown pages with citations |
-| **Oracle Vector DB** | The Vault | Deep recall — all knowledge vectorized, cross-machine semantic search |
+| **SQLite** | The Ledger | Operational truth: decisions, TODOs, audit log, salience, provenance |
+| **Git Wiki** | The Library | Compiled knowledge: cross-referenced markdown pages with citations |
+| **Oracle Vector DB** | The Vault | Deep recall: all knowledge vectorized, cross-machine semantic search |
 
 ## Three Lifecycle Operations
 
-**INGEST** — New information enters the system:
+**INGEST**: New information enters the system:
 - Raw sources land in `knowledge/raw/`
 - LLM summarizes → creates wiki pages with provenance (agent, confidence, lifecycle)
 - SQLite stores metadata, decisions, salience scores
 
-**QUERY** — Finding what you need:
+**QUERY**: Finding what you need:
 - Search SQLite (structured) + Wiki (ripgrep) + Oracle (vector, if enabled)
 - Answers cite sources. Valuable answers get written back to the wiki.
 
-**LINT** — Keeping knowledge healthy (runs in evolve-tick.py):
+**LINT**: Keeping knowledge healthy (runs in evolve-tick.py):
 - Broken wiki links, orphan pages, stale claims (>90 days untouched)
 - Pending corrections in `.pending/` need review
 - DB/wiki drift detection
@@ -38,10 +38,10 @@ Runs as an always-on MCP server (`python -m mcp_memory.server`) that exposes 27+
 - Access: +5%, Reinforce: +20%, Decay: -1%/day (30-day half-life)
 
 **Provenance** on every knowledge record:
-- `source_agent` — who wrote it (claude, codex, gemini)
-- `confidence` — how sure (0.0-1.0)
-- `lifecycle` — state (raw → extracted → synthesized → accepted → superseded)
-- `upstream_ids` — what L1 events led to this
+- `source_agent`: who wrote it (claude, codex, gemini)
+- `confidence`: how sure (0.0-1.0)
+- `lifecycle`: state (raw → extracted → synthesized → accepted → superseded)
+- `upstream_ids`: what L1 events led to this
 
 **Key tool groups:**
 - **Store/Record**: `memory_store`, `memory_record_decision`, `memory_record_resolved`, `memory_record_question`, `memory_record_knowledge`

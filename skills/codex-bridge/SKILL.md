@@ -1,4 +1,4 @@
-# Codex Bridge — Intelligent Work Delegation
+# Codex Bridge: Intelligent Work Delegation
 
 !codex --version 2>/dev/null || echo "Codex CLI not installed"
 !codex whoami 2>/dev/null || echo "Codex not authenticated"
@@ -50,10 +50,10 @@ When a user enables this skill or enters the Codex Bridge settings:
 When both Codex Bridge and Gemini Bridge are enabled, use the two-checkpoint
 pattern to eliminate human round trips:
 
-**Checkpoint 1 — Plan Review (before building):**
+**Checkpoint 1: Plan Review (before building)**
 You draft an approach → ask Codex + Gemini to challenge it → fix before coding.
 
-**Checkpoint 2 — Code Review (before delivering):**
+**Checkpoint 2: Code Review (before delivering)**
 You finish code → Codex adversarial review + Gemini logic check → fix before handoff.
 
 Each checkpoint costs ~3 minutes but can save a 15-minute redo cycle.
@@ -102,49 +102,49 @@ Here are patterns to inform your decisions, not rules to follow blindly:
 
 ### Good candidates for delegation
 
-- **Parallelizable work** — 10 similar React components, 20 API endpoint stubs,
+- **Parallelizable work**: 10 similar React components, 20 API endpoint stubs,
   database migration scripts for multiple tables. Work that's independent and
   can be done without seeing each other's results.
 
-- **Well-specified implementation** — When the spec, design, and tests are
+- **Well-specified implementation**: When the spec, design, and tests are
   already defined. Codex follows instructions well when the instructions are clear.
 
-- **Boilerplate and scaffolding** — Project setup, config files, CI pipelines,
+- **Boilerplate and scaffolding**: Project setup, config files, CI pipelines,
   linter configs. Stuff that follows well-known patterns.
 
-- **Test generation** — Given existing code + Gherkin specs, generate test files.
+- **Test generation**: Given existing code + Gherkin specs, generate test files.
   You write the code, Codex writes the tests (or vice versa).
 
-- **Bulk refactoring** — Rename across 50 files, update import paths, migrate
+- **Bulk refactoring**: Rename across 50 files, update import paths, migrate
   API versions. Tedious but straightforward.
 
 ### Use Codex as a second brain (critic, not worker)
 
 Not every delegation is about getting work done. Sometimes you need a
-**different perspective** — a second opinion from a brain that hasn't
+**different perspective**: a second opinion from a brain that hasn't
 been marinating in the same codebase as you.
 
-- **Security audit** — You wrote the auth code. Ask Codex to *attack* it:
+- **Security audit**: You wrote the auth code. Ask Codex to *attack* it:
   ```
   /codex:adversarial-review
   ```
-  Codex reviews as an adversary — looking for vulnerabilities, edge cases,
+  Codex reviews as an adversary, looking for vulnerabilities, edge cases,
   and design flaws you're too close to see. Read-only. No auto-fix.
 
-- **Architecture debate** — You're choosing between two approaches. Ask Codex
+- **Architecture debate**: You're choosing between two approaches. Ask Codex
   to argue against your preferred option:
   ```
   /codex:rescue "I'm choosing approach A over B for [reason]. Play devil's
-  advocate — argue why B is better. Don't implement anything, just debate."
+  advocate: argue why B is better. Don't implement anything, just debate."
   ```
 
-- **Code review** — You finished a feature. Get a cold-eye review before merge:
+- **Code review**: You finished a feature. Get a cold-eye review before merge:
   ```
   /codex:review
   ```
   Fresh perspective, no emotional attachment to the code.
 
-- **Spec challenge** — Before blitz, ask Codex to poke holes in your spec:
+- **Spec challenge**: Before blitz, ask Codex to poke holes in your spec:
   ```
   /codex:rescue "Read openspec/changes/v1/proposal.md and design.md.
   Find 3 things that will break in production. Don't fix them, just list them."
@@ -153,25 +153,25 @@ been marinating in the same codebase as you.
 **The key: Codex critiques, YOU decide.** Codex never auto-applies changes
 in review mode. It gives opinions. You evaluate them with your full context.
 
-This is actually MORE valuable for security than doing it yourself — you
+This is actually MORE valuable for security than doing it yourself: you
 can't objectively audit code you just wrote. A different brain can.
 
 ### Keep for yourself (write the code)
 
-- **Architecture decisions** — System design, data model choices, trade-offs.
+- **Architecture decisions**: System design, data model choices, trade-offs.
   These need your full context and judgment. (But ask Codex to *challenge*
   your decision afterward.)
 
-- **Security-critical implementation** — Write auth, encryption, and validation
+- **Security-critical implementation**: Write auth, encryption, and validation
   yourself. Then ask Codex to *review* it adversarially.
 
-- **Code that depends on recent context** — If you just made a decision that
+- **Code that depends on recent context**: If you just made a decision that
   affects this code, do it yourself. Codex won't have that context.
 
-- **Novel problem-solving** — Debugging weird issues, investigating unknown
+- **Novel problem-solving**: Debugging weird issues, investigating unknown
   behavior, designing new patterns. This is where your reasoning shines.
 
-- **User-facing communication** — Explaining changes, asking questions,
+- **User-facing communication**: Explaining changes, asking questions,
   presenting options. Stay in the conversation.
 
 ### Context-aware delegation
@@ -231,9 +231,9 @@ codex "Your prompt here"
 ```
 
 **IMPORTANT syntax notes:**
-- `codex exec "prompt"` — non-interactive, returns result (USE THIS)
-- `codex "prompt"` — interactive mode (avoid in automation)
-- Do NOT use `codex -p` — that flag does not exist
+- `codex exec "prompt"`: non-interactive, returns result (USE THIS)
+- `codex "prompt"`: interactive mode (avoid in automation)
+- Do NOT use `codex -p`; that flag does not exist
 - The prompt goes AFTER the `exec` subcommand, not as a flag
 
 ### Practical Examples
@@ -313,14 +313,14 @@ The final decision is always yours. Tags are hints, not orders.
 
 ## Model Quality Gate
 
-The gate is relative — what matters is Codex's capability *relative to yours*.
+The gate is relative: what matters is Codex's capability *relative to yours*.
 
 | You (Lead) | GPT-5.4 Codex | GPT-4o | GPT-4o-mini |
 |-----------|--------------|--------|------------|
 | Opus 4.6 | Peer | Review only | Skip |
 | Sonnet 4.6 | **Upgrade** | Peer | Skip |
 
-If running as Sonnet, Codex becomes an upgrade path — not just
+If running as Sonnet, Codex becomes an upgrade path, not just
 a second opinion, but a *stronger* brain to consult. Always use the best
 available model. If quota is exhausted and only weaker models remain,
 tell the user and handle it yourself.
@@ -330,14 +330,14 @@ tell the user and handle it yourself.
 ## Cost Model
 
 Codex runs on the user's own account:
-- **ChatGPT Plus** — included in subscription
-- **API key** — pay-per-token
+- **ChatGPT Plus**: included in subscription
+- **API key**: pay-per-token
 
 This skill does not track costs. Codex CLI handles its own billing.
 The `effort` config option controls compute intensity:
-- `none` / `minimal` — fastest, cheapest
-- `medium` — balanced (default)
-- `high` / `xhigh` — thorough, more expensive
+- `none` / `minimal`: fastest, cheapest
+- `medium`: balanced (default)
+- `high` / `xhigh`: thorough, more expensive
 
 ---
 
@@ -367,7 +367,7 @@ Then set up a cron job to keep it fresh:
 # crontab -e (Unix)
 */30 * * * * cd /path/to/clawd-lobster && python scripts/sync-claude-to-codex.py -q
 
-# Task Scheduler (Windows) — run every 30 min:
+# Task Scheduler (Windows), run every 30 min:
 # python C:\path\to\clawd-lobster\scripts\sync-claude-to-codex.py -q
 ```
 
@@ -384,7 +384,7 @@ python scripts/sync-claude-to-codex.py --dry-run           # preview
 
 Claude → Codex, never Codex → Claude. Because:
 - Claude has a full memory system (MCP, auto-memory, knowledge base)
-- Codex is a task worker — it doesn't accumulate project knowledge
+- Codex is a task worker; it doesn't accumulate project knowledge
 - Claude is the brain; Codex reads Claude's notes before each task
 
 ---
@@ -395,8 +395,8 @@ Claude → Codex, never Codex → Claude. Because:
 - Codex must be authenticated (`codex login`)
 - One task at a time per session (no parallel Codex jobs)
 - Review output is read-only (no auto-apply)
-- AGENTS.md has a 32 KiB limit — large memory sets are truncated
-- Sync is periodic (not real-time) — Codex sees Claude's state as of last sync
+- AGENTS.md has a 32 KiB limit; large memory sets are truncated
+- Sync is periodic (not real-time); Codex sees Claude's state as of last sync
 
 ## Gotchas
 

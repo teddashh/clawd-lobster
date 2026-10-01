@@ -15,7 +15,7 @@ from . import state_store, lease, intents, manifest, probes, executor, handoff
 # ---------------------------------------------------------------------------
 
 def create_session(body: dict) -> tuple[dict, int]:
-    """POST /api/onboarding/session — Create new onboarding session."""
+    """POST /api/onboarding/session: Create new onboarding session."""
     lang = body.get("lang", "en")
     state, token = state_store.create_session(lang)
 
@@ -35,7 +35,7 @@ def create_session(body: dict) -> tuple[dict, int]:
 
 
 def get_state(query: dict) -> tuple[dict, int]:
-    """GET /api/onboarding/state — Read current state."""
+    """GET /api/onboarding/state: Read current state."""
     session_id = query.get("session_id", [""])[0] if isinstance(query.get("session_id"), list) else query.get("session_id", "")
 
     if not session_id:
@@ -51,7 +51,7 @@ def get_state(query: dict) -> tuple[dict, int]:
 
 
 def get_manifest(query: dict) -> tuple[dict, int]:
-    """GET /api/onboarding/manifest — Return resolved onboarding plan."""
+    """GET /api/onboarding/manifest: Return resolved onboarding plan."""
     manifests = manifest.load_skill_manifests()
     catalog = manifest.get_skill_display(manifests)
     items = manifest.manifests_to_items(manifests)
@@ -70,7 +70,7 @@ def get_manifest(query: dict) -> tuple[dict, int]:
 
 
 def apply_intent(body: dict) -> tuple[dict, int]:
-    """POST /api/onboarding/intent — Apply a state transition."""
+    """POST /api/onboarding/intent: Apply a state transition."""
     session_id = body.get("session_id", "")
     lease_id = body.get("lease_id", "")
     intent_name = body.get("intent", "")
@@ -92,7 +92,7 @@ def apply_intent(body: dict) -> tuple[dict, int]:
 
 
 def run_reconcile(body: dict) -> tuple[dict, int]:
-    """POST /api/onboarding/reconcile — Run full reconciliation."""
+    """POST /api/onboarding/reconcile: Run full reconciliation."""
     session_id = body.get("session_id", "")
     if not session_id:
         return {"ok": False, "error": "session_id required"}, 400
@@ -102,11 +102,11 @@ def run_reconcile(body: dict) -> tuple[dict, int]:
     return result, status
 
 
-# mark_complete removed — completion goes through intent("complete") via /api/onboarding/intent
+# mark_complete removed; completion goes through intent("complete") via /api/onboarding/intent
 
 
 def get_events(query: dict) -> tuple[dict, int]:
-    """GET /api/onboarding/events — Incremental event feed."""
+    """GET /api/onboarding/events: Incremental event feed."""
     session_id = query.get("session_id", [""])[0] if isinstance(query.get("session_id"), list) else query.get("session_id", "")
     after = int(query.get("after", [0])[0]) if isinstance(query.get("after"), list) else int(query.get("after", 0))
 
@@ -118,13 +118,13 @@ def get_events(query: dict) -> tuple[dict, int]:
 
 
 def get_health(query: dict) -> tuple[dict, int]:
-    """GET /api/onboarding/health — Aggregate health summary."""
+    """GET /api/onboarding/health: Aggregate health summary."""
     results = probes.run_all_probes()
     return {"ok": True, "probes": results}, 200
 
 
 def get_item_health(item_id: str) -> tuple[dict, int]:
-    """GET /api/onboarding/health/<item_id> — Per-item probe."""
+    """GET /api/onboarding/health/<item_id>: Per-item probe."""
     result = probes.run_probe(item_id)
     return {"ok": True, "item_id": item_id, "probe": result}, 200
 
@@ -134,7 +134,7 @@ def get_item_health(item_id: str) -> tuple[dict, int]:
 # ---------------------------------------------------------------------------
 
 def acquire_lease(body: dict) -> tuple[dict, int]:
-    """POST /api/controller/acquire — Request controller lease."""
+    """POST /api/controller/acquire: Request controller lease."""
     session_id = body.get("session_id", "")
     holder = body.get("holder", "")
 
@@ -147,7 +147,7 @@ def acquire_lease(body: dict) -> tuple[dict, int]:
 
 
 def renew_lease(body: dict) -> tuple[dict, int]:
-    """POST /api/controller/renew — Renew active lease."""
+    """POST /api/controller/renew: Renew active lease."""
     session_id = body.get("session_id", "")
     lease_id = body.get("lease_id", "")
 
@@ -160,7 +160,7 @@ def renew_lease(body: dict) -> tuple[dict, int]:
 
 
 def release_lease(body: dict) -> tuple[dict, int]:
-    """POST /api/controller/release — Release lease. Requires lease_id."""
+    """POST /api/controller/release: Release lease. Requires lease_id."""
     session_id = body.get("session_id", "")
     holder = body.get("holder", "")
     lease_id = body.get("lease_id", "")
@@ -173,7 +173,7 @@ def release_lease(body: dict) -> tuple[dict, int]:
 
 
 def handoff_lease(body: dict) -> tuple[dict, int]:
-    """POST /api/controller/handoff — Transfer lease. Requires lease_id."""
+    """POST /api/controller/handoff: Transfer lease. Requires lease_id."""
     session_id = body.get("session_id", "")
     from_holder = body.get("from", "")
     to_holder = body.get("to", "")
@@ -188,7 +188,7 @@ def handoff_lease(body: dict) -> tuple[dict, int]:
 
 
 def get_controller(query: dict) -> tuple[dict, int]:
-    """GET /api/controller — Current lease holder."""
+    """GET /api/controller: Current lease holder."""
     session_id = query.get("session_id", [""])[0] if isinstance(query.get("session_id"), list) else query.get("session_id", "")
 
     if not session_id:
@@ -203,20 +203,20 @@ def get_controller(query: dict) -> tuple[dict, int]:
 # ---------------------------------------------------------------------------
 
 def get_skills_catalog(query: dict) -> tuple[dict, int]:
-    """GET /api/skills/catalog — All skills with onboarding metadata."""
+    """GET /api/skills/catalog: All skills with onboarding metadata."""
     manifests = manifest.load_skill_manifests()
     catalog = manifest.get_skill_display(manifests)
     return {"ok": True, "skills": catalog}, 200
 
 
 def verify_skill(skill_id: str) -> tuple[dict, int]:
-    """POST /api/skills/<skill_id>/verify — Run probe."""
+    """POST /api/skills/<skill_id>/verify: Run probe."""
     result = probes.run_probe(skill_id)
     return {"ok": True, "skill_id": skill_id, "probe": result}, 200
 
 
 def install_skill(body: dict) -> tuple[dict, int]:
-    """POST /api/skills/<skill_id>/install — Execute full skill setup."""
+    """POST /api/skills/<skill_id>/install: Execute full skill setup."""
     session_id = body.get("session_id", "")
     skill_id = body.get("skill_id", "")
     lease_id = body.get("lease_id", "")
@@ -233,7 +233,7 @@ def install_skill(body: dict) -> tuple[dict, int]:
 
 
 def register_jobs(body: dict) -> tuple[dict, int]:
-    """POST /api/jobs/register — Register OS scheduler for a skill."""
+    """POST /api/jobs/register: Register OS scheduler for a skill."""
     skill_id = body.get("skill_id", "")
     if not skill_id:
         return {"ok": False, "error": "skill_id required"}, 400
@@ -247,7 +247,7 @@ def register_jobs(body: dict) -> tuple[dict, int]:
 
 
 def get_jobs_status(query: dict) -> tuple[dict, int]:
-    """GET /api/jobs/status — Check all scheduler registrations."""
+    """GET /api/jobs/status: Check all scheduler registrations."""
     skill_ids = ["evolve", "heartbeat"]
     statuses = {}
     for sid in skill_ids:
@@ -260,7 +260,7 @@ def get_jobs_status(query: dict) -> tuple[dict, int]:
 # ---------------------------------------------------------------------------
 
 def generate_handoff(body: dict) -> tuple[dict, int]:
-    """POST /api/onboarding/handoff — Generate Claude Code handoff package."""
+    """POST /api/onboarding/handoff: Generate Claude Code handoff package."""
     session_id = body.get("session_id", "")
     port = body.get("port", 3333)
     workspace_dir = body.get("workspace_dir")
@@ -275,7 +275,7 @@ def generate_handoff(body: dict) -> tuple[dict, int]:
 
 
 def detect_handoff_state(body: dict) -> tuple[dict, int]:
-    """POST /api/onboarding/detect — Detect active handoff in a workspace."""
+    """POST /api/onboarding/detect: Detect active handoff in a workspace."""
     workspace_dir = body.get("workspace_dir", "")
     if not workspace_dir:
         return {"ok": False, "error": "workspace_dir required"}, 400

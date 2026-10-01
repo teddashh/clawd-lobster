@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-sync-claude-to-codex.py — One-way sync from Claude Code → Codex (AGENTS.md + config.toml).
+sync-claude-to-codex.py: One-way sync from Claude Code → Codex (AGENTS.md + config.toml).
 
 Converts Claude Code's project state into Codex-readable format so that
 when Codex is invoked, it knows what Claude has been doing.
@@ -18,7 +18,7 @@ Usage:
     python sync-claude-to-codex.py --dry-run           # preview without writing
 
 Designed to run as a cron job (e.g., every 30 minutes).
-No external dependencies — stdlib only.
+No external dependencies; stdlib only.
 """
 
 import argparse
@@ -88,7 +88,7 @@ AGENTS_HEADER = """# Project Instructions (synced from Claude Code)
 > Source: Claude Code's CLAUDE.md + memory system.
 > Last sync: {timestamp}
 >
-> **Do not edit manually** — changes will be overwritten on next sync.
+> **Do not edit manually**: changes will be overwritten on next sync.
 
 ---
 
@@ -109,7 +109,7 @@ AGENTS_FOOTER = """
 def convert_claude_md_to_agents_md(claude_md: str) -> str:
     """Convert CLAUDE.md content to AGENTS.md format.
 
-    AGENTS.md is just Markdown — same as CLAUDE.md. The main conversion is:
+    AGENTS.md is just Markdown, same as CLAUDE.md. The main conversion is:
     1. Strip Claude-specific meta (like hook configs, skill references)
     2. Add header noting this is auto-synced
     3. Reformat sections that reference Claude-specific tooling
@@ -142,7 +142,7 @@ def convert_claude_md_to_agents_md(claude_md: str) -> str:
             continue
 
         # Note: we intentionally do NOT replace "Claude Code" or slash commands
-        # because the content should remain accurate — Codex needs to know
+        # because the content should remain accurate; Codex needs to know
         # the project uses Claude Code tooling
 
         output.append(line)
@@ -302,7 +302,7 @@ def sync_workspace(workspace: Path, dry_run: bool = False) -> dict:
     if len(agents_content.encode("utf-8")) > 32 * 1024:
         # Truncate memory/skills sections to fit
         agents_content = agents_content[:32 * 1024 - 200]
-        agents_content += "\n\n> **Truncated** — exceeded 32 KiB Codex limit.\n"
+        agents_content += "\n\n> **Truncated**: exceeded 32 KiB Codex limit.\n"
 
     # 7. Write AGENTS.md to workspace
     agents_path = workspace / "AGENTS.md"

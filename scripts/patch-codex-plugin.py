@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Patch Codex Plugin — Remove disable-model-invocation from review commands.
+Patch Codex Plugin: Remove disable-model-invocation from review commands.
 
 By default, the codex-plugin-cc marks /codex:review and /codex:adversarial-review
 with `disable-model-invocation: true`, preventing Claude from using them proactively.
@@ -42,7 +42,7 @@ def find_latest_version(cache_dir: Path) -> Path | None:
 
 def patch_file(filepath: Path, patch: dict) -> bool:
     if not filepath.exists():
-        print(f"  SKIP {filepath.name} — not found")
+        print(f"  SKIP {filepath.name}: not found")
         return False
 
     content = filepath.read_text(encoding="utf-8")
@@ -54,7 +54,7 @@ def patch_file(filepath: Path, patch: dict) -> bool:
     if remove in content:
         content = re.sub(rf"^{re.escape(remove)}\n?", "", content, flags=re.MULTILINE)
         changed = True
-        print(f"  PATCH {filepath.name} — removed '{remove}'")
+        print(f"  PATCH {filepath.name}: removed '{remove}'")
 
     # Append to description if not already appended
     append = patch["description_append"]
@@ -67,12 +67,12 @@ def patch_file(filepath: Path, patch: dict) -> bool:
             flags=re.MULTILINE,
         )
         changed = True
-        print(f"  PATCH {filepath.name} — updated description")
+        print(f"  PATCH {filepath.name}: updated description")
 
     if changed:
         filepath.write_text(content, encoding="utf-8")
     else:
-        print(f"  OK   {filepath.name} — already patched")
+        print(f"  OK   {filepath.name}: already patched")
 
     return changed
 

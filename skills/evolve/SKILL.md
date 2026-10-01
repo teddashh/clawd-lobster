@@ -1,4 +1,4 @@
-# Evolve — System-Level Learning & Knowledge Consolidation
+# Evolve: System-Level Learning & Knowledge Consolidation
 
 !python -c "import sqlite3, os; db=os.path.expanduser('~/.claude-memory/memory.db'); c=sqlite3.connect(db); print(f'Skills: {c.execute(\"SELECT count(*) FROM learned_skills\").fetchone()[0]}, Knowledge: {c.execute(\"SELECT count(*) FROM knowledge_items\").fetchone()[0]}')" 2>/dev/null || echo "Memory DB not found or empty"
 
@@ -9,7 +9,7 @@ Evolve makes the entire Clawd-Lobster system smarter over time. It does NOT buil
 
 ---
 
-## Automatic Mode (Cron — every 2 hours)
+## Automatic Mode (Cron: every 2 hours)
 
 `scripts/evolve-tick.py` runs as a cron job and performs 5 phases:
 
@@ -75,7 +75,7 @@ When you complete a complex task, evaluate if a reusable pattern was discovered:
 
 - Each use: +2% effectiveness
 - Each improvement: +10% effectiveness (cap 3.0x)
-- Skills with effectiveness > 2.0 are proven patterns — trust them
+- Skills with effectiveness > 2.0 are proven patterns; trust them
 - Skills unused for 90+ days: flagged as potentially stale
 
 ---
@@ -111,7 +111,7 @@ No shared database needed. Git IS the sync protocol.
 
 1. **Evolving during an active blitz.** If `.blitz-active` exists in the workspace, evolve MUST skip it. Running evolve mid-blitz causes style inconsistency because evolve may extract patterns from half-finished work and apply them to the remaining tasks. Always check the marker first.
 
-2. **Extracting one-off fixes as reusable skills.** Claude tends to over-learn — storing every bug fix or config tweak as a "learned skill." A skill should represent a genuinely reusable pattern applicable across projects. If it only applies to one specific codebase, store it as knowledge, not as a skill.
+2. **Extracting one-off fixes as reusable skills.** Claude tends to over-learn, storing every bug fix or config tweak as a "learned skill." A skill should represent a genuinely reusable pattern applicable across projects. If it only applies to one specific codebase, store it as knowledge, not as a skill.
 
 3. **Salience decay deleting important memories.** Decay brings salience to a floor of 0.01 but never deletes. However, search results are ranked by salience, so important but rarely-accessed memories sink below noise. If a user reports "the system forgot X," check if the item exists with low salience and reinforce it.
 

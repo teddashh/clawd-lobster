@@ -1,5 +1,5 @@
 """
-Clawd-Lobster MCP Memory Server — unified memory interface for AI agents.
+Clawd-Lobster MCP Memory Server: unified memory interface for AI agents.
 
 Tools (28):
   Write:    memory_store, memory_record_decision, memory_record_resolved,
@@ -180,7 +180,7 @@ def memory_record_knowledge(title: str, content: str = "", tags: str = "",
 def memory_propose_correction(wiki_page: str, issue: str, evidence: str = "",
                                proposed_fix: str = "", severity: str = "medium") -> str:
     """Propose a correction to a wiki page. Creates a claim_challenge record.
-    Agents cannot directly edit wiki — they propose corrections for review.
+    Agents cannot directly edit wiki; they propose corrections for review.
     severity: low | medium | high | critical"""
     conn = get_sqlite()
     try:
@@ -220,7 +220,7 @@ def memory_propose_correction(wiki_page: str, issue: str, evidence: str = "",
             except OSError:
                 pass
 
-        return f"Correction proposed [{ws}]: {wiki_page} — {issue[:60]} (id: {rid})"
+        return f"Correction proposed [{ws}]: {wiki_page} - {issue[:60]} (id: {rid})"
     finally:
         conn.close()
 
@@ -526,7 +526,7 @@ def memory_todo_search(query: str) -> str:
 
 
 # ============================================================
-# TRAIL — Action Log (local SQLite, syncs to Oracle if available)
+# TRAIL: Action Log (local SQLite, syncs to Oracle if available)
 # ============================================================
 
 @mcp.tool()
@@ -550,7 +550,7 @@ def memory_log_action(action: str, target: str = "", note: str = "", tokens: int
 
 
 # ============================================================
-# EVOLVE — Self-improving skill system
+# EVOLVE: Self-improving skill system
 # ============================================================
 
 @mcp.tool()
@@ -798,7 +798,7 @@ def run_decay(workspace_id: str = None, decay_factor: float = 0.95, stale_days: 
 
 
 # ============================================================
-# SEARCH — searches ALL tables (not just knowledge_items)
+# SEARCH: searches ALL tables (not just knowledge_items)
 # ============================================================
 
 @mcp.tool()
@@ -958,7 +958,7 @@ def _local_text_search(query: str, limit: int) -> str:
         else:
             ws_ids = list(workspaces.keys())
     except (FileNotFoundError, json.JSONDecodeError):
-        # No registry — search current workspace only
+        # No registry; search current workspace only
         ws_ids = [detect_workspace()]
 
     for ws_id in ws_ids:
@@ -1028,7 +1028,7 @@ def _local_text_search(query: str, limit: int) -> str:
 
 
 # ============================================================
-# TRAIL / AUDIT TOOLS — SQLite-first, Oracle as sync target
+# TRAIL / AUDIT TOOLS: SQLite-first, Oracle as sync target
 # ============================================================
 
 @mcp.tool()
@@ -1153,7 +1153,7 @@ def _oracle_audit_search(oracle, query, date, action, machine, workspace, limit)
 
 @mcp.tool()
 def memory_audit_stats(date: str = "", workspace: str = "all") -> str:
-    """Audit trail statistics — local action counts + Oracle stats if available."""
+    """Audit trail statistics: local action counts + Oracle stats if available."""
     lines = []
 
     # Local stats from SQLite action_log

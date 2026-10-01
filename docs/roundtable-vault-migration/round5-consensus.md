@@ -1,4 +1,4 @@
-# Round 5 — Final Consensus: The Vault Deep Brain Schema v5
+# Round 5, Final Consensus: The Vault Deep Brain Schema v5
 
 > **Status: CONSENSUS REACHED**
 > **Date:** 2026-04-07
@@ -41,7 +41,7 @@
 ## Key Decisions
 
 ### 1. Everything is a document (with promoted fields for emails)
-**Unanimous after Round 3.** Emails, daily reports, SOPs, knowledge articles, calendar events — all go in vault_documents. Email-specific fields (from, importance, direction) are promoted to typed columns for index performance. All other structured metadata lives in metadata_json.
+**Unanimous after Round 3.** Emails, daily reports, SOPs, knowledge articles, calendar events: all go in vault_documents. Email-specific fields (from, importance, direction) are promoted to typed columns for index performance. All other structured metadata lives in metadata_json.
 
 ### 2. Multi-axis classification
 **Unanimous.** Three axes:
@@ -51,12 +51,12 @@
 
 ### 3. Fact-typed claims replace separate tables
 **Unanimous after Round 3.** vault_facts gains `fact_type` column:
-- `claim` — general extracted claims
-- `question` — open questions (lifecycle='open')
-- `decision` — architectural/business decisions (lifecycle='accepted')
-- `trait` — personality/behavioral observations
-- `observation` — general observations
-- `security_assessment` — phishing/threat findings (with confidence)
+- `claim`: general extracted claims
+- `question`: open questions (lifecycle='open')
+- `decision`: architectural/business decisions (lifecycle='accepted')
+- `trait`: personality/behavioral observations
+- `observation`: general observations
+- `security_assessment`: phishing/threat findings (with confidence)
 
 ### 4. Dedicated audit trail
 **Unanimous from Round 1.** vault_audit_trail for high-volume operational telemetry. Separate from vault_events (which tracks document/entity lifecycle).
@@ -74,10 +74,10 @@
 
 | Proposal | By | Why Rejected |
 |----------|-------|-------------|
-| vault_emails (separate table) | Codex | Table proliferation — every data type would need its own table |
-| vault_daily_digests | Codex | Over-engineering — doc_type='daily_report' + metadata_json suffices |
-| vault_calendar_events | Codex | Same reasoning — doc_type='calendar_event' in vault_documents |
-| vault_contacts | Gemini | Duplicates vault_entities — contacts ARE entities |
+| vault_emails (separate table) | Codex | Table proliferation: every data type would need its own table |
+| vault_daily_digests | Codex | Over-engineering: doc_type='daily_report' + metadata_json suffices |
+| vault_calendar_events | Codex | Same reasoning: doc_type='calendar_event' in vault_documents |
+| vault_contacts | Gemini | Duplicates vault_entities; contacts ARE entities |
 | vault_security_findings | Gemini | vault_facts with fact_type='security_assessment' covers this |
 | vault_entity_attributes | Gemini | vault_facts with fact_type='trait' + entity relation covers this |
 | vault_questions | Claude | vault_facts with fact_type='question' + lifecycle management covers this |

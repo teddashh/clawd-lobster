@@ -1,4 +1,4 @@
-# heartbeat.ps1 — Session Lifecycle Manager
+# heartbeat.ps1: Session Lifecycle Manager
 # Ensures every registered workspace has a live Claude Code session.
 # If a session is dead, it gets revived via claude --resume.
 # Runs via OS scheduler (every 30 min alongside sync-all).

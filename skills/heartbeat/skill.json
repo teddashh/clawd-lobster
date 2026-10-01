@@ -18,7 +18,7 @@
     "tier": "required",
     "phase": "skills_required",
     "order": 50,
-    "title": "Heartbeat — Session Monitor",
+    "title": "Heartbeat: Session Monitor",
     "summary": "Checks Claude Code session health every 30 minutes. Auto-revives dead sessions.",
     "why_it_matters": "Without this, Claude Code sessions silently die and nobody notices.",
     "estimated_minutes": 2,

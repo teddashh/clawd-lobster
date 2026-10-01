@@ -23,4 +23,4 @@
 - General-purpose project. No Docker, no deploy pipeline.
 - Ship via `git push` only.
 - Structure adapts to whatever the project needs.
-- This is the simplest workspace type — use when nothing else fits.
+- This is the simplest workspace type; use when nothing else fits.

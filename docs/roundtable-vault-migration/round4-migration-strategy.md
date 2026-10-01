@@ -1,19 +1,19 @@
-# Round 4 — Migration Strategy & Implementation Details
+# Round 4: Migration Strategy & Implementation Details
 
 ## Consensus Schema: 11 Tables
 
 ```
-vault_sources          — where data came from
-vault_documents        — ALL documents (emails, notes, SOPs, daily reports, calendar events)
-vault_chunks           — content splits for RAG
-vault_entities         — people, companies, projects, concepts
-vault_entity_aliases   — name variants
-vault_facts            — claims, decisions, questions, traits, security assessments
-vault_relations        — graph edges
-vault_events           — lifecycle log
-vault_sync_log         — migration tracking
-vault_audit_trail      — operational telemetry (NEW)
-vault_metrics          — quantified aggregates (NEW)
+vault_sources          - where data came from
+vault_documents        - ALL documents (emails, notes, SOPs, daily reports, calendar events)
+vault_chunks           - content splits for RAG
+vault_entities         - people, companies, projects, concepts
+vault_entity_aliases   - name variants
+vault_facts            - claims, decisions, questions, traits, security assessments
+vault_relations        - graph edges
+vault_events           - lifecycle log
+vault_sync_log         - migration tracking
+vault_audit_trail      - operational telemetry (NEW)
+vault_metrics          - quantified aggregates (NEW)
 ```
 
 ## Schema Modifications (DDL)
@@ -163,7 +163,7 @@ Source: CLAUDE_MEMORY.DAILY_REPORTS (1,865 rows)
 ```
 For each report:
   - doc_type = 'daily_report'
-  - title = "Daily Report — {report_date}"
+  - title = "Daily Report: {report_date}"
   - content = narrative
   - occurred_at = report_date
   - metadata_json = {email_count, inbox_count, sent_count, calendar_count, H/M/L counts, top_senders, calendar_events, key_subjects, day_of_week}

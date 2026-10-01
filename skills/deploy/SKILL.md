@@ -1,8 +1,8 @@
-# Deploy — Workspace-Aware Deployment Pipeline
+# Deploy: Workspace-Aware Deployment Pipeline
 
 Ship any workspace to dev/staging/prod with Docker containerization.
 This skill reads `workspace.json` to understand the project type, tech stack,
-and deployment targets — then generates or executes the appropriate pipeline.
+and deployment targets, then generates or executes the appropriate pipeline.
 
 **Philosophy:** Dev = playground (break things freely). Staging = verify (manual Claude OK).
 Prod = sacred (git push + CI/CD only, no Claude). Three environments, one source of truth.
@@ -49,26 +49,26 @@ If it doesn't exist, guide the user to run `/spec` first (which creates it durin
 
 ---
 
-## Mode 1: `/deploy` or `/deploy:init` — Initialize Deploy Pipeline
+## Mode 1 (`/deploy` or `/deploy:init`): Initialize Deploy Pipeline
 
 Three steps: detect, ask, write.
 
 ### Step 1: Detect Tech Stack
 
-Scan the workspace root for stack indicators. Be thorough — check multiple signals:
+Scan the workspace root for stack indicators. Be thorough; check multiple signals:
 
 | Signal | Detects |
 |--------|---------|
-| `package.json` | Node.js — check `dependencies` for framework (express, fastapi, next, nuxt, etc.) |
-| `requirements.txt` / `pyproject.toml` / `Pipfile` | Python — check for django, flask, fastapi |
-| `composer.json` | PHP — check for laravel, symfony |
+| `package.json` | Node.js: check `dependencies` for framework (express, fastapi, next, nuxt, etc.) |
+| `requirements.txt` / `pyproject.toml` / `Pipfile` | Python: check for django, flask, fastapi |
+| `composer.json` | PHP: check for laravel, symfony |
 | `go.mod` | Go |
 | `Cargo.toml` | Rust |
-| `Gemfile` | Ruby — check for rails |
+| `Gemfile` | Ruby: check for rails |
 | `*.csproj` / `*.sln` | .NET |
 | `docker-compose*.yml` | Already has Docker (offer to extend, not overwrite) |
 | `Dockerfile` | Already has Docker (offer to extend, not overwrite) |
-| `openspec/` | Has specs — read design.md for stack info |
+| `openspec/` | Has specs: read design.md for stack info |
 
 If detection finds existing Docker configs, ask:
 "You already have Docker configs. Want me to extend them with multi-environment support, or start fresh?"
@@ -84,7 +84,7 @@ Where do you want to deploy?
 1. Just local dev (Docker on this machine)
 2. Local dev + cloud staging (I'll need the staging server IP)
 3. Full pipeline: dev + staging + prod (I'll need both server IPs)
-4. I don't know yet — just set up local dev, I'll add servers later
+4. I don't know yet; just set up local dev, I'll add servers later
 
 Also: do you have a domain name, or should I use IP-based URLs for now?
 ```
@@ -97,8 +97,8 @@ Adapt the question based on workspace type:
 
 ### Step 3: Write Configuration
 
-1. **Update `workspace.json`** — fill in the `deploy` section with answers from Step 2.
-2. **Generate `deploy/infra-spec.md`** — an OpenSpec-format spec describing the infrastructure:
+1. **Update `workspace.json`**: fill in the `deploy` section with answers from Step 2.
+2. **Generate `deploy/infra-spec.md`**: an OpenSpec-format spec describing the infrastructure:
 
 ```markdown
 # Infrastructure Spec: <project-name>
@@ -149,7 +149,7 @@ Deploy pipeline initialized:
 
 ---
 
-## Mode 2: `/deploy:build` — Generate Docker Configs
+## Mode 2 (`/deploy:build`): Generate Docker Configs
 
 Read `workspace.json` and generate Docker configs for each configured environment.
 
@@ -178,12 +178,12 @@ Read `workspace.json` and generate Docker configs for each configured environmen
 
 ### Dockerfile Rules
 
-1. **Multi-stage build** — builder stage + runtime stage.
-2. **Non-root user** — always run as non-root in production.
-3. **Health check** — include HEALTHCHECK instruction.
-4. **No secrets in image** — all secrets via environment variables.
-5. **Pin versions** — use specific image tags, never `latest`.
-6. **.dockerignore** — generate one, exclude .git, node_modules, __pycache__, .env*, etc.
+1. **Multi-stage build**: builder stage + runtime stage.
+2. **Non-root user**: always run as non-root in production.
+3. **Health check**: include HEALTHCHECK instruction.
+4. **No secrets in image**: all secrets via environment variables.
+5. **Pin versions**: use specific image tags, never `latest`.
+6. **.dockerignore**: generate one, exclude .git, node_modules, __pycache__, .env*, etc.
 
 ### Environment-Specific Differences
 
@@ -281,7 +281,7 @@ Deploy configs generated:
 
 ---
 
-## Mode 3: `/deploy:ship <env>` — Deploy to Environment
+## Mode 3 (`/deploy:ship <env>`): Deploy to Environment
 
 ### Ship to Dev (local)
 
@@ -324,11 +324,11 @@ Then report the local URL and service status.
 | **agent** | Register with agent framework, start as service |
 | **mcp-server** | Write to `.mcp.json`, restart Claude |
 | **skill** | Copy to skills/, register in skill index |
-| **project** | No ship — just git push |
+| **project** | No ship, just git push |
 
 ---
 
-## Mode 4: `/deploy:status` — Show Deployment State
+## Mode 4 (`/deploy:status`): Show Deployment State
 
 ```
 Workspace: my-saas (webapp)
@@ -352,7 +352,7 @@ Determine status by:
 
 ---
 
-## Mode 5: `/deploy:teardown <env>` — Tear Down Environment
+## Mode 5 (`/deploy:teardown <env>`): Tear Down Environment
 
 1. **Confirm:** "This will stop and remove all containers for [env]. Proceed?"
 2. **Execute:** `docker compose -f deploy/docker-compose.<env>.yml down -v` (include `-v` only if user confirms volume removal)
@@ -395,12 +395,12 @@ by asking type and stack directly.
 
 ## Security Rules
 
-1. **Never commit `.env` files** — only `.env.example` with placeholder values.
+1. **Never commit `.env` files**: only `.env.example` with placeholder values.
 2. **Never hardcode IPs, passwords, or SSH keys** in any committed file.
 3. **Never store Docker registry credentials** in deploy configs.
-4. **Prod deploys require explicit confirmation** — no auto-deploy to prod.
-5. **No `--dangerously-skip-permissions` in staging/prod** — dev only.
-6. **Deploy scripts use `set -euo pipefail`** — fail fast on any error.
+4. **Prod deploys require explicit confirmation**: no auto-deploy to prod.
+5. **No `--dangerously-skip-permissions` in staging/prod**: dev only.
+6. **Deploy scripts use `set -euo pipefail`**: fail fast on any error.
 7. **All containers run as non-root** in staging and prod.
 8. **Health checks are mandatory** for all services.
 

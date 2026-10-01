@@ -1,5 +1,5 @@
 """
-agent_dispatch.py — Unified sub-agent dispatch using Claude Agent SDK.
+agent_dispatch.py: Unified sub-agent dispatch using Claude Agent SDK.
 
 Replaces subprocess.run(["claude", "-p", ...]) with native Agent SDK query().
 Provides both async and sync interfaces for backward compatibility.
