@@ -10,7 +10,7 @@ Clawd-Lobster 替 Claude Code CLI 加上每個工作區各自的 MCP 記憶伺�
 
 **專案介紹頁：** https://teddashh.github.io/clawd-lobster/?lang=zh-TW
 
-> **狀態：實驗性質，已停止維護**。2026 年 4 月 1 日到 9 日之間有 136 個 commit，之後就沒有更新。沒有正式的 release，也沒有 PyPI 套件。套件版本是 0.6.0，[CHANGELOG.md](CHANGELOG.md) 只寫到 0.5.0。詳見[現況與限制](#現況與限制)。
+> **狀態：實驗性質，已停止維護**。2026 年 4 月 1 日到 9 日之間有 136 個 commit，之後只在 2026 年 10 月做過一次清理與安全性修正。沒有正式的 release，也沒有 PyPI 套件。套件版本是 0.6.0，詳見 [CHANGELOG.md](CHANGELOG.md) 與[現況與限制](#現況與限制)。
 
 ---
 
@@ -93,7 +93,7 @@ chmod +x install.sh && ./install.sh
 
 你描述想做什麼，接下來交給四個角色。
 
-**Architect** 寫出 OpenSpec 檔案，需求用 SHALL/MUST 描述並附上 Gherkin 情境。**Reviewer** 是另一個獨立的 session，看不到 Architect 收到的指示，也只能讀取檔案，負責挑戰這份規格。兩邊來回修改，直到 Reviewer 核准為止，最多五輪。接著 **Coder** 依 `tasks.md` 實作，**Tester** 逐條檢查需求。只有 Coder 和 Tester 能執行 shell 指令。
+**Architect** 寫出 OpenSpec 檔案，需求用 SHALL/MUST 描述並附上 Gherkin 情境。**Reviewer** 是另一個獨立的 session，看不到 Architect 收到的指示，也只能讀取檔案，負責挑戰這份規格。兩邊來回修改，直到 Reviewer 核准為止，最多五輪。第五輪結束後 Reviewer 仍未核准的話，規格還是會被核准，讓流程繼續，但會記錄成強制核准：`.spec-squad.json` 寫的是 `"approval": "round_limit"`，而不是 `"reviewer"`，回合紀錄裡會多一筆 `FORCED_APPROVAL`，終端機和網頁畫面也都會註明這是輪數上限造成的核准。接著 **Coder** 依 `tasks.md` 實作，**Tester** 逐條檢查需求。只有 Coder 和 Tester 能執行 shell 指令。
 
 每個角色都在自己的脈絡裡工作：Reviewer 不會順著 Architect 的推理走，Tester 也不知道 Coder 抄了哪些捷徑。
 
@@ -132,7 +132,7 @@ GitHub 是控制平面，git 是協定。設定流程會建立或加入一個私
 
 ### 5. 自我進化
 
-evolve-tick 每兩小時執行一次（設定 evolve skill 時由儀表板登記排程）。它會收集各工作區最近完成的 TODO 與操作紀錄，請 Claude 把可以重複使用的做法存成 learned skill，接著讓沒用到的項目 salience 衰減，並檢查 wiki。改進的想法會寫成 `openspec/proposals/` 底下的提案檔並 commit 進 repo，等人審查。
+evolve-tick 每兩小時執行一次（設定 evolve skill 時由儀表板登記排程：在你的 crontab 加上一行，其餘內容不動；Windows 上則是建立一個 Task Scheduler 工作）。它會收集各工作區最近完成的 TODO 與操作紀錄，請 Claude 把可以重複使用的做法存成 learned skill，接著讓沒用到的項目 salience 衰減，並檢查 wiki。改進的想法會寫成 `openspec/proposals/` 底下的提案檔並 commit 進 repo，等人審查。
 
 ---
 
@@ -160,7 +160,7 @@ evolve-tick 每兩小時執行一次（設定 evolve skill 時由儀表板登記
 
 兩邊都不是主控。它們透過同一個後端 API 提交意圖，一份控制權租約確保同一時間只有一方在操作。
 
-> **安全提醒**：儀表板有幾個端點（包括建立工作區與啟動 Squad 的端點）不需要 session token 就能呼叫，也不檢查請求從哪裡來。只在需要時執行 `clawd-lobster serve`，用完就關掉。
+> **安全提醒**：儀表板只監聽 127.0.0.1，而且每個請求在處理之前都要先通過檢查。Host 標頭必須是 `127.0.0.1:<port>` 或 `localhost:<port>`，用來擋下 DNS rebinding。帶有 Origin 標頭的請求必須來自儀表板本身。每個 POST 都要在 `X-Clawd-Token` 標頭附上這次執行專用的 token，讓其他網頁無法代替你送出請求（CSRF）。伺服器每次啟動都會產生新的隨機 token，放進它提供的頁面，並寫到 `~/.clawd-lobster/server-<port>.token`（只有你能讀取）給本機腳本使用，伺服器停止時會刪除這個檔案。沒通過檢查的請求會收到 403，CORS 預檢請求一律回 403，回應也不會帶任何 `Access-Control-*` 標頭。設定流程的 API 和以前一樣還需要 session token。這個 token 擋的是網頁，擋不了同一台機器上以你的身分執行的其他程式，所以用完還是請關掉 `clawd-lobster serve`。
 
 ---
 
@@ -241,6 +241,8 @@ Dashboard (the eyes)   ->  web UI at 127.0.0.1:3333
 
 第一台機器建立 Hub，安裝腳本建議的名稱是 `clawd-` 加上你的使用者名稱。之後的每台機器都加入這個 Hub。
 
+工作區清單 `workspaces.json` 屬於每台機器各自的狀態：這個 repo 不追蹤它，只附上 [workspaces.example.json](workspaces.example.json) 說明格式，你的私人 Hub 則會追蹤自己的那一份。會被推送出去的檔案與 commit 訊息，只會用 `~/.clawd-lobster/config.json` 裡的 `machine_id` 稱呼這台機器（安裝腳本預設建議一個隨機的 `machine-` 名稱），不會寫出它的主機名稱。
+
 ---
 
 ## 環境需求
@@ -256,20 +258,20 @@ Dashboard (the eyes)   ->  web UI at 127.0.0.1:3333
 
 ## 現況與限制
 
-實驗性質。2026 年 4 月 1 日到 9 日之間有 136 個 commit，之後就沒有更新。沒有正式的 release。
+實驗性質。2026 年 4 月 1 日到 9 日之間有 136 個 commit，之後只在 2026 年 10 月做過一次清理與安全性修正。沒有正式的 release。
 
 **目前可用**
 - `pip install -e .` 之後就有 `clawd-lobster` 指令，包含 serve、setup、workspace create、squad start 與 status
-- 設定流程的測試可以通過：32 個單元測試，加上一支透過 HTTP API 跑完整流程的端對端腳本（2026 年 9 月在 Python 3.14 重新驗證過）
+- 測試可以通過：83 個單元測試（設定流程、排程登記、儀表板的請求檢查與 Spec Squad 的核准紀錄），加上一支透過 HTTP API 跑完整流程的端對端腳本（2026 年 10 月在 Python 3.14 重新驗證過）
 - 記憶伺服器只靠 SQLite 就能運作，文字搜尋依 salience 排序
 - 提供 Windows（PowerShell）、macOS 與 Linux 的安裝腳本
 - 終端機版的 Spec Squad 寫完規格會停下來，問過你才開始寫程式
 
 **限制與尚未完成**
-- 2026 年 4 月 9 日之後就沒有維護，也沒有針對之後的 Claude Code 或 Agent SDK 版本驗證過
-- 儀表板有幾個端點（包括建立工作區與啟動 Squad 的端點）不需要 session token 就能呼叫，也不檢查請求從哪裡來
-- 審查五輪後若 Reviewer 仍未核准，規格還是會被標成已核准，網頁流程會直接進入實作
-- 每 30 分鐘的同步會對工作區根目錄底下的每個 git repo 自動 commit 並 push，新的 Markdown、JSON、YAML、HTML 與腳本檔也會一起加進去，不想被推上去的東西請放在這個資料夾以外。evolve 推送的提案檔與 commit 訊息還會寫上這台機器的主機名稱
+- 2026 年 4 月 9 日之後就沒有新功能，也沒有針對之後的 Claude Code 或 Agent SDK 版本驗證過
+- 儀表板的 token 能擋下其他網頁，但同一台機器上以你的身分執行的任何程式都讀得到它
+- 審查五輪後若 Reviewer 仍未核准，規格還是會被核准，網頁流程會直接進入實作；狀態檔、回合紀錄與兩種介面都會標明這是輪數上限造成的強制核准
+- 每 30 分鐘的同步會對工作區根目錄底下的每個 git repo 自動 commit 並 push，新的 Markdown、JSON、YAML、HTML 與腳本檔也會一起加進去，不想被推上去的東西請放在這個資料夾以外
 - Heartbeat 只用程式名稱判斷 session 是否還在執行，重新開啟時也只是執行單純的 `claude --resume`
 - Spec Squad 需要 `[agent]` 選用相依套件；向量搜尋與 Vault 需要 Oracle 資料庫；記憶伺服器需要 Python 3.11 以上
 

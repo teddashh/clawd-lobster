@@ -39,6 +39,15 @@ input[type=text], select { padding:10px 14px; background:#0d1117;
 input[type=text]:focus, select:focus { outline:none; border-color:#58a6ff; }
 """
 
+# The server injects a per-process token as <meta name="clawd-token">; every
+# POST must send it back in the X-Clawd-Token header (CSRF protection).
+_TOKEN_JS = """
+function clawdHeaders() {
+  var m = document.querySelector('meta[name="clawd-token"]');
+  return {'Content-Type': 'application/json', 'X-Clawd-Token': m ? m.content : ''};
+}
+"""
+
 # ── HOME_PAGE ──────────────────────────────────────────────────────────────
 
 HOME_PAGE = """<!DOCTYPE html>
@@ -411,7 +420,7 @@ ONBOARDING_PAGE = (
   </div>
 </div>
 
-<script>
+<script>""" + _TOKEN_JS + """
 let lang = 'en';
 let persona = '';
 let sessionId = '';
@@ -847,7 +856,7 @@ async function runChecks() {
   document.getElementById('prereq-next').disabled = true;
   document.getElementById('prereq-summary').style.display = 'none';
   try {
-    var res = await fetch('/api/onboarding/check', {method:'POST'});
+    var res = await fetch('/api/onboarding/check', {method:'POST', headers: clawdHeaders()});
     var data = await res.json();
     detectedPlatform = data.platform || 'windows';
     defaultRoot = data.default_root || '';
@@ -878,7 +887,7 @@ function switchTab(prereq, plat) {
 async function startHandoff() {
   try {
     var res = await fetch('/api/onboarding/handoff', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers: clawdHeaders(),
       body: JSON.stringify({lang: lang})
     });
     var data = await res.json();
@@ -987,7 +996,7 @@ async function finishManual() {
   btn.textContent = T('finishing');
   try {
     var res = await fetch('/api/onboarding/complete', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers: clawdHeaders(),
       body: JSON.stringify({persona:persona, lang:lang, workspace_name:name, workspace_root:root})
     });
     var data = await res.json();
@@ -1023,7 +1032,7 @@ async function testVaultConnection() {
   status.style.color = '#8b949e';
   try {
     var res = await fetch('/api/vault/test', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers: clawdHeaders(),
       body: JSON.stringify({
         wallet_dir: document.getElementById('vault-wallet-dir').value.trim(),
         dsn: document.getElementById('vault-dsn').value.trim(),
@@ -1056,7 +1065,7 @@ async function saveVaultConfig() {
   status.textContent = '';
   try {
     var res = await fetch('/api/vault/save', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers: clawdHeaders(),
       body: JSON.stringify({
         wallet_dir: document.getElementById('vault-wallet-dir').value.trim(),
         dsn: document.getElementById('vault-dsn').value.trim(),
@@ -1204,7 +1213,7 @@ WORKSPACES_PAGE = (
   </div>
 </div>
 
-<script>
+<script>""" + _TOKEN_JS + """
 function openModal() { document.getElementById('modal-bg').classList.add('open'); }
 function closeModal(e) { if(e.target===e.currentTarget) e.target.classList.remove('open'); }
 
@@ -1249,7 +1258,7 @@ async function createWorkspace() {
   try {
     const res = await fetch('/api/workspaces/create', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: clawdHeaders(),
       body: JSON.stringify({name, domain, description: desc})
     });
     const data = await res.json();
@@ -1428,7 +1437,7 @@ body { height:100vh; display:flex; flex-direction:column; }
   </div>
 </div>
 
-<script>
+<script>""" + _TOKEN_JS + """
 let sending = false;
 const PHASE_ORDER = {spec:0, review:1, code:2, test:3, done:4};
 const workspace = new URLSearchParams(location.search).get('workspace') || '';
@@ -1459,7 +1468,7 @@ async function sendMessage() {
   try {
     const res = await fetch('/api/squad/chat', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: clawdHeaders(),
       body: JSON.stringify({message: text, workspace: workspace})
     });
     const data = await res.json();
@@ -1496,7 +1505,11 @@ function updateDashboard(data) {
   });
   document.getElementById('review-rounds').textContent = state.review_round||0;
   document.getElementById('turn-count').textContent = (state.turns||[]).length;
-  document.getElementById('approved').textContent = state.approved?'Yes':'No';
+  // A spec can be approved by the Reviewer or forced through by the round limit
+  const approvedEl = document.getElementById('approved');
+  approvedEl.textContent = !state.approved ? 'No'
+    : (state.approval === 'round_limit' ? 'Yes, forced by the round limit' : 'Yes, by the Reviewer');
+  approvedEl.style.color = state.approval === 'round_limit' ? '#e3b341' : '';
   const rm = {architect:[],reviewer:[],coder:[],tester:[]};
   (state.turns||[]).forEach(t => { if(rm[t.role]) rm[t.role].push(t); });
   const last = state.turns?.length ? state.turns[state.turns.length-1] : null;

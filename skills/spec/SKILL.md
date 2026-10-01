@@ -434,7 +434,7 @@ Reviewer's prompt, so the review is genuinely independent.
         ▼                    │
 [A] Architect revises ───────┘
         │
-        ▼ (APPROVED)
+        ▼ (APPROVED, or forced at the round limit)
 [C] Coder builds
         │
         ▼
@@ -447,22 +447,32 @@ After completing Phase 1 (Discovery) and Phase 2 (Workspace Creation), instead o
 generating the spec yourself, hand off to the squad:
 
 ```bash
-clawd-lobster squad start --workspace <workspace-path> --project "description"
+clawd-lobster squad start --workspace <workspace-path>
 ```
 
-Or from within Claude Code:
-1. Complete discovery (Phase 1) and workspace creation (Phase 2) as normal
-2. Run: `clawd-lobster squad start --workspace <workspace> --project "description from discovery"`
+`--workspace` (or `-w`) is the only option. The terminal mode reads the project
+description from stdin (end it with an empty line, or pipe it in), runs the
+Architect and the Reviewer, prints how the spec was approved, and asks before the
+Coder and the Tester run. The web mode (`clawd-lobster serve`, then the Squad
+page) starts with a discovery chat and runs all four roles.
 
-**Options:**
-- `--plan-only` — Run Architect + Reviewer only, skip Coder/Tester
-- `--phase review` — Resume from review phase
-- `--status` — Show current squad state
-- `--max-rounds 3` — Limit review rounds (default: 5)
-- `--reset` — Start fresh
+**Review round limit:** the Reviewer gets at most 5 rounds (`MAX_REVIEW_ROUNDS`
+in `clawd_lobster/squad.py`). If it has not returned APPROVED by then, the spec is
+approved anyway so the pipeline can go on, and the forced approval is recorded:
+- `.spec-squad.json` has `"approved": true` with `"approval": "round_limit"`;
+  a spec the Reviewer approved has `"approval": "reviewer"`
+- the turn log ends with a `system` turn whose signal is
+  `{"verdict": "FORCED_APPROVAL", "reason": "round_limit", ...}`
+- the web view receives a `forced_approval` event and shows
+  "Yes, forced by the round limit"
+- the terminal prints "approved by the round limit" and a warning to read the
+  last review before building
 
-**State file:** `.spec-squad.json` in the workspace root tracks progress and
-allows resumption if interrupted.
+Treat a forced approval as unreviewed: tell the user, and read the Reviewer's
+last issues in `.spec-squad.json` before building.
+
+**State file:** `.spec-squad.json` in the workspace root records the phase, every
+turn, the review round and how the spec was approved. A new run starts it over.
 
 **Key difference from solo `/spec`:** In solo mode, Claude self-validates using
 the checklist. In squad mode, a separate Claude session acts as an adversarial

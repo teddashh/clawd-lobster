@@ -77,8 +77,58 @@ def _find_memory_dbs(workspaces: list) -> list:
     return results
 
 
+CONFIG_FILE = Path.home() / ".clawd-lobster" / "config.json"
+
+
+def _configured_machine_id() -> str:
+    """machine_id from the local, untracked config, or CLAWD_MACHINE_ID."""
+    try:
+        cfg = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+        mid = str(cfg.get("machine_id", "") or "").strip()
+    except (OSError, ValueError, AttributeError):
+        mid = ""
+    return mid or os.environ.get("CLAWD_MACHINE_ID", "").strip()
+
+
+def _norm_name(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+def _host_name_forms() -> set:
+    """Normalised forms of this computer's host name (full and short)."""
+    import socket
+    forms = set()
+    for raw in (platform.node(), socket.gethostname(),
+                os.environ.get("COMPUTERNAME", ""), os.environ.get("HOSTNAME", "")):
+        raw = (raw or "").strip()
+        if raw:
+            forms.add(_norm_name(raw))
+            forms.add(_norm_name(raw.split(".")[0]))
+    forms.discard("")
+    return forms
+
+
 def _get_machine_id() -> str:
-    return platform.node() or "unknown"
+    """Machine ID for local, untracked records (memory.db rows)."""
+    return _configured_machine_id() or platform.node() or "unknown"
+
+
+def _get_machine_label() -> str:
+    """Label that is safe to put in tracked files and commit messages.
+
+    Only a machine_id the user set in the local config counts, and never one
+    that is simply this computer's host name (older installers defaulted to
+    that). Returns "" when there is no such label, so callers leave it out.
+    """
+    mid = _configured_machine_id()
+    if not mid or _norm_name(mid) in _host_name_forms():
+        return ""
+    return mid
+
+
+def _from_label() -> str:
+    label = _get_machine_label()
+    return f" from {label}" if label else ""
 
 
 def _new_id() -> str:
@@ -429,10 +479,13 @@ def generate_proposals(completed_tasks: list, recent_actions: list,
                 how = proposal.get("how", "")
                 effort = proposal.get("effort", "medium")
 
-                # Write proposal file (syncs via git)
+                # Write proposal file (syncs via git). Never put the host
+                # name here: only a label the user configured.
+                label = _get_machine_label()
+                source = f"evolve-tick on {label}" if label else "evolve-tick"
                 content = (
                     f"# Proposal: {title}\n\n"
-                    f"**Source:** evolve-tick on {_get_machine_id()}\n"
+                    f"**Source:** {source}\n"
                     f"**Date:** {timestamp}\n"
                     f"**Workspace:** {workspace}\n"
                     f"**Effort:** {effort}\n"
@@ -664,7 +717,7 @@ def sync_to_hub(db_list: list, dry_run: bool = False):
                     subprocess.run(["git", "-C", str(repo), "add", "knowledge/"],
                                    capture_output=True, timeout=30)
                     subprocess.run(["git", "-C", str(repo), "commit", "-m",
-                                    f"evolve: knowledge sync from {_get_machine_id()}"],
+                                    f"evolve: knowledge sync{_from_label()}"],
                                    capture_output=True, timeout=30)
                     subprocess.run(["git", "-C", str(repo), "push"],
                                    capture_output=True, timeout=60)
@@ -693,7 +746,7 @@ def sync_to_hub(db_list: list, dry_run: bool = False):
                     subprocess.run(["git", "-C", str(ws_path), "add", "openspec/proposals/"],
                                    capture_output=True, timeout=30)
                     subprocess.run(["git", "-C", str(ws_path), "commit", "-m",
-                                    f"evolve: {len(proposals)} proposal(s) from {_get_machine_id()}"],
+                                    f"evolve: {len(proposals)} proposal(s){_from_label()}"],
                                    capture_output=True, timeout=30)
                     subprocess.run(["git", "-C", str(ws_path), "push"],
                                    capture_output=True, timeout=60)

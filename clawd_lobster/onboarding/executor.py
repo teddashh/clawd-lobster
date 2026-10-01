@@ -1,10 +1,11 @@
-"""Skill setup executor — runs install, configure, and verify steps.
+"""Skill setup executor: runs install, configure, and verify steps.
 
 Each skill.json onboarding section defines steps with kinds:
-  command  — run a shell command
-  config   — write config fields
-  probe    — run health probe
-  link     — open a URL (user action)
+  command:  run a command (split into arguments, never through a shell)
+  config:   write config fields
+  probe:    run health probe
+  link:     open a URL (user action)
+  schedule: register the skill's "runtime" job with cron or Task Scheduler
 
 The executor runs steps sequentially, updates facts after each,
 and marks the skill succeeded or failed.
@@ -14,6 +15,8 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -151,6 +154,11 @@ def execute_skill_setup(
             # Link steps are user actions — auto-pass
             success = True
 
+        elif kind == "schedule":
+            success, error = _run_schedule_step(skill_id)
+            if not success:
+                last_error = error
+
         # Update facts
         if success:
             steps_passed += 1
@@ -234,6 +242,29 @@ def _probe_only(session_id: str, state: dict, item: dict, skill_id: str) -> dict
 # Step runners
 # ---------------------------------------------------------------------------
 
+# Tokens that only mean something to a shell. Command steps run without one,
+# so a step using them would silently do something else (for example
+# "echo ... | crontab -" just echoes and exits 0). Refuse them instead.
+_SHELL_OPERATORS = {"|", "||", "&", "&&", ";", ">", ">>", "<", "2>", "2>>", "2>&1"}
+
+
+def _split_command(cmd: str) -> list[str]:
+    """Split a manifest command into an argument list, without a shell.
+
+    Unix uses POSIX quoting rules. Windows keeps backslashes (posix=False)
+    and then drops the surrounding double quotes, so "a b" stays a single
+    argument; subprocess quotes it again when it builds the command line.
+    """
+    if not _IS_WINDOWS:
+        return shlex.split(cmd)
+    args = []
+    for tok in shlex.split(cmd, posix=False):
+        if len(tok) >= 2 and tok[0] == tok[-1] == '"':
+            tok = tok[1:-1]
+        args.append(tok)
+    return args
+
+
 def _run_command_step(step: dict) -> tuple[bool, str | None]:
     """Run a command step. Returns (success, error_message)."""
     cmd_spec = step.get("command", {})
@@ -252,21 +283,21 @@ def _run_command_step(step: dict) -> tuple[bool, str | None]:
     if not cmd:
         return False, "No command for this platform"
 
-    # Resolve {{WRAPPER_DIR}} placeholder
     wrapper_dir = str(Path(__file__).resolve().parent.parent.parent)
-    cmd = cmd.replace("{{WRAPPER_DIR}}", wrapper_dir)
 
-    # Security: use shlex.split instead of shell=True to prevent injection.
-    # Commands come from skill.json manifests (we control), but defense-in-depth.
-    import shlex
+    # Security: no shell=True. The command is split into arguments first and
+    # the {{WRAPPER_DIR}} placeholder is filled in per argument afterwards,
+    # so a path with spaces stays one argument.
     try:
-        if _IS_WINDOWS:
-            # shlex.split doesn't handle Windows quoting well; use cmd list manually
-            cmd_list = cmd.split()
-        else:
-            cmd_list = shlex.split(cmd)
+        cmd_list = [arg.replace("{{WRAPPER_DIR}}", wrapper_dir)
+                    for arg in _split_command(cmd)]
     except ValueError as e:
         return False, f"Command parse error: {e}"
+    if not cmd_list:
+        return False, "No command for this platform"
+    if any(arg in _SHELL_OPERATORS for arg in cmd_list):
+        return False, ("Command steps run without a shell, so pipes, redirects and "
+                       "'&&' are not supported. Use a 'schedule' step for cron jobs.")
 
     try:
         result = subprocess.run(
@@ -283,6 +314,17 @@ def _run_command_step(step: dict) -> tuple[bool, str | None]:
         return False, "Command timed out (120s)"
     except Exception as e:
         return False, str(e)
+
+
+def _run_schedule_step(skill_id: str) -> tuple[bool, str | None]:
+    """Register the skill's runtime job. Returns (success, error_message)."""
+    results = register_skill_jobs(skill_id)
+    if not results:
+        return False, f"No runtime schedule in the {skill_id} manifest"
+    for result in results:
+        if not result.get("ok"):
+            return False, result.get("error") or "Scheduler registration failed"
+    return True, None
 
 
 def _run_config_step(step: dict, values: dict) -> tuple[bool, str | None]:
@@ -306,7 +348,7 @@ def _run_config_step(step: dict, values: dict) -> tuple[bool, str | None]:
 def register_scheduler(
     skill_id: str,
     schedule: str,
-    command: str,
+    command: list[str] | str,
     task_name: str | None = None,
 ) -> dict:
     """Register an OS-level scheduled task.
@@ -314,107 +356,157 @@ def register_scheduler(
     Args:
         skill_id: which skill this job belongs to
         schedule: cron expression (e.g., "*/30 * * * *")
-        command: command to run
+        command: argument list to run (preferred; quoted for cron or for
+            schtasks as needed), or a ready-made command string
         task_name: override task name (default: clawd-lobster-{skill_id})
 
     Returns:
-        {"ok": True/False, "method": "cron|schtasks|launchd", "error": ...}
+        {"ok": True/False, "method": "cron|schtasks", "error": ...}
     """
     if task_name is None:
         task_name = f"clawd-lobster-{skill_id}"
 
     # Sanitize task_name to prevent injection (alphanumeric + hyphen only)
-    import re
     if not re.match(r'^[a-zA-Z0-9_-]+$', task_name):
         return {"ok": False, "error": f"Invalid task name: {task_name}", "method": "unknown"}
 
     wrapper_dir = str(Path(__file__).resolve().parent.parent.parent)
-    full_command = command.replace("{{WRAPPER_DIR}}", wrapper_dir)
+    if isinstance(command, str):
+        command = command.replace("{{WRAPPER_DIR}}", wrapper_dir)
+    else:
+        command = [arg.replace("{{WRAPPER_DIR}}", wrapper_dir) for arg in command]
 
     if _IS_WINDOWS:
-        return _register_windows(task_name, schedule, full_command, wrapper_dir)
-    elif platform.system() == "Darwin":
-        return _register_cron(task_name, schedule, full_command, wrapper_dir)
-    else:
-        return _register_cron(task_name, schedule, full_command, wrapper_dir)
+        return _register_windows(task_name, schedule, command, wrapper_dir)
+    # Linux and macOS both use cron
+    return _register_cron(task_name, schedule, command, wrapper_dir)
 
 
-def _register_windows(task_name: str, schedule: str, command: str, cwd: str) -> dict:
-    """Register Windows Task Scheduler entry."""
-    # Parse cron to schtasks params
+def _schtasks_schedule_args(schedule: str) -> list[str] | None:
+    """Translate a simple cron expression into schtasks /SC arguments."""
     parts = schedule.split()
     if len(parts) != 5:
-        return {"ok": False, "error": f"Invalid cron expression: {schedule}", "method": "schtasks"}
+        return None
+    minute, hour, _dom, _month, _dow = parts
 
-    minute, hour, dom, month, dow = parts
+    if minute.startswith("*/") and minute[2:].isdigit():
+        return ["/SC", "MINUTE", "/MO", minute[2:]]
+    if hour.startswith("*/") and hour[2:].isdigit():
+        return ["/SC", "HOURLY", "/MO", hour[2:]]
+    h = hour if hour != "*" else "0"
+    m = minute if minute != "*" else "0"
+    if not (h.isdigit() and m.isdigit()):
+        return None
+    # Otherwise: daily at a specific time
+    return ["/SC", "DAILY", "/ST", f"{h.zfill(2)}:{m.zfill(2)}"]
 
-    # Simple patterns
-    if minute.startswith("*/"):
-        interval = minute[2:]
-        sc_args = f"/SC MINUTE /MO {interval}"
-    elif hour.startswith("*/"):
-        interval = hour[2:]
-        sc_args = f"/SC HOURLY /MO {interval}"
-    elif minute == "0" and hour.startswith("*/"):
-        interval = hour[2:]
-        sc_args = f"/SC HOURLY /MO {interval}"
-    else:
-        # Default: daily at specific time
-        h = hour if hour != "*" else "0"
-        m = minute if minute != "*" else "0"
-        sc_args = f"/SC DAILY /ST {h.zfill(2)}:{m.zfill(2)}"
 
-    cmd = f'schtasks /Create /TN "{task_name}" /TR "{command}" {sc_args} /F'
+def _register_windows(task_name: str, schedule: str, command: list[str] | str,
+                      cwd: str) -> dict:
+    """Register a Windows Task Scheduler entry.
 
+    The schtasks argument list is built explicitly (no shell, no splitting).
+    The /TR value is one argument: the task command line, with each part
+    quoted by subprocess.list2cmdline, so paths with spaces survive.
+    """
+    sc_args = _schtasks_schedule_args(schedule)
+    if sc_args is None:
+        return {"ok": False, "method": "schtasks",
+                "error": f"Unsupported cron expression for schtasks: {schedule}"}
+
+    task_command = command if isinstance(command, str) else subprocess.list2cmdline(command)
+    args = ["schtasks", "/Create", "/TN", task_name, "/TR", task_command, *sc_args, "/F"]
     try:
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True,
+            args, capture_output=True, text=True,
             timeout=30, encoding="utf-8", errors="replace",
         )
-        if result.returncode == 0:
-            return {"ok": True, "method": "schtasks", "task_name": task_name}
-        return {"ok": False, "method": "schtasks", "error": result.stderr.strip()[:200]}
-    except Exception as e:
-        return {"ok": False, "method": "schtasks", "error": str(e)}
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return {"ok": False, "method": "schtasks", "error": f"schtasks failed: {e}"}
+    if result.returncode == 0:
+        return {"ok": True, "method": "schtasks", "task_name": task_name}
+    error = (result.stderr or result.stdout or "").strip()[:200]
+    return {"ok": False, "method": "schtasks",
+            "error": f"schtasks failed (exit {result.returncode}): {error}"}
 
 
-def _register_cron(task_name: str, schedule: str, command: str, cwd: str) -> dict:
-    """Register Unix cron entry."""
-    marker = f"# {task_name}"
-    cron_line = f"{schedule} cd {cwd} && {command} {marker}"
+def _read_crontab() -> tuple[bool, str, str]:
+    """Read the user's crontab. Returns (ok, text, error).
 
+    "no crontab for <user>" is not an error: it means an empty crontab.
+    """
     try:
-        # Read existing crontab
         result = subprocess.run(
             ["crontab", "-l"], capture_output=True, text=True,
             timeout=10, encoding="utf-8", errors="replace",
         )
-        existing = result.stdout or ""
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return False, "", f"crontab -l failed: {e}"
+    if result.returncode == 0:
+        return True, result.stdout or "", ""
+    stderr = (result.stderr or "").strip()
+    if "no crontab" in stderr.lower():
+        return True, "", ""
+    return False, "", f"crontab -l failed (exit {result.returncode}): {stderr[:200]}"
 
-        # Check if already registered
-        if task_name in existing:
-            # Update existing entry
-            lines = [l for l in existing.splitlines() if task_name not in l]
-            lines.append(cron_line)
-        else:
-            lines = existing.splitlines()
-            lines.append(cron_line)
 
-        new_crontab = "\n".join(lines) + "\n"
+def _register_cron(task_name: str, schedule: str, command: list[str] | str,
+                   cwd: str) -> dict:
+    """Add a cron entry without disturbing the rest of the user's crontab.
 
-        # Write new crontab
-        proc = subprocess.Popen(
-            ["crontab", "-"], stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, encoding="utf-8",
+    Reads `crontab -l` (no crontab counts as empty), leaves it alone when the
+    exact line is already there, replaces our own line for this task (the
+    one ending in "# <task_name>") if its command or schedule changed, and
+    otherwise appends. The result is written back through stdin of
+    `crontab -` (no shell), every return code is checked, and the line is
+    read back before success is reported.
+    """
+    marker = f"# {task_name}"
+    command_text = command if isinstance(command, str) else shlex.join(command)
+    # cron runs the line with /bin/sh, so arguments are shell-quoted; a bare
+    # "%" would end the command in a crontab, so it is escaped
+    job = f"cd {shlex.quote(cwd)} && {command_text}".replace("%", "\\%")
+    cron_line = f"{schedule} {job} {marker}"
+
+    ok, existing, error = _read_crontab()
+    if not ok:
+        return {"ok": False, "method": "cron", "error": error}
+
+    lines = existing.splitlines()
+    if cron_line in lines:
+        return {"ok": True, "method": "cron", "task_name": task_name, "changed": False}
+
+    ours = [i for i, line in enumerate(lines) if line.rstrip().endswith(marker)]
+    if ours:
+        new_lines = []
+        for i, line in enumerate(lines):
+            if i == ours[0]:
+                new_lines.append(cron_line)
+            elif i not in ours:
+                new_lines.append(line)
+    else:
+        new_lines = lines + [cron_line]
+    new_crontab = "\n".join(new_lines) + "\n"
+
+    try:
+        result = subprocess.run(
+            ["crontab", "-"], input=new_crontab, capture_output=True, text=True,
+            timeout=10, encoding="utf-8", errors="replace",
         )
-        stdout, stderr = proc.communicate(input=new_crontab, timeout=10)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return {"ok": False, "method": "cron", "error": f"crontab - failed: {e}"}
+    if result.returncode != 0:
+        error = (result.stderr or result.stdout or "").strip()[:200]
+        return {"ok": False, "method": "cron",
+                "error": f"crontab - failed (exit {result.returncode}): {error}"}
 
-        if proc.returncode == 0:
-            return {"ok": True, "method": "cron", "task_name": task_name}
-        return {"ok": False, "method": "cron", "error": stderr.strip()[:200]}
-    except Exception as e:
-        return {"ok": False, "method": "cron", "error": str(e)}
+    ok, written, error = _read_crontab()
+    if not ok:
+        return {"ok": False, "method": "cron", "error": error}
+    if cron_line not in written.splitlines():
+        return {"ok": False, "method": "cron",
+                "error": "crontab was written but the new line is not in it"}
+    return {"ok": True, "method": "cron", "task_name": task_name, "changed": True}
 
 
 def check_scheduler(skill_id: str) -> dict:
@@ -422,26 +514,21 @@ def check_scheduler(skill_id: str) -> dict:
     task_name = f"clawd-lobster-{skill_id}"
 
     if _IS_WINDOWS:
-        result = subprocess.run(
-            f'schtasks /Query /TN "{task_name}"',
-            shell=True, capture_output=True, text=True,
-            timeout=10, encoding="utf-8", errors="replace",
-        )
-        return {
-            "registered": result.returncode == 0,
-            "method": "schtasks",
-            "task_name": task_name,
-        }
-    else:
         try:
             result = subprocess.run(
-                ["crontab", "-l"], capture_output=True, text=True,
+                ["schtasks", "/Query", "/TN", task_name],
+                capture_output=True, text=True,
                 timeout=10, encoding="utf-8", errors="replace",
             )
-            registered = task_name in (result.stdout or "")
-            return {"registered": registered, "method": "cron", "task_name": task_name}
-        except Exception:
-            return {"registered": False, "method": "cron", "task_name": task_name}
+            registered = result.returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            registered = False
+        return {"registered": registered, "method": "schtasks", "task_name": task_name}
+
+    ok, text, _error = _read_crontab()
+    registered = ok and any(line.rstrip().endswith(f"# {task_name}")
+                            for line in text.splitlines())
+    return {"registered": registered, "method": "cron", "task_name": task_name}
 
 
 def register_skill_jobs(skill_id: str) -> list[dict]:
@@ -466,16 +553,29 @@ def register_skill_jobs(skill_id: str) -> list[dict]:
     if not schedule_expr or not entrypoint:
         return []
 
-    # Build command
-    wrapper_dir = str(Path(__file__).resolve().parent.parent.parent)
-    if entrypoint.endswith(".py"):
-        command = f"{sys.executable} {wrapper_dir}/{entrypoint}"
-    elif entrypoint.endswith(".sh"):
-        command = f"{_resolve_bash()} {wrapper_dir}/{entrypoint}"
-    elif entrypoint.endswith(".ps1"):
-        command = f"powershell {wrapper_dir}/{entrypoint}"
-    else:
-        command = f"{wrapper_dir}/{entrypoint}"
+    command = _job_command(Path(__file__).resolve().parent.parent.parent, entrypoint)
+    if command is None:
+        return [{"ok": False, "method": "schtasks" if _IS_WINDOWS else "cron",
+                 "error": f"Entrypoint not found: {entrypoint}"}]
 
     result = register_scheduler(skill_id, schedule_expr, command)
     return [result]
+
+
+def _job_command(wrapper_dir: Path, entrypoint: str) -> list[str] | None:
+    """Argument list that runs a skill's runtime entrypoint, or None if missing."""
+    script = wrapper_dir / entrypoint
+    if not script.exists():
+        return None
+    powershell = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]
+    if entrypoint.endswith(".py"):
+        return [sys.executable, str(script)]
+    if entrypoint.endswith(".sh"):
+        # On Windows prefer the PowerShell twin of a shell script (heartbeat.ps1)
+        twin = script.with_suffix(".ps1")
+        if _IS_WINDOWS and twin.exists():
+            return powershell + [str(twin)]
+        return [_resolve_bash(), str(script)]
+    if entrypoint.endswith(".ps1"):
+        return powershell + [str(script)]
+    return [str(script)]

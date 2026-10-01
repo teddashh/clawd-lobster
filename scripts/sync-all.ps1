@@ -138,6 +138,8 @@ if (Test-Path $machineConfigFile) {
             $clientFile = "$wrapperDir\clients\$mid.json"
             if (Test-Path $clientFile) {
                 $status = Get-Content $clientFile -Raw | ConvertFrom-Json
+                # Older installers stored the host name here; drop it before this file is pushed
+                $status.PSObject.Properties.Remove("hostname")
                 $status.last_sync = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
                 $status | ConvertTo-Json -Depth 3 | Set-Content $clientFile -Encoding UTF8
             }

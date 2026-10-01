@@ -172,10 +172,14 @@ function detectBrowserLang() {
   return 'en';
 }
 
-// ── Auth helper ──
+// ── Auth helpers ──
+// The server injects a per-process token as <meta name="clawd-token">.
+// Every POST must send it back in the X-Clawd-Token header (CSRF protection).
+const CLAWD_TOKEN = (document.querySelector('meta[name="clawd-token"]') || {}).content || '';
 function authHeaders() {
   const t = localStorage.getItem('cl-token') || '';
-  return {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t};
+  return {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t,
+          'X-Clawd-Token': CLAWD_TOKEN};
 }
 
 // ── i18n ──
@@ -356,7 +360,7 @@ async function init() {
 
   // No existing session — create new one
   const res = await fetch(API + '/api/onboarding/session', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
+    method: 'POST', headers: {'Content-Type': 'application/json', 'X-Clawd-Token': CLAWD_TOKEN},
     body: JSON.stringify({lang: detectBrowserLang()})
   });
   const data = await res.json();

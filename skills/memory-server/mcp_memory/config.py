@@ -96,6 +96,37 @@ def get_machine_id() -> str:
     return socket.gethostname().lower().replace(" ", "-")
 
 
+def _norm_name(name: str) -> str:
+    import re
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+def get_machine_label() -> str:
+    """Machine label that is safe to write into files that git may push.
+
+    Only a machine_id set in the local config (or CLAWD_MACHINE_ID) counts,
+    and never one that is simply this computer's host name. Returns "" when
+    there is no such label, so callers can leave the field out.
+    """
+    config = load_config()
+    mid = str(config.get("machine_id", "") or "").strip()
+    if not mid:
+        mid = os.environ.get("CLAWD_MACHINE_ID", "").strip()
+    if not mid:
+        return ""
+    import platform
+    import socket
+    host_forms = set()
+    for raw in (platform.node(), socket.gethostname(),
+                os.environ.get("COMPUTERNAME", ""), os.environ.get("HOSTNAME", "")):
+        raw = (raw or "").strip()
+        if raw:
+            host_forms.add(_norm_name(raw))
+            host_forms.add(_norm_name(raw.split(".")[0]))
+    host_forms.discard("")
+    return "" if _norm_name(mid) in host_forms else mid
+
+
 def _deep_merge(base: dict, override: dict):
     for k, v in override.items():
         if k in base and isinstance(base[k], dict) and isinstance(v, dict):

@@ -28,8 +28,10 @@ log "=== Heartbeat started (machine: $MACHINE_ID, domain: $DOMAIN) ==="
 
 REGISTRY="$WRAPPER_DIR/workspaces.json"
 if [ ! -f "$REGISTRY" ]; then
-    log "No workspaces.json found"
-    exit 1
+    # The registry is per-machine state (see workspaces.example.json). With no
+    # registry there is nothing to check, which is not an error.
+    log "No workspaces.json yet, no workspaces registered, nothing to check"
+    exit 0
 fi
 
 alive=0
@@ -118,6 +120,7 @@ import json
 from datetime import datetime
 with open('$CLIENT_FILE') as f:
     s = json.load(f)
+s.pop('hostname', None)  # older installers stored the host name; keep it out of the Hub
 s['last_heartbeat'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 s['sessions_alive'] = $alive + $revived
 s['last_sync'] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')

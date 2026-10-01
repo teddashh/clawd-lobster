@@ -27,8 +27,10 @@ if (Test-Path $configFile) {
 # Load workspace registry
 $registryFile = "$wrapperDir\workspaces.json"
 if (-not (Test-Path $registryFile)) {
-    Write-Host "[heartbeat] No workspaces.json found."
-    exit 1
+    # The registry is per-machine state (see workspaces.example.json). With no
+    # registry there is nothing to check, which is not an error.
+    Write-Host "[heartbeat] No workspaces.json yet, no workspaces registered, nothing to check."
+    exit 0
 }
 $registry = Get-Content $registryFile -Raw | ConvertFrom-Json
 
@@ -195,6 +197,8 @@ $clientFile = "$wrapperDir\clients\$MachineId.json"
 if (Test-Path $clientFile) {
     try {
         $status = Get-Content $clientFile -Raw | ConvertFrom-Json
+        # Older installers stored the host name here; keep it out of the Hub
+        $status.PSObject.Properties.Remove("hostname")
         $status.last_sync = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss")
         if (-not ($status | Get-Member "last_heartbeat" -ErrorAction SilentlyContinue)) {
             $status | Add-Member -NotePropertyName "last_heartbeat" -NotePropertyValue "" -Force

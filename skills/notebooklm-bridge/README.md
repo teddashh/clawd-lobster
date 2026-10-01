@@ -37,6 +37,7 @@ the linked notebook.
 | `auto_sync_sources` | boolean | `false` | Auto-sync docs after blitz |
 | `default_language` | string | `zh_Hant` | Default output language |
 | `auto_create_notebook` | boolean | `false` | Auto-create notebook if none exists |
+| `auto_remove_watermark` | boolean | `false` | Remove the NotebookLM watermark from downloaded slides and infographics (off unless you turn it on, see below) |
 
 ## Dependencies
 
@@ -71,9 +72,14 @@ authentication status.
 ## Watermark Removal
 
 Built-in tool to remove the NotebookLM logo from generated slides and infographics.
+It is **off by default**: nothing removes a watermark unless you turn it on.
+
+> **Warning:** removing the NotebookLM watermark may conflict with Google's terms.
+> Check NotebookLM's terms of service before you enable it.
 
 - **No AI / No GPU** -- uses biharmonic inpainting (classical image processing)
-- **Auto mode** -- enabled by default (`auto_remove_watermark: true`)
+- **Auto mode** -- off by default (`auto_remove_watermark: false`). To turn it on:
+  `python scripts/skill-manager.py config notebooklm-bridge --set auto_remove_watermark=true`
 - **Manual**: `python skills/notebooklm-bridge/remove_watermark.py input.pdf`
 - **Formats**: PDF (default), `--pptx` (PowerPoint), `--png` (ZIP of images)
 

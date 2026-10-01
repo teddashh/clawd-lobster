@@ -403,7 +403,11 @@ it alone, it emerged from the debate.
 ## Watermark Removal
 
 NotebookLM adds a logo watermark to the bottom-right corner of all generated
-slides and infographics. This skill includes an automatic watermark remover.
+slides and infographics. This skill includes a watermark remover, and it is
+**off by default**.
+
+> **Warning:** removing the NotebookLM watermark may conflict with Google's
+> terms. Users must check NotebookLM's terms of service before turning this on.
 
 ### How It Works
 - **Not AI** — uses biharmonic inpainting (classical image processing)
@@ -411,9 +415,11 @@ slides and infographics. This skill includes an automatic watermark remover.
 - Fixed-position detection at NotebookLM's standard resolution (2867×1600)
 - Outputs: clean PDF, PNG ZIP, or PowerPoint
 
-### Automatic Mode
-When `auto_remove_watermark` is enabled (default: true), any PDF downloaded
-from NotebookLM (slides, infographics) is automatically cleaned before saving.
+### Automatic Mode (off by default)
+`auto_remove_watermark` defaults to `false`. Only when the user sets it to
+`true` themselves is a PDF downloaded from NotebookLM (slides, infographics)
+cleaned before saving. While it is `false`, downloaded files are left exactly
+as NotebookLM made them.
 
 ### Manual Usage
 ```bash
@@ -437,8 +443,11 @@ python skills/notebooklm-bridge/remove_watermark.py slides.pdf --dpi 300
 ```
 
 ### When Claude Should Use This
-- After generating slides or infographics via NotebookLM, **always** run
-  watermark removal before delivering the final files to the user
+- **Never by default.** Run watermark removal only when the user has set
+  `auto_remove_watermark` to `true`, or explicitly asks you to remove the
+  watermark from a specific file. Otherwise deliver the files unchanged.
+- Before the first run, remind the user that removing the watermark may
+  conflict with Google's terms and that they should check NotebookLM's terms
 - Use `--pptx` when the user wants editable slides
 - Use `--png` when the user wants individual images
 - Use default (PDF) for archival or sharing

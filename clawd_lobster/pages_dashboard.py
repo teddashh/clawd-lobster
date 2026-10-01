@@ -206,8 +206,8 @@ async function loadCreds() {
       + '<div class="type">' + s.type + '</div></div>'
       + '<span class="card-badge ' + badgeClass + '">' + status + '</span>'
       + '<div class="card-actions">'
-      + '<button class="btn sm" onclick="alert(\'Configure ' + s.name + ' — coming soon\')">Update</button>'
-      + '<button class="btn sm" onclick="testCred(\'' + s.id + '\')">Test</button>'
+      + '<button class="btn sm" onclick="alert(\\'Configure ' + s.name + ': coming soon\\')">Update</button>'
+      + '<button class="btn sm" onclick="testCred(\\'' + s.id + '\\')">Test</button>'
       + '</div></div>';
   }).join('');
 }

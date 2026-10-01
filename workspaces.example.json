@@ -1,0 +1,26 @@
+{
+  "owner": "",
+  "workspace_root": "",
+  "workspaces": [],
+  "_schema": {
+    "description": "Template for workspaces.json, the workspace registry. workspaces.json is per-machine state: it is not tracked in this repo, the tools create it on first use, and a private Hub tracks its own copy. Each entry in 'workspaces' looks like 'example_workspace'.",
+    "example_workspace": {
+      "id": "my-project",
+      "path": "my-project",
+      "repo": "your-github-user/my-project",
+      "domain": "personal",
+      "deploy": "all",
+      "created": "2026-01-01"
+    },
+    "fields": {
+      "id": "kebab-case workspace name",
+      "path": "workspace directory, relative to workspace_root or absolute",
+      "repo": "GitHub owner/name, or empty",
+      "domain": "work, personal or hybrid",
+      "deploy": "all, work or personal: which machines deploy and monitor it",
+      "created": "ISO date (YYYY-MM-DD)",
+      "type": "optional, one of webapp, api, agent, skill, mcp-server, project",
+      "stack": "optional, for example {\"runtime\": \"python\", \"framework\": \"fastapi\"}"
+    }
+  }
+}

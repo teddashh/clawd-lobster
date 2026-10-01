@@ -216,13 +216,38 @@ def _append_turn(sq: dict, role: str, phase: str, signal, **extra) -> None:
     sq["turns"].append({"role": role, "phase": phase, "time": _now(),
                          "signal": signal, **extra})
 
+def approval_source(state: dict) -> str | None:
+    """How the spec got approved: "reviewer", "round_limit", or None if it is not.
+
+    State files written before the "approval" field existed are classified
+    from the last Reviewer verdict.
+    """
+    if not state.get("approved"):
+        return None
+    source = state.get("approval")
+    if source in ("reviewer", "round_limit"):
+        return source
+    reviews = [t for t in state.get("turns", []) if t.get("role") == "reviewer"]
+    last = (reviews[-1].get("signal") or {}) if reviews else {}
+    return "reviewer" if last.get("verdict") == "APPROVED" else "round_limit"
+
+def approval_label(state: dict) -> str:
+    """One-line approval status that tells the two kinds of approval apart."""
+    source = approval_source(state)
+    if source is None:
+        return "not approved"
+    if source == "round_limit":
+        return (f"approved by the round limit (the Reviewer did not approve within "
+                f"{MAX_REVIEW_ROUNDS} rounds)")
+    return "approved by the Reviewer"
+
 async def _run_squad_async(
     workspace: Path, project_desc: str,
     plan_only: bool = False, on_phase=None,
 ) -> None:
     """Architect -> Reviewer -> Coder -> Tester pipeline."""
     sq: dict = {"phase": "spec", "review_round": 0, "approved": False,
-                "started": _now(), "turns": []}
+                "approval": None, "started": _now(), "turns": []}
     save_state(workspace, sq)
     def _notify(p: str):
         push_sse("phase", {"phase": p})
@@ -250,6 +275,8 @@ async def _run_squad_async(
         save_state(workspace, sq)
         if rs and rs.get("verdict") == "APPROVED":
             sq["approved"] = True
+            sq["approval"] = "reviewer"
+            save_state(workspace, sq)
             break
         issues = rs.get("issues", ["Reviewer requested revisions"]) if rs else ["Review completed"]
         fix = await _run_agent("architect", ARCHITECT_SYSTEM,
@@ -260,7 +287,17 @@ async def _run_squad_async(
         save_state(workspace, sq)
 
     if not sq["approved"]:
+        # Round limit reached without an APPROVED verdict. The spec still
+        # counts as approved so the pipeline can go on, but the state, the
+        # turn log and the SSE stream all record that the limit forced it.
         sq["approved"] = True
+        sq["approval"] = "round_limit"
+        _append_turn(sq, "system", "review",
+                     {"verdict": "FORCED_APPROVAL", "reason": "round_limit",
+                      "rounds": sq["review_round"], "max_rounds": MAX_REVIEW_ROUNDS})
+        save_state(workspace, sq)
+        push_sse("forced_approval", {"rounds": sq["review_round"],
+                                     "max_rounds": MAX_REVIEW_ROUNDS})
 
     if plan_only:
         sq["phase"] = "done"; save_state(workspace, sq); _notify("done"); return
@@ -338,7 +375,10 @@ def run_squad_terminal(workspace: Path | str | None = None) -> None:
 
     st = load_state(workspace)
     print(f"\nSpec complete: {len(st.get('turns',[]))} turns, "
-          f"{st.get('review_round',0)} review rounds, approved={st.get('approved',False)}")
+          f"{st.get('review_round',0)} review rounds, {approval_label(st)}")
+    if approval_source(st) == "round_limit":
+        print("Warning: the Reviewer never approved this spec. Read the last review "
+              "in .spec-squad.json before building.")
     print(f"Files in: {workspace / 'openspec'}\n")
 
     try:

@@ -10,7 +10,7 @@ Clawd-Lobster wraps the Claude Code CLI with a per-workspace MCP memory server, 
 
 **Project page:** https://teddashh.github.io/clawd-lobster/
 
-> **Status: experimental, not maintained.** 136 commits between April 1 and April 9, 2026, and none since. No tagged releases and no PyPI package. The package version is 0.6.0; [CHANGELOG.md](CHANGELOG.md) stops at 0.5.0. See [Status and limits](#status-and-limits).
+> **Status: experimental, not maintained.** 136 commits between April 1 and April 9, 2026, then one cleanup and security fix pass in October 2026. No tagged releases and no PyPI package. The package version is 0.6.0; see [CHANGELOG.md](CHANGELOG.md) and [Status and limits](#status-and-limits).
 
 ---
 
@@ -93,7 +93,7 @@ The scripts run nine steps: prerequisites, authentication, Hub setup, configurat
 
 You describe what you want, and four roles take it from there.
 
-The **Architect** writes OpenSpec files with SHALL/MUST requirements and Gherkin scenarios. The **Reviewer**, a separate session that never sees the Architect's instructions and can only read files, challenges the spec. They loop until the Reviewer approves, for up to five rounds. The **Coder** builds from `tasks.md`, and the **Tester** checks each requirement. Only the Coder and Tester can run shell commands.
+The **Architect** writes OpenSpec files with SHALL/MUST requirements and Gherkin scenarios. The **Reviewer**, a separate session that never sees the Architect's instructions and can only read files, challenges the spec. They loop until the Reviewer approves, for up to five rounds. If the Reviewer still has not approved after the fifth round, the spec is approved anyway so the pipeline can go on, but it is recorded as forced: `.spec-squad.json` says `"approval": "round_limit"` instead of `"reviewer"`, the turn log gets a `FORCED_APPROVAL` entry, and the terminal and the web view both say that the round limit approved it. The **Coder** builds from `tasks.md`, and the **Tester** checks each requirement. Only the Coder and Tester can run shell commands.
 
 Each role works in its own context: the Reviewer is not working from the Architect's reasoning, and the Tester does not know which shortcuts the Coder took.
 
@@ -132,7 +132,7 @@ GitHub is the control plane and git is the protocol. Setup creates or joins a pr
 
 ### 5. Self-evolution
 
-Every two hours (the dashboard registers this job when you set up the evolve skill), evolve-tick collects recently completed TODOs and logged actions from every workspace and asks Claude to save reusable patterns as learned skills. It also decays the salience of unused items and lints the wiki. Improvement ideas are written as proposal files under `openspec/proposals/` and committed for a person to review.
+Every two hours (the dashboard registers this job when you set up the evolve skill: it adds one line to your crontab and leaves the rest alone, or creates a Task Scheduler task on Windows), evolve-tick collects recently completed TODOs and logged actions from every workspace and asks Claude to save reusable patterns as learned skills. It also decays the salience of unused items and lints the wiki. Improvement ideas are written as proposal files under `openspec/proposals/` and committed for a person to review.
 
 ---
 
@@ -160,7 +160,7 @@ Updates in real time          Reads state, advances the flow
 
 Neither one is in charge. Both submit intents through a single backend API, and one controller lease keeps them from acting at the same time.
 
-> **Security note:** several dashboard endpoints, including the ones that create a workspace and start the Squad, accept requests without the session token and do not check where a request comes from. Run `clawd-lobster serve` only while you are using it.
+> **Security note:** the dashboard listens on 127.0.0.1 only and checks every request before it does anything else. The Host header must be `127.0.0.1:<port>` or `localhost:<port>`, which stops DNS rebinding. A request with an Origin header must come from the dashboard itself. Every POST must send the per-process token in an `X-Clawd-Token` header, which stops other web pages from sending requests (CSRF). The server makes a new random token each time it starts, puts it in the pages it serves, and writes it to `~/.clawd-lobster/server-<port>.token` (readable only by you) for local scripts; the file is removed when the server stops. Failed checks get 403, CORS preflights always get 403, and no `Access-Control-*` headers are sent. The onboarding API also needs its session token, as before. The token keeps web pages out, not other programs running as you on the same machine, so stop `clawd-lobster serve` when you are done.
 
 ---
 
@@ -243,6 +243,8 @@ There is no `clawd-lobster deploy` command; deployment is the `/deploy` prompt p
 
 The first machine creates the Hub; the install scripts suggest `clawd-` plus your user name. Every machine after that joins it.
 
+The workspace registry, `workspaces.json`, is per-machine state: this repository does not track it and ships [workspaces.example.json](workspaces.example.json) to show the format, while your private Hub tracks its own copy. Files and commit messages that get pushed name a machine only by the `machine_id` in `~/.clawd-lobster/config.json` (the install scripts suggest a random `machine-` label), never by its host name.
+
 ---
 
 ## Requirements
@@ -258,20 +260,20 @@ The first machine creates the Hub; the install scripts suggest `clawd-` plus you
 
 ## Status and limits
 
-Experimental. 136 commits between April 1 and April 9, 2026, and none since. No tagged releases.
+Experimental. 136 commits between April 1 and April 9, 2026, then one cleanup and security fix pass in October 2026. No tagged releases.
 
 **Works today**
 - `pip install -e .` gives a `clawd-lobster` command with serve, setup, workspace create, squad start, and status
-- The onboarding tests pass: 32 unit tests plus a scripted end-to-end run through the HTTP API (rechecked on Python 3.14 in September 2026)
+- The tests pass: 83 unit tests (onboarding, scheduler registration, the dashboard's request checks, and the Spec Squad approval record) plus a scripted end-to-end run through the HTTP API (rechecked on Python 3.14 in October 2026)
 - The memory server runs on SQLite alone, with text search ranked by salience
 - Install scripts for Windows (PowerShell), macOS, and Linux
 - Spec Squad in the terminal stops after the spec and asks before any code is written
 
 **Limits and not yet**
-- Not maintained since April 9, 2026, and not checked against later Claude Code or Agent SDK releases
-- Several dashboard endpoints, including the ones that create a workspace and start the Squad, accept requests without the session token and do not check where a request comes from
-- If the Reviewer has not approved after five rounds, the spec is marked approved anyway, and the web flow goes on to build
-- The 30-minute sync commits and pushes every git repository under the workspace root, including new Markdown, JSON, YAML, HTML, and script files, so keep anything you do not want pushed outside that folder. evolve writes the machine's hostname into the proposals and commit messages it pushes
+- No feature work since April 9, 2026, and not checked against later Claude Code or Agent SDK releases
+- The dashboard's token keeps other web pages out, but any program running as you on the same machine can read it
+- If the Reviewer has not approved after five rounds, the spec is still approved and the web flow goes on to build; the state file, the turn log, and both interfaces mark it as forced by the round limit
+- The 30-minute sync commits and pushes every git repository under the workspace root, including new Markdown, JSON, YAML, HTML, and script files, so keep anything you do not want pushed outside that folder
 - Heartbeat matches sessions by process name and revives them with a plain `claude --resume`
 - Spec Squad needs the `[agent]` extra; vector search and the Vault need an Oracle database; the memory server needs Python 3.11 or newer
 
