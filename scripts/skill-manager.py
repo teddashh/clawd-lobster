@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-skill-manager.py — CLI tool for managing clawd-lobster skills.
+skill-manager.py: CLI tool for managing clawd-lobster skills.
 
 Commands:
   list                     Table of all skills: id, name, category, enabled, status
@@ -12,7 +12,7 @@ Commands:
   health                   Run health checks on all enabled skills
   reconcile                Re-derive .mcp.json + settings.json from registry
 
-No external dependencies — stdlib only, cross-platform (Windows + Unix).
+No external dependencies; stdlib only, cross-platform (Windows + Unix).
 """
 
 import argparse
@@ -39,7 +39,7 @@ CLAUDE_DIR = HOME / ".claude"
 MCP_FILE = CLAUDE_DIR / ".mcp.json"
 SETTINGS_FILE = CLAUDE_DIR / "settings.json"
 
-# Where the clawd-lobster repo lives — derive from this script's location
+# Where the clawd-lobster repo lives; derive from this script's location
 REPO_DIR = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_DIR / "skills"
 
@@ -853,7 +853,7 @@ def _patch_codex_plugin():
         if result.stdout.strip():
             print(result.stdout.strip())
     except Exception:
-        pass  # non-critical — skip silently if patch fails
+        pass  # non-critical; skip silently if patch fails
 
 
 def _reconcile_files(reg: dict) -> None:
@@ -908,7 +908,7 @@ def _reconcile_files(reg: dict) -> None:
 def main():
     parser = argparse.ArgumentParser(
         prog="skill-manager",
-        description="Manage clawd-lobster skills — enable, disable, configure, and reconcile.",
+        description="Manage clawd-lobster skills: enable, disable, configure, and reconcile.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
             Examples:

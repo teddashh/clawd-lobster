@@ -1,4 +1,4 @@
-# Deploy — Docker Deployment Pipeline
+# Deploy: Docker Deployment Pipeline
 
 Ship your projects to dev/staging/prod with one command.
 
@@ -7,9 +7,9 @@ Ship your projects to dev/staging/prod with one command.
 The deploy skill auto-detects your tech stack and generates Docker deployment configs. It reads `workspace.json` to understand your project type, then creates Dockerfiles, docker-compose files, nginx configs, and deploy scripts for three environments.
 
 **Three environments, one philosophy:**
-- **Dev** — Playground. Break things freely. Hot reload. `localhost`.
-- **Staging** — Verify. Manual Claude OK. Mirror of prod.
-- **Prod** — Sacred. Git push + CI/CD only. No direct Claude access.
+- **Dev**: Playground. Break things freely. Hot reload. `localhost`.
+- **Staging**: Verify. Manual Claude OK. Mirror of prod.
+- **Prod**: Sacred. Git push + CI/CD only. No direct Claude access.
 
 ## How to Use
 
@@ -71,4 +71,4 @@ Docker is optional but recommended. The skill works without it (generates config
 
 ## Architecture
 
-Depends on the **spec** skill — reads `workspace.json` created during `/spec` workspace setup. Uses `openspec/changes/v1/design.md` for stack and architecture info.
+Depends on the **spec** skill: reads `workspace.json` created during `/spec` workspace setup. Uses `openspec/changes/v1/design.md` for stack and architecture info.

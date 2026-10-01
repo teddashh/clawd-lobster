@@ -208,7 +208,7 @@ class _Handler(BaseHTTPRequestHandler):
         """Validate auth token for API endpoints. Returns True if valid.
 
         Token can be in query param (?token=...) or Authorization header.
-        Non-API routes (pages) don't require auth — they're just HTML.
+        Non-API routes (pages) don't require auth; they're just HTML.
         """
         # Check Authorization header first
         auth = self.headers.get("Authorization", "")
@@ -568,7 +568,7 @@ class _Handler(BaseHTTPRequestHandler):
         except OSError as e:
             self._send_json({"ok": False, "error": str(e)}, status=500)
 
-    # Legacy _api_onboarding_update removed — use /api/onboarding/intent instead.
+    # Legacy _api_onboarding_update removed; use /api/onboarding/intent instead.
 
     # ── API: workspaces ────────────────────────────────────────────────────
 

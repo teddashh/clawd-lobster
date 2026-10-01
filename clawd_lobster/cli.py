@@ -1,5 +1,5 @@
 """
-clawd_lobster.cli — Main entry point for the clawd-lobster CLI.
+clawd_lobster.cli: Main entry point for the clawd-lobster CLI.
 
 Usage:
     clawd-lobster serve            Start the web UI server
@@ -308,7 +308,7 @@ def _get_tool_version(tool: str, args: list[str]) -> str:
             capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace",
         )
         output = result.stdout.strip() or result.stderr.strip()
-        # Clean up — take first line, strip common prefixes
+        # Clean up: take first line, strip common prefixes
         if output:
             return output.splitlines()[0].strip()
         return ""
@@ -317,7 +317,7 @@ def _get_tool_version(tool: str, args: list[str]) -> str:
 
 
 def _find_workspaces_json() -> Path:
-    """Locate workspaces.json — config.data_dir, config.wrapper_dir, or repo dir."""
+    """Locate workspaces.json: config.data_dir, config.wrapper_dir, or repo dir."""
     config = _read_json(_config_file())
     data_dir = config.get("data_dir", "")
     if data_dir:
@@ -338,7 +338,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the top-level argument parser with all subcommands."""
     parser = argparse.ArgumentParser(
         prog="clawd-lobster",
-        description="AI-native spec-to-code framework — from idea to working code.",
+        description="AI-native spec-to-code framework, from idea to working code.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Quick start:

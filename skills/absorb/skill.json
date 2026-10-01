@@ -1,7 +1,7 @@
 {
   "id": "absorb",
   "name": "Absorb",
-  "description": "Universal knowledge ingestion — absorb files, folders, PDFs, emails, LINE chats, Facebook posts, images, web pages, and more into The Vault (Oracle L3) or Memory (L1+L2). Triggers on /absorb, 'scan this repo', 'import this project', 'absorb my files', or 'learn from this'.",
+  "description": "Universal knowledge ingestion. Absorb files, folders, PDFs, emails, LINE chats, Facebook posts, images, web pages, and more into The Vault (Oracle L3) or Memory (L1+L2). Triggers on /absorb, 'scan this repo', 'import this project', 'absorb my files', or 'learn from this'.",
   "context": "fork",
   "version": "1.0.0",
   "category": "intelligence",
@@ -15,7 +15,7 @@
     "tier": "required",
     "phase": "skills_required",
     "order": 30,
-    "title": "Absorb — Knowledge Ingestion",
+    "title": "Absorb: Knowledge Ingestion",
     "summary": "Ingest files, PDFs, emails, chats, and more into your knowledge base. Optionally connect Oracle Vault for deep storage.",
     "why_it_matters": "This is how your AI learns from your existing documents and data. Oracle Vault is optional but gives you cross-machine search.",
     "estimated_minutes": 2,

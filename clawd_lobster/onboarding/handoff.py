@@ -1,4 +1,4 @@
-"""Claude Code handoff — generates the staged environment for Claude.
+"""Claude Code handoff: generates the staged environment for Claude.
 
 When a user runs `claude` in the onboarding workspace, Claude Code reads
 the CLAUDE.md we generate. This file tells Claude:
@@ -8,7 +8,7 @@ the CLAUDE.md we generate. This file tells Claude:
   4. The current state (which items are pending/done/failed)
 
 The web dashboard and Claude are co-pilots. Claude doesn't need
-hardcoded scripts — it reads the live state and acts accordingly.
+hardcoded scripts; it reads the live state and acts accordingly.
 """
 from __future__ import annotations
 
@@ -136,13 +136,13 @@ You are the conversational guide. Together you and the web are co-pilots.
 
 ## Behavior Guidelines
 
-- **Explain each skill** before setting it up — what it does, why it matters
+- **Explain each skill** before setting it up: what it does, why it matters
 - **Ask permission** before installing anything (pip install, npm install, etc.)
-- **Show progress** — tell the user which step you're on
+- **Show progress**: tell the user which step you're on
 - **If a step fails**, explain the error and suggest a fix
-- **Don't skip required skills** — foundations and required skills must complete
-- **Optional skills** — explain what they do, let the user decide to skip or install
-- **The web dashboard updates live** — the user can see your progress there
+- **Don't skip required skills**: foundations and required skills must complete
+- **Optional skills**: explain what they do, let the user decide to skip or install
+- **The web dashboard updates live**: the user can see your progress there
 
 {api_reference}
 """
@@ -150,7 +150,7 @@ You are the conversational guide. Together you and the web are co-pilots.
     # Write CLAUDE.md
     claude_md_path = ws_path / "CLAUDE.md"
 
-    # Don't overwrite if onboarding section already exists — append
+    # Don't overwrite if onboarding section already exists; append
     if claude_md_path.exists():
         existing = claude_md_path.read_text(encoding="utf-8")
         if "Clawd-Lobster Onboarding" not in existing:
@@ -289,7 +289,7 @@ def _build_items_summary(state: dict) -> str:
             icon = icons.get(item.get("status", "pending"), "⬜")
             name = item.get("title") or item.get("id")
             status = item.get("status", "pending")
-            error = f" — {item['error']}" if item.get("error") else ""
+            error = f": {item['error']}" if item.get("error") else ""
             lines.append(f"- {icon} **{name}** ({status}){error}")
 
     return "\n".join(lines)

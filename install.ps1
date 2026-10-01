@@ -1,4 +1,4 @@
-# install.ps1 — Clawd-Lobster Setup
+# install.ps1: Clawd-Lobster Setup
 # Usage:
 #   .\install.ps1                                         # Interactive
 #   .\install.ps1 -Lang en -Hub new -Env fresh -MachineId "my-server"  # Headless
@@ -48,9 +48,9 @@ $i18n = @{
         round2_a = "Fresh start (brand new, nothing to import)"
         round2_b = "Absorb previous system (OpenClaw, Hermes, claude-setup, etc.)"
         domain_title = "This machine is for:"
-        domain_work = "Work — deploy work workspaces"
-        domain_personal = "Personal — deploy personal workspaces"
-        domain_hybrid = "Hybrid — deploy everything"
+        domain_work = "Work: deploy work workspaces"
+        domain_personal = "Personal: deploy personal workspaces"
+        domain_hybrid = "Hybrid: deploy everything"
         hub_name_prompt = "Name your Hub (e.g. clawd-yourname)"
         hub_name_hint = "This creates a private GitHub repo that becomes your command center"
         machine_prompt = "Name this machine"
@@ -80,9 +80,9 @@ $i18n = @{
         round2_a = "全新開始（什麼都沒有，從零開始）"
         round2_b = "吸收舊系統（OpenClaw、Hermes、claude-setup 等）"
         domain_title = "這台機器的用途："
-        domain_work = "工作 — 部署工作用工作區"
-        domain_personal = "個人 — 部署個人工作區"
-        domain_hybrid = "混合 — 全部部署"
+        domain_work = "工作：部署工作用工作區"
+        domain_personal = "個人：部署個人工作區"
+        domain_hybrid = "混合：全部部署"
         hub_name_prompt = "幫你的 Hub 取個名字 (例如 clawd-你的名字)"
         hub_name_hint = "這會建立一個 private GitHub repo，成為你的指揮中心"
         machine_prompt = "幫這台機器命名"
@@ -112,9 +112,9 @@ $i18n = @{
         round2_a = "全新开始（什么都没有，从零开始）"
         round2_b = "吸收旧系统（OpenClaw、Hermes、claude-setup 等）"
         domain_title = "这台机器的用途："
-        domain_work = "工作 — 部署工作用工作区"
-        domain_personal = "个人 — 部署个人工作区"
-        domain_hybrid = "混合 — 全部部署"
+        domain_work = "工作：部署工作用工作区"
+        domain_personal = "个人：部署个人工作区"
+        domain_hybrid = "混合：全部部署"
         hub_name_prompt = "给你的 Hub 起个名字 (例如 clawd-你的名字)"
         hub_name_hint = "这会创建一个 private GitHub repo，成为你的指挥中心"
         machine_prompt = "给这台机器命名"
@@ -144,9 +144,9 @@ $i18n = @{
         round2_a = "新規スタート（何もない状態から）"
         round2_b = "既存システムを吸収（OpenClaw、Hermes、claude-setup等）"
         domain_title = "このマシンの用途："
-        domain_work = "仕事 — 仕事用ワークスペースをデプロイ"
-        domain_personal = "個人 — 個人ワークスペースをデプロイ"
-        domain_hybrid = "ハイブリッド — すべてデプロイ"
+        domain_work = "仕事：仕事用ワークスペースをデプロイ"
+        domain_personal = "個人：個人ワークスペースをデプロイ"
+        domain_hybrid = "ハイブリッド：すべてデプロイ"
         hub_name_prompt = "Hubの名前を決めてください (例: clawd-あなたの名前)"
         hub_name_hint = "プライベートGitHubリポジトリが作成され、あなたの司令塔になります"
         machine_prompt = "このマシンの名前"
@@ -176,9 +176,9 @@ $i18n = @{
         round2_a = "새로 시작 (처음부터)"
         round2_b = "기존 시스템 흡수 (OpenClaw, Hermes, claude-setup 등)"
         domain_title = "이 머신의 용도:"
-        domain_work = "업무 — 업무 워크스페이스 배포"
-        domain_personal = "개인 — 개인 워크스페이스 배포"
-        domain_hybrid = "하이브리드 — 전부 배포"
+        domain_work = "업무: 업무 워크스페이스 배포"
+        domain_personal = "개인: 개인 워크스페이스 배포"
+        domain_hybrid = "하이브리드: 전부 배포"
         hub_name_prompt = "Hub 이름을 정해주세요 (예: clawd-당신의이름)"
         hub_name_hint = "프라이빗 GitHub 리포지토리가 생성되어 당신의 지휘 센터가 됩니다"
         machine_prompt = "이 머신의 이름"
@@ -380,7 +380,7 @@ $proceed = Read-Host "  Proceed? (Y/n)"
 if ($proceed -eq "n") { Write-Host "  Aborted."; exit 0 }
 
 # ============================================================
-# PHASE 3: EXECUTE — Initialize state tracking
+# PHASE 3: EXECUTE (initialize state tracking)
 # ============================================================
 
 $installParams = @{
@@ -464,7 +464,7 @@ if ($Hub -eq "new") {
     } else {
         # Copy clawd-lobster as template
         Copy-Item -Path $wrapperDir -Destination $hubDir -Recurse -Force
-        # Remove clawd-lobster's .git — this is a new repo
+        # Remove clawd-lobster's .git; this is a new repo
         Remove-Item -Path "$hubDir\.git" -Recurse -Force -ErrorAction SilentlyContinue
         # Init fresh git
         Push-Location $hubDir
@@ -567,7 +567,7 @@ Backup-File $mcpJsonPath $configDir ([ref]$installState) | Out-Null
 $mergedMcp = Merge-McpJson $mcpJsonPath $mcpServerDir $pythonCmd
 $mergedMcp | ConvertTo-Json -Depth 4 | Set-Content $mcpJsonPath -Encoding UTF8
 $serverCount = ($mergedMcp.mcpServers.PSObject.Properties | Measure-Object).Count
-$action = if ($serverCount -gt 1) { "merged — $serverCount servers" } else { "created" }
+$action = if ($serverCount -gt 1) { "merged, $serverCount servers" } else { "created" }
 Write-OK ".mcp.json ($action)"
 
 # Initialize skill registry
@@ -599,7 +599,7 @@ if (Test-Path $claudeMdPath) {
     Backup-File $claudeMdPath $configDir ([ref]$installState) | Out-Null
     $mergedMd = Merge-ClaudeMd $claudeMdPath $templateMd
     Set-Content $claudeMdPath -Value $mergedMd -Encoding UTF8
-    Write-OK "CLAUDE.md (merged — existing content preserved)"
+    Write-OK "CLAUDE.md (merged, existing content preserved)"
 } else {
     Set-Content $claudeMdPath -Value $templateMd -Encoding UTF8
     Write-OK "CLAUDE.md (created)"
@@ -612,7 +612,7 @@ if (Test-Path $settingsPath) {
         Backup-File $settingsPath $configDir ([ref]$installState) | Out-Null
         $mergedSettings = Merge-Settings $settingsPath "$wrapperDir\templates\settings.json.template"
         $mergedSettings | ConvertTo-Json -Depth 4 | Set-Content $settingsPath -Encoding UTF8
-        Write-OK "settings.json (merged — added memory permissions)"
+        Write-OK "settings.json (merged, added memory permissions)"
     } else {
         Copy-Item "$wrapperDir\templates\settings.json.template" $settingsPath
         Write-OK "settings.json (created)"
@@ -621,9 +621,9 @@ if (Test-Path $settingsPath) {
     Copy-Item "$wrapperDir\templates\settings.json.template" $settingsPath
     Write-OK "settings.json (created)"
 }
-# Never touch settings.local.json — user's permission overrides are sacred
+# Never touch settings.local.json; user's permission overrides are sacred
 if (Test-Path "$claudeDir\settings.local.json") {
-    Write-OK "settings.local.json (preserved — not modified)"
+    Write-OK "settings.local.json (preserved, not modified)"
 }
 
 # ============================================================
@@ -681,7 +681,7 @@ if (-not $existingTask) {
     Write-OK "Scheduler (every 30 min)"
 } else { Write-OK "Scheduler (exists)" }
 
-# Heartbeat task (every 30 min — ensures all workspace sessions stay alive)
+# Heartbeat task (every 30 min; ensures all workspace sessions stay alive)
 $hbTaskName = "Clawd-Lobster Heartbeat"
 $existingHb = Get-ScheduledTask -TaskName $hbTaskName -ErrorAction SilentlyContinue
 if (-not $existingHb) {
@@ -778,7 +778,7 @@ if ($Env -eq "absorb") {
                 }
             }
 
-            # 4. Skills inventory (list, don't copy — Lobster has its own skill format)
+            # 4. Skills inventory (list, don't copy; Lobster has its own skill format)
             $skillsDir = "$openclawDir\skills"
             if (Test-Path $skillsDir) {
                 $skillDirs = Get-ChildItem $skillsDir -Directory -ErrorAction SilentlyContinue
@@ -863,7 +863,7 @@ if ($Env -eq "absorb") {
                 $imported++
             }
 
-            # Memory databases (keep in place — Lobster can read them via workspace registry)
+            # Memory databases (keep in place; Lobster can read them via workspace registry)
             $cssMemDbs = Get-ChildItem "$claudeSetupDir\*\.claude-memory\memory.db" -Recurse -ErrorAction SilentlyContinue
             if ($cssMemDbs.Count -gt 0) {
                 Write-OK "Memory databases: $($cssMemDbs.Count) (kept in place)"
@@ -891,7 +891,7 @@ if ($Env -eq "absorb") {
         if (Test-Path $ccMemDir) {
             $ccMemFiles = Get-ChildItem "$ccMemDir\*\memory\*.md" -Recurse -ErrorAction SilentlyContinue
             if ($ccMemFiles.Count -gt 0) {
-                Write-OK "CC auto-memory: $($ccMemFiles.Count) files (native — no migration needed)"
+                Write-OK "CC auto-memory: $($ccMemFiles.Count) files (native, no migration needed)"
             }
         }
 
@@ -904,7 +904,7 @@ if ($Env -eq "absorb") {
     }
 } else {
     Write-Step "9/9" "step_migrate"
-    Write-Skip "Fresh environment — nothing to absorb"
+    Write-Skip "Fresh environment, nothing to absorb"
 }
 Set-StepComplete $configDir ([ref]$installState) 9
 } # end step 9
@@ -944,7 +944,7 @@ if ($fleetFiles.Count -ge 1) {
     foreach ($f in $fleetFiles) {
         $c = Get-Content $f.FullName -Raw | ConvertFrom-Json
         $tag = if ($c.machine_id -eq $MachineId) { " <-- $(T 'this_machine')" } else { "" }
-        Write-Host "    $($c.machine_id) ($($c.hub)-$($c.env_mode)) — $($c.deployed_workspaces.Count) ws$tag" -ForegroundColor Gray
+        Write-Host "    $($c.machine_id) ($($c.hub)-$($c.env_mode)): $($c.deployed_workspaces.Count) ws$tag" -ForegroundColor Gray
     }
     Write-Host ""
 }

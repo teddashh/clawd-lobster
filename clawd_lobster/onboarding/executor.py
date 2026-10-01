@@ -98,7 +98,7 @@ def execute_skill_setup(
             break
 
     if skill_manifest is None:
-        # No manifest with onboarding — just run probe
+        # No manifest with onboarding; just run probe
         return _probe_only(session_id, state, item, skill_id)
 
     ob = skill_manifest.get("onboarding", {})
@@ -151,7 +151,7 @@ def execute_skill_setup(
                 last_error = result.get("repair_hint", "Probe failed")
 
         elif kind == "link":
-            # Link steps are user actions — auto-pass
+            # Link steps are user actions; auto-pass
             success = True
 
         elif kind == "schedule":
@@ -328,7 +328,7 @@ def _run_schedule_step(skill_id: str) -> tuple[bool, str | None]:
 
 
 def _run_config_step(step: dict, values: dict) -> tuple[bool, str | None]:
-    """Run a config step — validate and save fields."""
+    """Run a config step: validate and save fields."""
     fields = step.get("fields", [])
     for field in fields:
         name = field.get("name", "")

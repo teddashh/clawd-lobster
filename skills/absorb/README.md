@@ -4,7 +4,7 @@
 
 ## What It Does
 
-Absorb is the **INGEST** operation of the Thin Ledger pattern. Point it at a codebase, repo, or URL, and it extracts decisions, knowledge, skills, and TODOs — storing them with full provenance (source agent, confidence, lifecycle state). Raw sources go to `knowledge/raw/`, synthesized knowledge becomes wiki pages in `knowledge/wiki/`, and structured records land in SQLite.
+Absorb is the **INGEST** operation of the Thin Ledger pattern. Point it at a codebase, repo, or URL, and it extracts decisions, knowledge, skills, and TODOs, storing them with full provenance (source agent, confidence, lifecycle state). Raw sources go to `knowledge/raw/`, synthesized knowledge becomes wiki pages in `knowledge/wiki/`, and structured records land in SQLite.
 
 ## How It Works
 

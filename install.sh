@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh — Clawd-Lobster Setup for Linux/macOS
+# install.sh: Clawd-Lobster Setup for Linux/macOS
 # Usage:
 #   ./install.sh                                    # Interactive
 #   ./install.sh --lang en --hub new --env fresh     # Headless
@@ -69,7 +69,7 @@ if [ -z "$LANG" ]; then
     esac
 fi
 
-# i18n (keep it simple — key messages only)
+# i18n (keep it simple: key messages only)
 case $LANG in
     zh-TW) MSG_NEW="建立新系統"; MSG_JOIN="加入現有 Hub"; MSG_FRESH="全新開始"; MSG_ABSORB="吸收舊系統"
            MSG_HUB_PROMPT="幫你的 Hub 取個名字"; MSG_MACHINE="幫這台機器命名"
@@ -295,7 +295,7 @@ with open('$MCP_JSON', 'w') as f:
 print(f'{len(servers)} servers')
 " 2>/dev/null
     server_count=$($PYTHON -c "import json; print(len(json.load(open('$MCP_JSON')).get('mcpServers',{})))" 2>/dev/null || echo "?")
-    ok ".mcp.json (merged — $server_count servers)"
+    ok ".mcp.json (merged, $server_count servers)"
 else
     cat > "$MCP_JSON" << MCPEOF
 {
@@ -335,7 +335,7 @@ if [ -f "$CLAUDE_MD_PATH" ]; then
         ok "CLAUDE.md (already has Lobster sections)"
     else
         printf "\n\n# ============================================================\n# Clawd-Lobster (auto-appended by installer)\n# ============================================================\n\n%s" "$TEMPLATE_MD" >> "$CLAUDE_MD_PATH"
-        ok "CLAUDE.md (merged — existing content preserved)"
+        ok "CLAUDE.md (merged, existing content preserved)"
     fi
 else
     echo "$TEMPLATE_MD" > "$CLAUDE_MD_PATH"
@@ -344,7 +344,7 @@ fi
 
 SETTINGS="$CLAUDE_DIR/settings.json"
 if [ -f "$CLAUDE_DIR/settings.local.json" ]; then
-    ok "settings.local.json (preserved — not modified)"
+    ok "settings.local.json (preserved, not modified)"
 fi
 if [ ! -f "$SETTINGS" ] || [ "$(cat "$SETTINGS" 2>/dev/null)" = "{}" ]; then
     cp "$WRAPPER_DIR/templates/settings.json.template" "$SETTINGS"
@@ -478,7 +478,7 @@ if [ "$ENV_MODE" = "absorb" ]; then
         skip "No previous systems detected"
     fi
 else
-    skip "Fresh environment — nothing to absorb"
+    skip "Fresh environment, nothing to absorb"
 fi
 
 # ============================================================
@@ -505,7 +505,7 @@ if [ -d "$CLIENTS_DIR" ]; then
         ws_cnt=$($PYTHON -c "import json; d=json.load(open('$f')); print(len(d.get('deployed_workspaces',[])))" 2>/dev/null)
         tag=""
         [ "$mid" = "$MACHINE_ID" ] && tag=" <-- this machine"
-        echo "    $mid — ${ws_cnt} ws${tag}"
+        echo "    $mid: ${ws_cnt} ws${tag}"
     done
     echo ""
 fi

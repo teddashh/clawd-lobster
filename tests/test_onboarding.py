@@ -76,7 +76,7 @@ class TestStateStore(unittest.TestCase):
 
 
 class TestLease(unittest.TestCase):
-    """Controller lease safety — Ted's checklist item #2."""
+    """Controller lease safety (Ted's checklist item #2)."""
 
     def setUp(self):
         self.state, _ = state_store.create_session("en")
@@ -126,7 +126,7 @@ class TestLease(unittest.TestCase):
 
 
 class TestIntents(unittest.TestCase):
-    """Single-writer guarantee — all mutations via intents."""
+    """Single-writer guarantee: all mutations via intents."""
 
     def setUp(self):
         self.state, _ = state_store.create_session("en")
@@ -228,7 +228,7 @@ class TestProbes(unittest.TestCase):
 
 
 class TestRecovery(unittest.TestCase):
-    """Crash recovery — Ted's checklist item #3."""
+    """Crash recovery (Ted's checklist item #3)."""
 
     def test_state_integrity_valid(self):
         state, _ = state_store.create_session("en")
@@ -302,7 +302,7 @@ class TestHandoff(unittest.TestCase):
 
 
 class TestE2EFlow(unittest.TestCase):
-    """Full onboarding E2E — Ted's checklist item #6."""
+    """Full onboarding E2E (Ted's checklist item #6)."""
 
     def test_full_flow(self):
         # 1. Create session
@@ -337,7 +337,7 @@ class TestE2EFlow(unittest.TestCase):
         # 5. Run probes on required skills
         for skill_id in ["spec", "deploy"]:
             r = executor.execute_skill_setup(sid, skill_id, lid)
-            # These may pass or fail depending on machine state — that's OK
+            # These may pass or fail depending on machine state; that's OK
 
         # 6. Check events logged
         events = state_store.get_events(sid)
@@ -363,7 +363,7 @@ class TestE2EFlow(unittest.TestCase):
 
 
 class TestSecurity(unittest.TestCase):
-    """Security baseline — Ted's checklist item #5."""
+    """Security baseline (Ted's checklist item #5)."""
 
     def test_token_never_in_state(self):
         """Raw token should never be stored in state.json."""

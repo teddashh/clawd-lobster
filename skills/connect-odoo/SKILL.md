@@ -9,7 +9,7 @@ Connects a Clawd-Lobster agent to an Odoo ERP instance via XML-RPC. Provides MCP
 This skill is **disabled by default**. Enable it in your workspace config:
 
 ```jsonc
-// workspaces.json — skill overrides
+// workspaces.json: skill overrides
 "skills": {
   "connect-odoo": { "enabled": true }
 }
@@ -59,9 +59,9 @@ Returns JSON with `status: "ok"` and the Odoo server version, or `status: "error
 
 Optional settings in `configDefaults`:
 
-- **`poll_interval_seconds`** — How often the poller runs (default: 300).
-- **`modules`** — Which Odoo modules to interact with (default: `["crm"]`).
-- **`sync_direction`** — `pull`, `push`, or `bidirectional` (default: `bidirectional`).
+- **`poll_interval_seconds`**: How often the poller runs (default: 300).
+- **`modules`**: Which Odoo modules to interact with (default: `["crm"]`).
+- **`sync_direction`**: `pull`, `push`, or `bidirectional` (default: `bidirectional`).
 
 ## Dependencies
 
@@ -77,6 +77,6 @@ Optional settings in `configDefaults`:
 
 3. **Domain filter syntax errors.** Odoo domain filters use Polish notation: `['&', ('field', '=', 'val1'), ('field2', '>', 5)]`. Claude often writes SQL-like conditions or forgets the `&`/`|` prefix operators for compound filters. Triple-check domain syntax before calling `odoo_search`.
 
-4. **Polling a model that does not exist.** The poller queries `arp.task` by default, which is a custom module. On vanilla Odoo instances this model does not exist. The poller handles this gracefully (returns empty list), but Claude may report "no tasks found" without mentioning the model is missing — always distinguish "no tasks" from "model not found".
+4. **Polling a model that does not exist.** The poller queries `arp.task` by default, which is a custom module. On vanilla Odoo instances this model does not exist. The poller handles this gracefully (returns empty list), but Claude may report "no tasks found" without mentioning the model is missing; always distinguish "no tasks" from "model not found".
 
 5. **Credential environment variables not set.** The MCP server reads `ODOO_URL`, `ODOO_DB`, `ODOO_USER`, `ODOO_PASSWORD` from environment. If credentials are not configured via the credential store, the server starts but every call fails with a cryptic XML-RPC fault. Always verify credentials are set before diagnosing connection issues.

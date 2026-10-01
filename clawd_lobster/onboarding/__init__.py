@@ -1,4 +1,4 @@
-"""clawd_lobster.onboarding — Agent-guided onboarding backend.
+"""clawd_lobster.onboarding: Agent-guided onboarding backend.
 
 Re-exports legacy functions from the old onboarding.py module
 so server.py can still call onboarding.is_first_time() etc.
@@ -6,7 +6,7 @@ so server.py can still call onboarding.is_first_time() etc.
 from pathlib import Path as _Path
 import json as _json
 
-# Legacy compatibility — these were in the old clawd_lobster/onboarding.py
+# Legacy compatibility: these were in the old clawd_lobster/onboarding.py
 _HOME = _Path.home()
 CONFIG_DIR = _HOME / ".clawd-lobster"
 CONFIG_FILE = CONFIG_DIR / "config.json"
@@ -84,7 +84,7 @@ def get_latest_session():
 
 
 def update_onboarding_state(session_id: str, step: str, value):
-    """Legacy update — maps old step names to new intent system."""
+    """Legacy update: maps old step names to new intent system."""
     from .state_store import get_state, save_state, find_item
     state = get_state(session_id)
     if state is None:
@@ -110,7 +110,7 @@ def update_onboarding_state(session_id: str, step: str, value):
 
 
 def write_handoff_file(session_id: str, lang: str = "en"):
-    """Legacy handoff — delegates to handoff module."""
+    """Legacy handoff: delegates to handoff module."""
     from .handoff import generate_handoff
     result = generate_handoff(session_id)
     if result.get("ok"):

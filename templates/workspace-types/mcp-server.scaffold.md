@@ -29,7 +29,7 @@
 ## Notes
 
 - Default transport: stdio (for Claude Code integration).
-- Ship via `.mcp.json` registration — `/deploy:ship` handles this.
+- Ship via `.mcp.json` registration; `/deploy:ship` handles this.
 - Each tool in `src/tools/` should be self-contained with clear input/output schemas.
 - Test integration: call tools via MCP protocol in tests.
 - Optional Docker for running as SSE/HTTP server instead of stdio.

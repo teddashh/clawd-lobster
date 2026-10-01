@@ -13,7 +13,7 @@ The .claude/ directory contains both shareable rules and machine-local hooks/sta
 Update .gitignore to explicitly include .claude/rules/ while excluding .claude/hooks/ and any session-specific state
 
 ## Who
-All contributors — prevents accidental commits of local config while keeping shared rules tracked
+All contributors: prevents accidental commits of local config while keeping shared rules tracked
 
 ## How
 Review current .gitignore, add explicit include/exclude patterns for .claude/ subdirectories, document the convention in README

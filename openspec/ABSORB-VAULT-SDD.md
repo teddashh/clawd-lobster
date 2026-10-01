@@ -1,4 +1,4 @@
-# Absorb + Vault Integration — Software Design Document
+# Absorb + Vault Integration: Software Design Document
 
 > **Status:** DRAFT
 > **Date:** 2026-04-07
@@ -29,7 +29,7 @@ User: "absorb ~/Desktop/important_docs/"
          │
          ▼
 ┌─────────────────────┐
-│   absorb skill      │  (entry point — prompt-pattern + Python backend)
+│   absorb skill      │  (entry point: prompt-pattern + Python backend)
 │   ┌─────────────┐   │
 │   │ ParserRouter │   │  Detects source type → selects parser(s)
 │   └──────┬──────┘   │
@@ -63,7 +63,7 @@ The skill auto-detects which backend is available. Oracle is preferred when conf
 
 ## 3. Data Model: PreDocument
 
-Every parser produces `PreDocument` objects — the universal intermediate format.
+Every parser produces `PreDocument` objects, the universal intermediate format.
 
 ```python
 @dataclass
@@ -456,7 +456,7 @@ absorb skill       → mixed    → vault_parsers.py      (user-facing entry poi
 [ ] vault_api.py has all new methods
 [ ] vault_init.py creates v11 schema (13 tables)
 [ ] absorb skill routes to vault when available
-[ ] Backward compatible — works without Oracle (L1+L2 fallback)
+[ ] Backward compatible: works without Oracle (L1+L2 fallback)
 [ ] No secrets in parser output
 [ ] Error handling doesn't crash on bad files
 ```

@@ -1,4 +1,4 @@
-"""Server-rendered onboarding pages — the Escape Room visual layer.
+"""Server-rendered onboarding pages: the Escape Room visual layer.
 
 This is the web half of the Agent-Guided onboarding. Claude Code is the
 conversation half. Together they guide the user through setup.
@@ -135,7 +135,7 @@ ONBOARDING_PAGE = (
     "<div id='controller-slot'></div>"
     "<div id='handoff-result' style='margin-bottom:12px;font-size:0.85rem;color:var(--fg2);display:none'></div>"
 
-    # Mascot (clickable — jumps + cycles quotes)
+    # Mascot (clickable: jumps + cycles quotes)
     "<div class='mascot' id='mascot' onclick='mascotClick()' title='Click me!'>"
     "<div class='mascot-icon' id='mascot-icon'><img src='/assets/mascot-lobster.png' alt='Clawd Lobster'></div>"
     "<div class='bubble' id='mascot-bubble'>Loading wisdom...</div>"
@@ -358,7 +358,7 @@ async function init() {
     }
   }
 
-  // No existing session — create new one
+  // No existing session; create new one
   const res = await fetch(API + '/api/onboarding/session', {
     method: 'POST', headers: {'Content-Type': 'application/json', 'X-Clawd-Token': CLAWD_TOKEN},
     body: JSON.stringify({lang: detectBrowserLang()})
@@ -710,7 +710,7 @@ function updateControllerBanner() {
     btnA.style.display = 'none';
     btnR.style.display = '';
   } else {
-    h.textContent = 'No active controller — take control to make changes';
+    h.textContent = 'No active controller. Take control to make changes';
     btnA.style.display = '';
     btnR.style.display = 'none';
   }
@@ -814,7 +814,7 @@ async function setFoundation(itemId, value) {
 
 // ── Language ──
 async function setLang(code) {
-  // Language doesn't need lease — auto-acquire if needed, or set directly
+  // Language doesn't need lease; auto-acquire if needed, or set directly
   if (!leaseId) {
     const r = await fetch(API + '/api/controller/acquire', {
       method: 'POST', headers: authHeaders(),
@@ -864,7 +864,7 @@ async function launchHandoff() {
 
 // Handoff banner is now integrated into the language card's controller section
 function checkHandoffBanner() {
-  // no-op — Launch Claude Code button is always visible in controller banner
+  // no-op: Launch Claude Code button is always visible in controller banner
 }
 
 // ── Polling ──

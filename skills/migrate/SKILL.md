@@ -1,4 +1,4 @@
-# Migrate — Import from existing AI agent setups
+# Migrate: Import from existing AI agent setups
 
 !ls -d ~/.claude 2>/dev/null && echo "Found: ~/.claude" || true
 !ls -d ~/.openclaw 2>/dev/null && echo "Found: ~/.openclaw" || true
@@ -63,7 +63,7 @@ When the user asks to migrate or import from an existing setup, scan these paths
 
 1. **Overwriting instead of merging.** Claude's instinct is to write a fresh config file. Migration MUST merge into existing configs, preserving any clawd-lobster settings already configured. Read the destination file first, merge the new entries, then write.
 
-2. **Importing secrets accidentally.** Source directories often contain `.env` files, API keys in config files, or credentials in memory databases. Claude must skip these and note them for manual setup — never store credentials in L2 memory or copy them to new config files.
+2. **Importing secrets accidentally.** Source directories often contain `.env` files, API keys in config files, or credentials in memory databases. Claude must skip these and note them for manual setup; never store credentials in L2 memory or copy them to new config files.
 
 3. **Path assumptions across operating systems.** `~/Documents/claude-setup/` may not exist on Linux. `~/.openclaw/` may be at a different path on Windows. Always use the `!command` detection above to verify which sources actually exist before scanning.
 

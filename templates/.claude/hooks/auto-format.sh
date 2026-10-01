@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # PostToolUse hook: auto-format files after Edit/Write
 # Detects project formatter and runs it on the changed file.
-# Fails gracefully — never blocks Claude.
+# Fails gracefully; never blocks Claude.
 
 set -euo pipefail
 

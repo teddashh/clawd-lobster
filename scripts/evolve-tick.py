@@ -1,5 +1,5 @@
 """
-Evolve Tick — cron entrypoint for system-level learning and knowledge consolidation.
+Evolve Tick: cron entrypoint for system-level learning and knowledge consolidation.
 
 NOT for building features (that's /spec:blitz). Evolve is about getting SMARTER:
   1. Reviews recently completed work across all workspaces
@@ -254,7 +254,7 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
     )
 
     action_summary = "\n".join(
-        f"- [{a.get('_ws_name', '?')}] {a.get('action')}: {a.get('target', '')} — {a.get('note', '')[:80]}"
+        f"- [{a.get('_ws_name', '?')}] {a.get('action')}: {a.get('target', '')} - {a.get('note', '')[:80]}"
         for a in recent_actions[:10]
     )
 
@@ -282,7 +282,7 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
         "```\n"
         "5. Skip patterns that duplicate already known skills.\n"
         "6. If nothing worth learning, just say 'No new patterns found.'\n\n"
-        "Be selective — only extract patterns that are genuinely reusable, not one-off fixes."
+        "Be selective: only extract patterns that are genuinely reusable, not one-off fixes."
     )
 
     if dry_run:
@@ -326,7 +326,7 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
         return learned
 
     except ImportError:
-        # agent_dispatch not available — fall back to subprocess
+        # agent_dispatch not available; fall back to subprocess
         print("[evolve] agent_dispatch not available, using subprocess fallback")
         try:
             result = subprocess.run(
@@ -366,14 +366,14 @@ def extract_patterns(completed_tasks: list, recent_actions: list,
 
 
 # ---------------------------------------------------------------------------
-# Phase 2.5: Generate improvement proposals (files, not DB — syncs via git)
+# Phase 2.5: Generate improvement proposals (files, not DB; syncs via git)
 # ---------------------------------------------------------------------------
 
 def generate_proposals(completed_tasks: list, recent_actions: list,
                        db_list: list, dry_run: bool = False) -> int:
     """
     Ask Claude to suggest improvements based on completed work.
-    Proposals are written as markdown files in openspec/proposals/ —
+    Proposals are written as markdown files in openspec/proposals/;
     they sync via git and can be reviewed on any machine.
     Returns number of proposals generated.
     """
@@ -785,7 +785,7 @@ def main():
     dry_run = "--dry-run" in sys.argv
     force = "--force" in sys.argv
 
-    print(f"[evolve] {_now()} — starting evolution cycle")
+    print(f"[evolve] {_now()} - starting evolution cycle")
 
     # 1. Load workspaces
     workspaces = _load_workspaces()
@@ -799,7 +799,7 @@ def main():
         print("[evolve] No memory.db files found.")
         return
 
-    # 3. Blitz gate — skip workspaces in blitz mode
+    # 3. Blitz gate: skip workspaces in blitz mode
     if not force:
         filtered = []
         for ws_name, db_path, ws_path in db_list:

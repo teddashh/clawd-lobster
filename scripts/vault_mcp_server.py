@@ -1,5 +1,5 @@
 """
-vault_mcp_server.py — MCP server wrapping vault_api for Agent SDK consumption.
+vault_mcp_server.py: MCP server wrapping vault_api for Agent SDK consumption.
 
 Exposes Vault operations as MCP tools so any Claude agent (via Agent SDK)
 can ingest, search, query, and manage the Oracle Vault.

@@ -7,7 +7,7 @@
 **Status:** pending
 
 ## Why
-18 learned skill files sit untracked — they'll be lost on clone and are invisible to other machines. These represent accumulated pattern knowledge that should be version-controlled.
+18 learned skill files sit untracked; they'll be lost on clone and are invisible to other machines. These represent accumulated pattern knowledge that should be version-controlled.
 
 ## What
 Stage and commit all files under skills/learned/ and skills/workspace-sync/

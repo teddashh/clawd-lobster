@@ -1,13 +1,13 @@
-# Spec — Guided Workspace Creation & Spec-Driven Development
+# Spec: Guided Workspace Creation & Spec-Driven Development
 
 !git branch --show-current 2>/dev/null || echo "Not in a git repo"
-!ls .blitz-active 2>/dev/null && echo "BLITZ ACTIVE — check before evolving" || echo "No active blitz"
+!ls .blitz-active 2>/dev/null && echo "BLITZ ACTIVE: check before evolving" || echo "No active blitz"
 !find . -path "*/openspec/changes/*/tasks.md" -exec grep -c "^\- \[ \]" {} + 2>/dev/null || echo "No pending tasks"
 
 The most important skill in Clawd-Lobster. You LEAD the user through planning,
 spec generation, and blitz execution. The user answers questions; you do everything else.
 
-**Philosophy:** Every artifact follows 3W1H — Why (motivation), What (scope),
+**Philosophy:** Every artifact follows 3W1H: Why (motivation), What (scope),
 Who (audience), How (approach). Specs use SHALL/MUST for testable requirements.
 Tasks reference file paths. The dependency DAG is strict. Blitz is autonomous.
 
@@ -39,25 +39,25 @@ architect, not like a checklist of meta-rules about how to write specs.
 
 ---
 
-## Mode 1: `/spec` or `/spec new` — Guided Workspace + Spec Creation
+## Mode 1 (`/spec` or `/spec new`): Guided Workspace + Spec Creation
 
 Five phases, executed sequentially.
 
 ### Phase 1: Discovery (YOU ask, user answers)
 
 Enter planning mode. Extract enough context to generate a complete spec.
-Ask conversationally — not as a checklist. Adapt based on answers.
+Ask conversationally, not as a checklist. Adapt based on answers.
 
 **3W1H discovery questions:**
 
-1. **Why** — "What problem does this solve? What happens if we don't build it?"
-2. **What** — "What do you want to build? What's the high-level picture?"
-3. **Who** — "Who will use this? End users? Internal team? API consumers?"
-4. **How** — "What tech stack? Any preferences or should I recommend?"
-5. **Scope** — "MVP or full product? What's the timeline pressure?"
-6. **Integrations** — "External systems? Databases, APIs, payment, auth?"
-7. **References** — "Reference projects or competitors?" Use `/absorb` on any URLs.
-8. **Constraints** — "Non-negotiable requirements? Performance, compliance, a11y?"
+1. **Why**: "What problem does this solve? What happens if we don't build it?"
+2. **What**: "What do you want to build? What's the high-level picture?"
+3. **Who**: "Who will use this? End users? Internal team? API consumers?"
+4. **How**: "What tech stack? Any preferences or should I recommend?"
+5. **Scope**: "MVP or full product? What's the timeline pressure?"
+6. **Integrations**: "External systems? Databases, APIs, payment, auth?"
+7. **References**: "Reference projects or competitors?" Use `/absorb` on any URLs.
+8. **Constraints**: "Non-negotiable requirements? Performance, compliance, a11y?"
 
 **Behavior rules:**
 
@@ -91,7 +91,7 @@ Based on Phase 1 discovery, classify the project into one of these types:
 - If the user said "agent", "bot", "automation", "AI tool" → `agent`
 - If the user said "skill", "command", "slash command" → `skill`
 - If the user said "MCP", "tool server", "MCP server" → `mcp-server`
-- If unclear, ask ONE question: "This sounds like a [type] — does that fit, or is it more of a [alternative]?"
+- If unclear, ask ONE question: "This sounds like a [type]. Does that fit, or is it more of a [alternative]?"
 
 #### Step 2b: Confirm Type and Show What's Included
 
@@ -162,11 +162,11 @@ project.md → proposal.md → design.md → specs/ → tasks.md
 ```
 
 Why this order is mandatory:
-- **project.md** captures raw context — everything downstream reads it
-- **proposal.md** defines scope boundaries — design needs to know what's in/out
-- **design.md** defines architecture — specs need to know component boundaries
-- **specs/** define testable requirements — tasks need requirements to implement
-- **tasks.md** references all of the above — it's the last thing generated
+- **project.md** captures raw context; everything downstream reads it
+- **proposal.md** defines scope boundaries; design needs to know what's in/out
+- **design.md** defines architecture; specs need to know component boundaries
+- **specs/** define testable requirements; tasks need requirements to implement
+- **tasks.md** references all of the above; it's the last thing generated
 
 Never generate tasks.md before design.md is complete. Never write specs
 before the architecture is decided. The DAG is strict.
@@ -204,7 +204,7 @@ before the architecture is decided. The DAG is strict.
 [Tech stack choices and rationale]
 
 ## Scope
-[MVP / Standard / Enterprise — what's in, what's out]
+[MVP / Standard / Enterprise: what's in, what's out]
 
 ## Integrations
 [External systems, APIs, databases]
@@ -239,7 +239,7 @@ before the architecture is decided. The DAG is strict.
 [Who benefits from this change and how they'll interact with it]
 
 ## How
-[High-level approach — not architecture details, just the strategy]
+[High-level approach, not architecture details, just the strategy]
 ```
 
 #### design.md (3W1H: architecture blueprint)
@@ -255,7 +255,7 @@ Include WHY this architecture was chosen over alternatives.]
 [Core entities, relationships, storage strategy]
 
 ## API Design
-[Endpoints, protocols, authentication — if applicable]
+[Endpoints, protocols, authentication (if applicable)]
 
 ## Data Flow
 [Key user journeys mapped to system interactions]
@@ -267,12 +267,12 @@ Include WHY this architecture was chosen over alternatives.]
 [Auth, input validation, secrets management]
 
 ## Deployment
-[How this runs — local, cloud, containerized, etc.]
+[How this runs: local, cloud, containerized, etc.]
 ```
 
 #### specs/\<capability\>/spec.md (testable requirements)
 
-Requirements MUST use SHALL or MUST — never "should", "could", or "might".
+Requirements MUST use SHALL or MUST; never "should", "could", or "might".
 Each requirement MUST have at least one Gherkin scenario.
 
 ```markdown
@@ -304,9 +304,9 @@ Then [expected result]
 
 Every task must be:
 - **Completable** in 5-30 minutes of focused work
-- **File-referenced** — include the target file path in backticks or parentheses
-- **Phased** — grouped by logical phase
-- **Sequentially dependent** — Phase N depends on Phase N-1
+- **File-referenced**: include the target file path in backticks or parentheses
+- **Phased**: grouped by logical phase
+- **Sequentially dependent**: Phase N depends on Phase N-1
 
 ```markdown
 # V1 Tasks: <Project Name>
@@ -340,10 +340,10 @@ Target: **100-300 tasks** for a standard project. Fewer for MVP, more for enterp
 
 Tasks can be marked for external execution engine delegation:
 
-- `- [ ] [codex] Task description` — Delegatable to external engine (Codex, etc.)
-- `- [ ] Task description` — Claude handles directly
+- `- [ ] [codex] Task description`: Delegatable to external engine (Codex, etc.)
+- `- [ ] Task description`: Claude handles directly
 
-The /spec skill does not implement delegation — it recognizes the marker and
+The /spec skill does not implement delegation; it recognizes the marker and
 skips those tasks during blitz. A separate skill handles delegated execution.
 
 #### Self-Validation (run after EACH artifact)
@@ -361,13 +361,13 @@ generating the next artifact in the DAG.
 
 Parse `tasks.md` and load into memory:
 
-1. **Parse tasks.md** — extract every `- [ ]` line with phase context.
-2. **Create TODOs** — call `memory_todo_add()` for each task:
+1. **Parse tasks.md**: extract every `- [ ]` line with phase context.
+2. **Create TODOs**: call `memory_todo_add()` for each task:
    - `title`: the task text
    - `description`: phase name + file paths + 3W1H tag (which artifact it traces to)
    - `priority`: Phase 1 = priority 1, Phase 2 = priority 2, etc. (cap at 3)
-3. **Record decisions** — call `memory_record_decision()` for major Phase 1 decisions.
-4. **Store project context** — call `memory_record_knowledge()` with project.md content.
+3. **Record decisions**: call `memory_record_decision()` for major Phase 1 decisions.
+4. **Store project context**: call `memory_record_knowledge()` with project.md content.
 5. **Report:**
    ```
    Spec loaded:
@@ -380,7 +380,7 @@ Parse `tasks.md` and load into memory:
 ### Phase 5: Blitz (optional, user confirms)
 
 Only start if the user confirms. This is the execution phase.
-All work happens on a `blitz/<change>` branch — main stays clean until verified.
+All work happens on a `blitz/<change>` branch; main stays clean until verified.
 
 **Blitz execution:**
 
@@ -396,22 +396,22 @@ All work happens on a `blitz/<change>` branch — main stays clean until verifie
    - Update TODO via `memory_todo_update()` to `approved`
 4. **Commit after each phase:** `git add -A && git commit -m "Phase N: <phase title> complete"`
 5. **Report after each phase:** `Phase 2 complete: 12/47 tasks done (25%)`
-6. **On completion — post-blitz hook:**
+6. **On completion (post-blitz hook):**
    - Remove `.blitz-active` marker
    - Merge: `git checkout main && git merge blitz/v1`
    - Store entire spec as knowledge via `memory_record_knowledge()`
    - Suggest next steps: run tests, `/spec:add` for new features, `/spec:archive` when satisfied
 
-**Blitz rules:** No questions — the spec is the plan. If ambiguous, decide and
+**Blitz rules:** No questions; the spec is the plan. If ambiguous, decide and
 comment. If a task fails, log it, note the TODO, continue. Never block.
-Check `.blitz-active` before evolve-tick — if present, skip evolve.
+Check `.blitz-active` before evolve-tick; if present, skip evolve.
 
 ---
 
-## Mode 2: `/spec:squad` — Multi-Session Spec Flow
+## Mode 2 (`/spec:squad`): Multi-Session Spec Flow
 
 Run the full spec-to-code pipeline using separate Claude sessions for each role.
-This provides adversarial review and role isolation — the Architect can't see the
+This provides adversarial review and role isolation: the Architect can't see the
 Reviewer's prompt, so the review is genuinely independent.
 
 **The Team:**
@@ -419,7 +419,7 @@ Reviewer's prompt, so the review is genuinely independent.
 | Role | ID | What It Does |
 |------|----|-------------|
 | **Architect** | `A` | Writes the complete OpenSpec (same DAG as Phase 3 above) |
-| **Reviewer** | `R` | Challenges the spec — finds gaps, ambiguities, weak decisions |
+| **Reviewer** | `R` | Challenges the spec: finds gaps, ambiguities, weak decisions |
 | **Coder** | `C` | Builds exactly what the approved spec says (blitz mode) |
 | **Tester** | `T` | Verifies code against spec requirements and Gherkin scenarios |
 
@@ -476,12 +476,12 @@ turn, the review round and how the spec was approved. A new run starts it over.
 
 **Key difference from solo `/spec`:** In solo mode, Claude self-validates using
 the checklist. In squad mode, a separate Claude session acts as an adversarial
-reviewer with no knowledge of the checklist — it finds issues the checklist
+reviewer with no knowledge of the checklist; it finds issues the checklist
 wouldn't catch because it thinks independently.
 
 ---
 
-## Mode 3: `/spec:status` — Show Current Spec Status
+## Mode 3 (`/spec:status`): Show Current Spec Status
 
 Read workspace state and display:
 
@@ -506,16 +506,16 @@ per phase) and checking for `.blitz-active` marker.
 
 ---
 
-## Mode 4: `/spec:add "feature"` — Add to Existing Spec (Delta Operations)
+## Mode 4 (`/spec:add "feature"`): Add to Existing Spec (Delta Operations)
 
 Create a new change for an existing workspace using delta operations.
 
-1. **Validate** — confirm workspace exists and has `openspec/` directory.
-2. **Discover** — ask 2-3 clarifying questions (lighter than full Phase 1).
-3. **Name the change** — derive kebab-case name (e.g., `add-notifications`).
+1. **Validate**: confirm workspace exists and has `openspec/` directory.
+2. **Discover**: ask 2-3 clarifying questions (lighter than full Phase 1).
+3. **Name the change**: derive kebab-case name (e.g., `add-notifications`).
 4. **Generate delta artifacts** under `openspec/changes/<change-name>/`:
 
-   proposal.md, design.md, tasks.md, and specs/ — same format as Mode 1,
+   proposal.md, design.md, tasks.md, and specs/, same format as Mode 1,
    but design.md MUST reference the existing architecture and explain how
    the new feature integrates.
 
@@ -523,43 +523,43 @@ Create a new change for an existing workspace using delta operations.
 
    ```markdown
    ## Delta Summary
-   ### ADDED — New capabilities
+   ### ADDED: New capabilities
    - [New capability 1]
 
-   ### MODIFIED — Changes to existing behavior
+   ### MODIFIED: Changes to existing behavior
    - [Modified capability 1]: was X, now Y
 
-   ### REMOVED — Deprecated features
+   ### REMOVED: Deprecated features
    - [Removed capability 1]: reason
    ```
 
    Apply order when implementing: **RENAME → REMOVE → MODIFY → ADD**
 
 5. **Run self-validation** on all generated artifacts (same checks as Mode 1).
-6. **Load TODOs** — parse and add new tasks to memory.
-7. **Report** — "Added N tasks for '\<feature\>'. Run `/spec:blitz` to execute."
+6. **Load TODOs**: parse and add new tasks to memory.
+7. **Report**: "Added N tasks for '\<feature\>'. Run `/spec:blitz` to execute."
 8. **Do NOT auto-start blitz.** Let the user review first.
 
 ---
 
-## Mode 5: `/spec:archive` — Archive Completed Change
+## Mode 5 (`/spec:archive`): Archive Completed Change
 
 Archive a change after all tasks are complete.
 
-1. **Verify completion** — read `tasks.md`, confirm all items are `[x]`. If not, report remaining and abort.
-2. **Move specs** — copy capability specs from `openspec/changes/<change>/specs/` to `openspec/specs/` (permanent truth source).
-3. **Store knowledge** — record proposal.md and design.md via `memory_record_knowledge()`.
-4. **Record decisions** — extract key decisions and store via `memory_record_decision()`.
+1. **Verify completion**: read `tasks.md`, confirm all items are `[x]`. If not, report remaining and abort.
+2. **Move specs**: copy capability specs from `openspec/changes/<change>/specs/` to `openspec/specs/` (permanent truth source).
+3. **Store knowledge**: record proposal.md and design.md via `memory_record_knowledge()`.
+4. **Record decisions**: extract key decisions and store via `memory_record_decision()`.
 5. **Git commit:** `git add -A && git commit -m "Archive change: <change-name>"`
 6. **Report:** specs merged count, knowledge items stored, decisions recorded.
 
 ---
 
-## Mode 6: `/spec:blitz` — Resume or Start Blitz
+## Mode 6 (`/spec:blitz`): Resume or Start Blitz
 
 If there are pending tasks in any change:
 
-1. **Find pending work** — scan `openspec/changes/*/tasks.md` for unchecked items.
+1. **Find pending work**: scan `openspec/changes/*/tasks.md` for unchecked items.
 2. If `.blitz-active` exists, resume from where it left off (read marker for current phase).
 3. If no marker, create blitz branch and marker, start from first unchecked task.
 4. Follow the same blitz protocol as Phase 5 above (branch isolation, phase commits, post-blitz hook).
@@ -573,7 +573,7 @@ No pending tasks found. Use /spec:add to add new features, or /spec new to start
 
 ## Self-Validation Checklist
 
-Run this after generating ANY spec artifact. This is YOUR internal checklist —
+Run this after generating ANY spec artifact. This is YOUR internal checklist;
 do not expose it to the user or copy it into generated files.
 
 ### proposal.md
@@ -590,7 +590,7 @@ do not expose it to the user or copy it into generated files.
 - [ ] Architecture rationale explains WHY, not just WHAT
 
 ### specs/
-- [ ] Requirements use SHALL or MUST (grep for "should", "could", "might" — zero matches)
+- [ ] Requirements use SHALL or MUST (grep for "should", "could", "might"; zero matches)
 - [ ] Every requirement has >= 1 Gherkin scenario
 - [ ] All scenarios follow Given/When/Then
 - [ ] Each spec lives in `specs/<capability>/spec.md`

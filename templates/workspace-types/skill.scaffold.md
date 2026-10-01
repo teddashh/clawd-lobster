@@ -22,8 +22,8 @@
 
 ## Notes
 
-- Skills are primarily prompt patterns — `SKILL.md` is the main artifact.
+- Skills are primarily prompt patterns; `SKILL.md` is the main artifact.
 - `skill.json` defines metadata, config schema, and dependencies.
-- No Docker or deploy pipeline — skills ship via `/skill:register`.
+- No Docker or deploy pipeline; skills ship via `/skill:register`.
 - Test scenarios validate the skill's behavior, not code.
 - Follow the existing skill format in `clawd-lobster/skills/*/`.

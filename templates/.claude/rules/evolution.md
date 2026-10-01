@@ -15,5 +15,5 @@ If yes: call `memory_learn_skill` with name, trigger, approach, tools, category.
 
 ## Skill Effectiveness
 - Each use: +2%, each improvement: +10% (cap 3.0x)
-- Skills > 2.0 effectiveness = proven patterns — trust them
-- Skills unused 90+ days = possibly stale — verify first
+- Skills > 2.0 effectiveness = proven patterns; trust them
+- Skills unused 90+ days = possibly stale; verify first

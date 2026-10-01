@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-workspace-create.py — CLI tool for creating clawd-lobster workspaces.
+workspace-create.py: CLI tool for creating clawd-lobster workspaces.
 
 Usage:
   python workspace-create.py                                    # Interactive
@@ -8,7 +8,7 @@ Usage:
   python workspace-create.py --name "my-api" --dry-run           # Dry run
   python workspace-create.py --name "my-api" --repo              # With GitHub repo
 
-No external dependencies — stdlib only, cross-platform (Windows + Unix).
+No external dependencies; stdlib only, cross-platform (Windows + Unix).
 """
 
 import argparse
@@ -39,7 +39,7 @@ KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 _USE_COLOR = sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
 
-# Safe unicode symbols — fallback to ASCII if encoding can't handle them
+# Safe unicode symbols; fallback to ASCII if encoding can't handle them
 try:
     "\u2713".encode(sys.stdout.encoding or "ascii")
     SYM_CHECK = "\u2713"  # ✓
@@ -192,7 +192,7 @@ def resolve_workspace_root() -> Path:
 
 
 def resolve_workspaces_json() -> Path:
-    """Find workspaces.json — check config.data_dir, then repo dir."""
+    """Find workspaces.json: check config.data_dir, then repo dir."""
     config = safe_read_json(CONFIG_FILE)
     data_dir = config.get("data_dir", "")
     if data_dir:
@@ -247,15 +247,15 @@ def create_directory_structure(workspace_path: Path, dry_run: bool = False) -> l
 
 def create_knowledge_index(workspace_path: Path, name: str, dry_run: bool = False) -> None:
     """Create knowledge/INDEX.md with starter content."""
-    content = f"""# {name} — Knowledge Index
+    content = f"""# {name}: Knowledge Index
 
 ## Wiki
 Cross-referenced knowledge pages organized by topic:
-- `wiki/architecture/` — system design decisions
-- `wiki/conventions/` — coding standards, patterns
-- `wiki/decisions/` — why we chose X over Y (with provenance)
-- `wiki/learnings/` — mistakes and lessons
-- `wiki/skills/` — reusable patterns
+- `wiki/architecture/`: system design decisions
+- `wiki/conventions/`: coding standards, patterns
+- `wiki/decisions/`: why we chose X over Y (with provenance)
+- `wiki/learnings/`: mistakes and lessons
+- `wiki/skills/`: reusable patterns
 
 ## Raw Sources
 Immutable source materials in `raw/`.
@@ -273,14 +273,14 @@ Append-only journal of knowledge operations in `log.md`.
     # Create log.md (append-only journal, Karpathy pattern)
     log_path = workspace_path / "knowledge" / "log.md"
     if not dry_run and not log_path.exists():
-        log_path.write_text(f"# {name} — Knowledge Log\n\nAppend-only journal of knowledge operations.\n", encoding="utf-8")
+        log_path.write_text(f"# {name}: Knowledge Log\n\nAppend-only journal of knowledge operations.\n", encoding="utf-8")
 
 
 def create_openspec_project(workspace_path: Path, name: str, description: str = "",
                             dry_run: bool = False) -> None:
     """Create openspec/project.md placeholder."""
     desc_line = description if description else "Describe the project goals and scope here."
-    content = f"""# {name} — Project Spec
+    content = f"""# {name}: Project Spec
 
 ## Overview
 {desc_line}
@@ -315,7 +315,7 @@ def create_claude_md(workspace_path: Path, name: str, description: str = "",
     else:
         # Generate from scratch
         desc_line = description if description else "Describe the project goals and context here."
-        content = f"""# {name} — Workspace
+        content = f"""# {name}: Workspace
 
 ## About
 {desc_line}
@@ -709,7 +709,7 @@ def main() -> int:
     print(dim("-" * 40))
 
     try:
-        # Resolve arguments — prompt interactively if not provided
+        # Resolve arguments; prompt interactively if not provided
         name = args.name
         if not name:
             name = prompt_name()

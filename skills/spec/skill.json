@@ -1,7 +1,7 @@
 {
   "id": "spec",
   "name": "Spec-Driven Development",
-  "description": "Use when starting a new project, creating a workspace, planning a feature, or executing a build — triggers on /spec, 'build this', 'plan a project', 'new workspace', 'add a feature', 'start blitz', or architecture questions. The primary skill for going from idea to working code.",
+  "description": "Use when starting a new project, creating a workspace, planning a feature, or executing a build. Triggers on /spec, 'build this', 'plan a project', 'new workspace', 'add a feature', 'start blitz', or architecture questions. The primary skill for going from idea to working code.",
   "version": "0.1.0",
   "category": "core",
   "tags": ["spec", "planning", "workspace", "openspec", "sdd", "blitz", "squad", "multi-agent"],
@@ -20,7 +20,7 @@
     "order": 20,
     "title": "Spec-Driven Development",
     "summary": "Turn ideas into structured specs, then into working code. The core development workflow.",
-    "why_it_matters": "This is how you go from 'I want to build X' to actual running software — with AI review and testing built in.",
+    "why_it_matters": "This is how you go from 'I want to build X' to actual running software, with AI review and testing built in.",
     "estimated_minutes": 1,
     "depends_on": ["memory-server"],
     "facts_schema": {

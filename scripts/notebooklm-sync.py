@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-notebooklm-sync.py — Push all valuable content from a workspace to NotebookLM.
+notebooklm-sync.py: Push all valuable content from a workspace to NotebookLM.
 
 Scans the workspace for markdown files, specs, knowledge docs, and pushes
 them as sources to the workspace's linked NotebookLM notebook.
@@ -44,7 +44,7 @@ CODE_EXTENSIONS = {
     '.sh', '.ps1', '.bash',
 }
 
-# Max file size to push (500KB — NotebookLM has limits)
+# Max file size to push (500KB; NotebookLM has limits)
 MAX_FILE_SIZE = 500 * 1024
 
 

@@ -29,7 +29,7 @@
     "tier": "required",
     "phase": "skills_required",
     "order": 40,
-    "title": "Evolve — Pattern Learning",
+    "title": "Evolve: Pattern Learning",
     "summary": "Automatically reviews completed work every 2 hours and extracts reusable patterns. Applies salience decay to old memories.",
     "why_it_matters": "Your AI gets smarter over time. Without this, it never learns from past work.",
     "estimated_minutes": 2,

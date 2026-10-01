@@ -1,6 +1,6 @@
-# The Vault — Oracle L3 Deep Brain Architecture
+# The Vault: Oracle L3 Deep Brain Architecture
 
-> **Status: APPROVED** — 5-round spiral roundtable consensus (Claude 0.88 / Codex 0.88 / Gemini 0.95)
+> **Status: APPROVED** (5-round spiral roundtable consensus; Claude 0.88 / Codex 0.88 / Gemini 0.95)
 > **Date:** 2026-04-07
 > **Participants:** Claude Opus 4.6 (CIO), Codex GPT-5.4 (Developer), Gemini 2.5 Pro (Consultant)
 
@@ -9,9 +9,9 @@
 Three layers. Optional depth. Zero mandatory cloud dependencies.
 
 ```
-L1  SQLite (The Ledger)   — fast local operational state (default)
-L2  Git Wiki (The Library) — compiled human-readable knowledge (default)
-L3  Oracle (The Vault)     — deep brain: evidence graph + vector search (optional)
+L1  SQLite (The Ledger)   - fast local operational state (default)
+L2  Git Wiki (The Library) - compiled human-readable knowledge (default)
+L3  Oracle (The Vault)     - deep brain: evidence graph + vector search (optional)
 ```
 
 L1+L2 ship with clawd-lobster. L3 is a power-user upgrade for those with Oracle Cloud.
@@ -33,10 +33,10 @@ L1+L2 ship with clawd-lobster. L3 is a power-user upgrade for those with Oracle 
 
 ```sql
 -- ============================================================
--- THE VAULT — Oracle L3 Deep Brain Schema v4
+-- THE VAULT: Oracle L3 Deep Brain Schema v4
 -- ============================================================
 
--- 1. SOURCES — where data came from
+-- 1. SOURCES: where data came from
 CREATE TABLE vault_sources (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     source_type     VARCHAR2(50) NOT NULL,   -- email_account, folder, repo, url, api, manual, legacy_import
@@ -49,7 +49,7 @@ CREATE TABLE vault_sources (
     CONSTRAINT uq_source_uri UNIQUE (source_type, source_uri_hash)
 );
 
--- 2. DOCUMENTS — raw artifacts (emails, notes, files, conversations)
+-- 2. DOCUMENTS: raw artifacts (emails, notes, files, conversations)
 CREATE TABLE vault_documents (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     source_id       NUMBER NOT NULL REFERENCES vault_sources(id),
@@ -82,7 +82,7 @@ CREATE TABLE vault_documents (
     CONSTRAINT uq_doc_content UNIQUE (source_id, content_hash)
 );
 
--- 3. CHUNKS — content split for RAG + individual vector search
+-- 3. CHUNKS: content split for RAG + individual vector search
 CREATE TABLE vault_chunks (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     document_id     NUMBER NOT NULL REFERENCES vault_documents(id),
@@ -102,7 +102,7 @@ CREATE TABLE vault_chunks (
     CONSTRAINT uq_chunk UNIQUE (document_id, chunk_index)
 );
 
--- 4. ENTITIES — people, companies, projects, concepts, locations
+-- 4. ENTITIES: people, companies, projects, concepts, locations
 CREATE TABLE vault_entities (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     entity_type     VARCHAR2(50) NOT NULL,   -- person, company, project, concept, location, product, event
@@ -130,7 +130,7 @@ CREATE TABLE vault_entities (
     updated_at      TIMESTAMP DEFAULT SYSTIMESTAMP
 );
 
--- 5. ENTITY ALIASES — name variants for resolution
+-- 5. ENTITY ALIASES: name variants for resolution
 CREATE TABLE vault_entity_aliases (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     entity_id       NUMBER NOT NULL REFERENCES vault_entities(id),
@@ -143,7 +143,7 @@ CREATE TABLE vault_entity_aliases (
     CONSTRAINT uq_alias UNIQUE (entity_id, alias_normalized)
 );
 
--- 6. FACTS — extracted atomic claims with provenance
+-- 6. FACTS: extracted atomic claims with provenance
 CREATE TABLE vault_facts (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     claim           VARCHAR2(4000) NOT NULL,
@@ -171,7 +171,7 @@ CREATE TABLE vault_facts (
     embedding       VECTOR(1536, FLOAT32)
 );
 
--- 7. RELATIONS — typed edges between vault objects
+-- 7. RELATIONS: typed edges between vault objects
 CREATE TABLE vault_relations (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     
@@ -194,7 +194,7 @@ CREATE TABLE vault_relations (
     CONSTRAINT chk_rel_object CHECK (object_type IN ('entity','document','fact','chunk'))
 );
 
--- 8. EVENTS — immutable lifecycle event log
+-- 8. EVENTS: immutable lifecycle event log
 CREATE TABLE vault_events (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     target_type     VARCHAR2(50) NOT NULL,    -- source, document, chunk, entity, fact, relation
@@ -206,7 +206,7 @@ CREATE TABLE vault_events (
     created_at      TIMESTAMP DEFAULT SYSTIMESTAMP
 );
 
--- 9. SYNC LOG — L1/L2 → L3 tracking
+-- 9. SYNC LOG: L1/L2 → L3 tracking
 CREATE TABLE vault_sync_log (
     id              NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     source_layer    VARCHAR2(10) NOT NULL,    -- L1, L2
@@ -368,7 +368,7 @@ if config.get("oracle", {}).get("enabled", False):
     vault_enrich(doc_id, mode=mode)
 ```
 
-L3 push is **async and non-blocking** — absorb returns immediately after L1+L2 writes. L3 enrichment runs in background.
+L3 push is **async and non-blocking**: absorb returns immediately after L1+L2 writes. L3 enrichment runs in background.
 
 ## Query Architecture
 

@@ -1,5 +1,5 @@
 """
-vault_parsers.py — Universal file parser framework for The Vault.
+vault_parsers.py: Universal file parser framework for The Vault.
 
 Converts any file type into PreDocument objects for vault_api.ingest().
 Each parser handles a specific format; ParserRouter dispatches to the right one.
@@ -48,7 +48,7 @@ SKIP_DIRS = {
     ".idea", ".vscode", ".vs", "bin", "obj",
 }
 
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB — skip files larger than this
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB; skip files larger than this
 CHUNK_SIZE = 4000  # characters per chunk (~1000 tokens English, ~2000 tokens CJK)
 
 CODE_EXTENSIONS = {
@@ -68,7 +68,7 @@ TEXT_EXTENSIONS = {
 
 
 # ---------------------------------------------------------------------------
-# PreDocument — universal intermediate format
+# PreDocument: universal intermediate format
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -106,7 +106,7 @@ class PreDocument:
             "occurred_at": self.occurred_at,
             "privacy_level": self.privacy_level,
             "language": self.language,
-            # v11 promoted columns — passed directly, not via meta
+            # v11 promoted columns: passed directly, not via meta
             "ownership": self.ownership,
             "email_from": self.email_from,
             "email_importance": self.email_importance,
@@ -365,7 +365,7 @@ class EmailParser(BaseParser):
                 if text_part.get_content_type() == "text/html":
                     body = self._strip_html(body)
         else:
-            # Fallback for mailbox messages — M4 fix: respect charset from Content-Type
+            # Fallback for mailbox messages. M4 fix: respect charset from Content-Type
             if msg.is_multipart():
                 for part in msg.walk():
                     ct = part.get_content_type()
@@ -632,7 +632,7 @@ class FacebookParser(BaseParser):
 
 
 class ImageParser(BaseParser):
-    """Parse image files — extract EXIF metadata."""
+    """Parse image files: extract EXIF metadata."""
     name = "image"
     supported_extensions = [".jpg", ".jpeg", ".png", ".heic", ".webp", ".gif", ".bmp", ".tiff"]
     priority = 60
@@ -847,7 +847,7 @@ class WebParser(BaseParser):
                                      uri=f"file://{p.as_posix()}",
                                      occurred_at=datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc))
 
-    # H5 audit fix: SSRF protection — block internal/metadata URLs
+    # H5 audit fix: SSRF protection (block internal/metadata URLs)
     _BLOCKED_HOSTS = {"169.254.169.254", "metadata.google.internal", "100.100.100.200"}
     _BLOCKED_PREFIXES = ("http://localhost", "http://127.0.0.1", "http://0.0.0.0",
                          "http://[::1]", "http://10.", "http://172.16.", "http://192.168.")
@@ -920,7 +920,7 @@ class WebParser(BaseParser):
 
 
 class VoiceMemoParser(BaseParser):
-    """Parse audio files — transcribe using Whisper if available."""
+    """Parse audio files: transcribe using Whisper if available."""
     name = "voice_memo"
     supported_extensions = [".m4a", ".wav", ".mp3", ".ogg", ".flac"]
     priority = 80
@@ -931,7 +931,7 @@ class VoiceMemoParser(BaseParser):
         meta = self._file_meta(source)
         mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
 
-        # Try whisper transcription — M9: load model once, reuse across files
+        # Try whisper transcription (M9: load model once, reuse across files)
         try:
             import whisper
             if VoiceMemoParser._whisper_model is None:
@@ -1023,7 +1023,7 @@ class DebateParser(BaseParser):
 
 
 # ---------------------------------------------------------------------------
-# ParserRouter — dispatch to correct parser
+# ParserRouter: dispatch to correct parser
 # ---------------------------------------------------------------------------
 
 class ParserRouter:
@@ -1055,7 +1055,7 @@ class ParserRouter:
         for parser in self._parsers:
             if parser.can_handle(source, **kwargs):
                 return parser.parse(source, **kwargs)
-        # No parser found — create metadata-only doc
+        # No parser found; create metadata-only doc
         p = Path(source)
         if p.exists():
             return [PreDocument(
@@ -1070,7 +1070,7 @@ class ParserRouter:
 
     def route_directory(self, directory: str, recursive: bool = True,
                         **kwargs):
-        """Walk a directory and yield PreDocuments (generator — M10 audit fix: no OOM)."""
+        """Walk a directory and yield PreDocuments (generator; M10 audit fix: no OOM)."""
         dir_path = Path(directory)
         if not dir_path.is_dir():
             yield from self.route(directory, **kwargs)
@@ -1109,7 +1109,7 @@ class ParserRouter:
 
 
 # ---------------------------------------------------------------------------
-# DedupEngine — 3-layer deduplication
+# DedupEngine: 3-layer deduplication
 # ---------------------------------------------------------------------------
 
 class DedupEngine:
@@ -1124,7 +1124,7 @@ class DedupEngine:
         Returns (action, existing_doc_id, version_info).
             action: 'skip' | 'version' | 'new'
             version_info: {} or {parent_doc_id, version} for versioned docs
-        M2 fix: no longer mutates pre_doc — returns version_info separately.
+        M2 fix: no longer mutates pre_doc; returns version_info separately.
         """
         content_hash = hashlib.sha256(pre_doc.content.encode("utf-8")).hexdigest()
 
@@ -1156,7 +1156,7 @@ class DedupEngine:
 
 
 # ---------------------------------------------------------------------------
-# absorb() — main entry point
+# absorb(): main entry point
 # ---------------------------------------------------------------------------
 
 def absorb(source: str, dry_run: bool = False, recursive: bool = True,
@@ -1167,7 +1167,7 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
         source: File path, directory path, or URL.
         dry_run: If True, parse but don't ingest.
         recursive: If True, recurse into subdirectories.
-        vault: Vault instance (optional — falls back to no-op if None).
+        vault: Vault instance (optional; falls back to no-op if None).
         **kwargs: Passed to parser (e.g., parser='line', user_email='user@example.com')
 
     Returns:
@@ -1176,7 +1176,7 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
     router = ParserRouter()
     router.register_defaults()
 
-    # Parse (generator — streams docs one at a time to avoid OOM)
+    # Parse (generator; streams docs one at a time to avoid OOM)
     source_path = Path(source)
     if source_path.is_dir():
         doc_stream = router.route_directory(str(source_path), recursive=recursive, **kwargs)
@@ -1213,7 +1213,7 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
                 summary["new"] += 1
             continue
 
-        # Actually ingest — merge version_info into kwargs if versioning
+        # Actually ingest: merge version_info into kwargs if versioning
         if vault:
             try:
                 ingest_kwargs = doc.to_ingest_kwargs()
@@ -1227,7 +1227,7 @@ def absorb(source: str, dry_run: bool = False, recursive: bool = True,
             except Exception as e:
                 summary["errors"].append(f"{doc.title}: {e}")
         else:
-            # No vault — just count (useful for dry-run or L1/L2 fallback)
+            # No vault; just count (useful for dry-run or L1/L2 fallback)
             if action == "version":
                 summary["versioned"] += 1
             else:
@@ -1262,7 +1262,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Vault Parsers — Universal file ingestion for The Vault",
+        description="Vault Parsers: Universal file ingestion for The Vault",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command")

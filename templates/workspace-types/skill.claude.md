@@ -1,8 +1,8 @@
-# Skill — Workspace Rules
+# Skill: Workspace Rules
 
 ## Skill Structure
-- `skill/SKILL.md` — The skill prompt pattern (main artifact)
-- `skill/skill.json` — Metadata, config, dependencies
+- `skill/SKILL.md`: The skill prompt pattern (main artifact)
+- `skill/skill.json`: Metadata, config, dependencies
 
 ## Ship
 - Use `/skill:register` to install into Clawd-Lobster

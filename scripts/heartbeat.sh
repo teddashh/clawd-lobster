@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# heartbeat.sh — Session Lifecycle Manager (macOS/Linux)
+# heartbeat.sh: Session Lifecycle Manager (macOS/Linux)
 # Ensures every registered workspace has a live Claude Code session.
 # If a session is dead, it gets revived via claude --resume.
 set -euo pipefail

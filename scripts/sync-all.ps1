@@ -1,4 +1,4 @@
-# sync-all.ps1 — Pull, push, and optional Oracle sync for all workspaces
+# sync-all.ps1: Pull, push, and optional Oracle sync for all workspaces
 # Scheduled to run every 30 minutes via OS task scheduler
 # Usage: powershell -File sync-all.ps1 [-Pull] [-Push] [-Oracle] [-All]
 

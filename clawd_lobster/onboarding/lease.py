@@ -56,7 +56,7 @@ def acquire(session_id: str, holder: str) -> dict:
     # Check if there's an active non-expired lease
     if controller.get("lease_id") and not _is_expired(controller):
         if controller.get("holder") == holder:
-            # Same holder re-acquiring — just renew
+            # Same holder re-acquiring; just renew
             return renew(session_id, controller["lease_id"])
         return {
             "ok": False,

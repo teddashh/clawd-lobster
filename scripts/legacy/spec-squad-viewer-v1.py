@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-spec-squad-viewer.py — Live web viewer for Spec Squad progress.
+spec-squad-viewer.py: Live web viewer for Spec Squad progress.
 
 Opens a browser showing the 4 agents and their real-time status.
 Polls .spec-squad.json every 2 seconds for updates.
@@ -9,7 +9,7 @@ Usage:
     python spec-squad-viewer.py <workspace-path>
     python spec-squad-viewer.py <workspace-path> --port 3001
 
-No external dependencies — stdlib only.
+No external dependencies; stdlib only.
 """
 
 import argparse

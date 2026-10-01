@@ -1,12 +1,12 @@
-# Learned Skills — Living Pattern Library
+# Learned Skills: Living Pattern Library
 
 Auto-populated directory of reusable patterns extracted from your completed work.
 
 ## What It Does
 
-`skills/learned/` is not a skill you invoke — it's the **output** of the evolution loop. When you complete meaningful work and the `evolve` system detects a reusable pattern, it promotes that pattern into a learned skill. Future sessions can reuse it instead of rediscovering it.
+`skills/learned/` is not a skill you invoke; it's the **output** of the evolution loop. When you complete meaningful work and the `evolve` system detects a reusable pattern, it promotes that pattern into a learned skill. Future sessions can reuse it instead of rediscovering it.
 
-The key distinction: a learned skill is a **pattern to follow** — a trigger condition, an approach that worked, and enough structure to apply it again. One-off fixes and project-specific hacks stay as knowledge, not skills.
+The key distinction: a learned skill is a **pattern to follow** (a trigger condition, an approach that worked, and enough structure to apply it again). One-off fixes and project-specific hacks stay as knowledge, not skills.
 
 ## How Patterns Become Skills
 
@@ -23,7 +23,7 @@ The key distinction: a learned skill is a **pattern to follow** — a trigger co
 | New | 1.0x | Just extracted, untested |
 | Proven | 1.0-3.0x | Each successful reuse: +2%. Each improvement: +10%. Cap at 3.0x. |
 | Stale | Decaying | Unused for 90+ days, suggested for retirement |
-| Archived | — | Moved out of active path |
+| Archived | - | Moved out of active path |
 
 ## Directory Structure
 
@@ -35,5 +35,5 @@ skills/learned/
 
 ## Related Skills
 
-- **[evolve](../evolve/README.md)** — The system that extracts patterns and populates this directory
-- **[memory-server](../memory-server/README.md)** — Stores skill metadata and effectiveness scores
+- **[evolve](../evolve/README.md)**: The system that extracts patterns and populates this directory
+- **[memory-server](../memory-server/README.md)**: Stores skill metadata and effectiveness scores

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sync-all.sh — Pull, push, and optional decay for all workspaces
+# sync-all.sh: Pull, push, and optional decay for all workspaces
 # Scheduled to run every 30 minutes via cron (Linux) or launchd (macOS)
 set -euo pipefail
 

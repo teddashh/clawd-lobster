@@ -15,12 +15,12 @@ This wastes the product's best feature: **it's actually simple underneath** (~2,
 
 ### In Scope
 
-1. **`clawd-lobster` CLI entry point** — single command that dispatches everything
-   - `clawd-lobster serve` — start the web dashboard (persistent)
-   - `clawd-lobster setup` — interactive terminal onboarding
-   - `clawd-lobster workspace create <name>` — create workspace
-   - `clawd-lobster squad start` — launch Spec Squad (terminal mode)
-   - `clawd-lobster status` — show system health
+1. **`clawd-lobster` CLI entry point**: single command that dispatches everything
+   - `clawd-lobster serve`: start the web dashboard (persistent)
+   - `clawd-lobster setup`: interactive terminal onboarding
+   - `clawd-lobster workspace create <name>`: create workspace
+   - `clawd-lobster squad start`: launch Spec Squad (terminal mode)
+   - `clawd-lobster status`: show system health
 
 2. **Web Dashboard** (`localhost:3333`, persistent)
    - Onboarding wizard (first-time only)
@@ -28,7 +28,7 @@ This wastes the product's best feature: **it's actually simple underneath** (~2,
    - Spec Squad launcher (chat discovery → agent dashboard)
    - System health (heartbeat, memory, sync status)
 
-3. **Unified Spec Squad** — merge 3 scripts into one
+3. **Unified Spec Squad**: merge 3 scripts into one
    - Terminal mode: Claude asks questions in terminal, agents run in background
    - Web mode: Chat UI for discovery, dashboard for agent monitoring
    - Same orchestration engine underneath (Agent SDK)
@@ -40,7 +40,7 @@ This wastes the product's best feature: **it's actually simple underneath** (~2,
    - Step 4: Create first workspace
    - Step 5: Run first spec (guided)
 
-5. **Script consolidation** — retire redundant scripts
+5. **Script consolidation**: retire redundant scripts
    - `spec-squad.py` (subprocess) → deprecated, kept for reference
    - `spec-squad-ui.py` (form) → absorbed into web dashboard
    - `spec-squad-sdk.py` (Agent SDK) → becomes the engine
@@ -64,8 +64,8 @@ This wastes the product's best feature: **it's actually simple underneath** (~2,
 ## How
 
 Consolidate around two surfaces:
-1. **`clawd-lobster` CLI** — Python entry point, dispatches to existing scripts
-2. **Web dashboard** — Single-page app served by Python stdlib http.server
+1. **`clawd-lobster` CLI**: Python entry point, dispatches to existing scripts
+2. **Web dashboard**: Single-page app served by Python stdlib http.server
 
 Both surfaces use the same backend:
 - Agent SDK for Claude interactions

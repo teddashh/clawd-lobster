@@ -1,6 +1,6 @@
 # PostToolUse hook: auto-format files after Edit/Write (Windows)
 # Detects project formatter and runs it on the changed file.
-# Fails gracefully — never blocks Claude.
+# Fails gracefully; never blocks Claude.
 
 $ErrorActionPreference = "SilentlyContinue"
 $FilePath = $env:CLAUDE_TOOL_INPUT_FILE_PATH

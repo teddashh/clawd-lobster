@@ -16,7 +16,7 @@ import sys
 from .server import _execute_kw
 
 try:
-    import xmlrpc.client as _xmlrpc  # noqa: F401 — used for Fault type
+    import xmlrpc.client as _xmlrpc  # noqa: F401 (used for Fault type)
 except ImportError:
     pass
 

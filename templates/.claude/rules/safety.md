@@ -12,7 +12,7 @@
 - Never commit secrets, API keys, tokens, or credentials
 - Never include personal names, hardcoded user paths, or machine-specific info in shared files
 - Validate all external input before processing
-- Check `.blitz-active` marker before running evolve — never evolve during blitz
+- Check `.blitz-active` marker before running evolve; never evolve during blitz
 
 ## Git Safety
 - Always review diffs before committing

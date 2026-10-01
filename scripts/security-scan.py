@@ -1,5 +1,5 @@
 """
-Security scan — runs available DevSecOps tools and reports findings.
+Security scan: runs available DevSecOps tools and reports findings.
 Gracefully skips tools that are not installed.
 
 Usage:
@@ -7,11 +7,11 @@ Usage:
   python security-scan.py --install        # Show install commands for all tools
 
 Tools checked:
-  1. bandit     — Python security linter
-  2. pip-audit  — Python dependency vulnerabilities
-  3. gitleaks   — Secret detection in git repos
-  4. semgrep    — Multi-language static analysis
-  5. trivy      — Container + filesystem scanning
+  1. bandit     - Python security linter
+  2. pip-audit  - Python dependency vulnerabilities
+  3. gitleaks   - Secret detection in git repos
+  4. semgrep    - Multi-language static analysis
+  5. trivy      - Container + filesystem scanning
 """
 import json
 import os
@@ -100,7 +100,7 @@ def main():
         for name, info in TOOLS.items():
             available = check_tool(name)
             status = "installed" if available else "NOT FOUND"
-            print(f"  [{status}] {name} — {info['desc']}")
+            print(f"  [{status}] {name}: {info['desc']}")
             if not available:
                 print(f"           {info['install']}")
         return

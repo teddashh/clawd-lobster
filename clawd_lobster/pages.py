@@ -1,8 +1,8 @@
 """
-clawd_lobster.pages — HTML page templates (inline strings).
+clawd_lobster.pages: HTML page templates (inline strings).
 
 All web UI pages are defined here as plain strings with embedded CSS/JS.
-No template engine — keeps the zero-dependency promise.
+No template engine: keeps the zero-dependency promise.
 
 Dark theme (#0d1117), consistent with spec-squad-sdk.py design.
 Each page is self-contained with inline CSS + JS, no external CDN.
@@ -69,7 +69,7 @@ ONBOARDING_PAGE = (
     """<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>clawd-lobster &mdash; Setup</title>
+<title>clawd-lobster | Setup</title>
 <style>"""
     + _BASE_CSS
     + """
@@ -212,11 +212,11 @@ ONBOARDING_PAGE = (
     <div class="welcome-hero">
       <h1>Welcome to Clawd-Lobster</h1>
       <div class="tagline-stack">
-        <p data-lang="en">You'll end up using Claude Code anyway &mdash; why not start with the best experience?</p>
-        <p data-lang="zh-TW">&#x4F60;&#x7D42;&#x7A76;&#x8981;&#x7528; Claude Code &#x7684; &mdash; &#x70BA;&#x4EC0;&#x9EBC;&#x4E0D;&#x4E00;&#x958B;&#x59CB;&#x5C31;&#x9078;&#x6700;&#x597D;&#x7684;&#x9AD4;&#x9A57;&#xFF1F;</p>
-        <p data-lang="zh-CN">&#x4F60;&#x7EC8;&#x7A76;&#x8981;&#x7528; Claude Code &#x7684; &mdash; &#x4E3A;&#x4EC0;&#x4E48;&#x4E0D;&#x4E00;&#x5F00;&#x59CB;&#x5C31;&#x9009;&#x6700;&#x597D;&#x7684;&#x4F53;&#x9A8C;&#xFF1F;</p>
-        <p data-lang="ja">&#x3069;&#x3046;&#x305B; Claude Code &#x3092;&#x4F7F;&#x3046;&#x3053;&#x3068;&#x306B;&#x306A;&#x308B; &mdash; &#x6700;&#x521D;&#x304B;&#x3089;&#x6700;&#x9AD8;&#x306E;&#x4F53;&#x9A13;&#x3092;&#x9078;&#x3073;&#x307E;&#x305B;&#x3093;&#x304B;&#xFF1F;</p>
-        <p data-lang="ko">&#xACB0;&#xAD6D; Claude Code&#xB97C; &#xC4F0;&#xAC8C; &#xB420; &#xD150;&#xB370; &mdash; &#xCC98;&#xC74C;&#xBD80;&#xD130; &#xCD5C;&#xACE0;&#xC758; &#xACBD;&#xD5D8;&#xC744; &#xC120;&#xD0DD;&#xD558;&#xC9C0; &#xC54A;&#xACA0;&#xC2B5;&#xB2C8;&#xAE4C;?</p>
+        <p data-lang="en">You'll end up using Claude Code anyway. Why not start with the best experience?</p>
+        <p data-lang="zh-TW">&#x4F60;&#x7D42;&#x7A76;&#x8981;&#x7528; Claude Code &#x7684;&#xFF0C;&#x70BA;&#x4EC0;&#x9EBC;&#x4E0D;&#x4E00;&#x958B;&#x59CB;&#x5C31;&#x9078;&#x6700;&#x597D;&#x7684;&#x9AD4;&#x9A57;&#xFF1F;</p>
+        <p data-lang="zh-CN">&#x4F60;&#x7EC8;&#x7A76;&#x8981;&#x7528; Claude Code &#x7684;&#xFF0C;&#x4E3A;&#x4EC0;&#x4E48;&#x4E0D;&#x4E00;&#x5F00;&#x59CB;&#x5C31;&#x9009;&#x6700;&#x597D;&#x7684;&#x4F53;&#x9A8C;&#xFF1F;</p>
+        <p data-lang="ja">&#x3069;&#x3046;&#x305B; Claude Code &#x3092;&#x4F7F;&#x3046;&#x3053;&#x3068;&#x306B;&#x306A;&#x308B;&#x3002;&#x6700;&#x521D;&#x304B;&#x3089;&#x6700;&#x9AD8;&#x306E;&#x4F53;&#x9A13;&#x3092;&#x9078;&#x3073;&#x307E;&#x305B;&#x3093;&#x304B;&#xFF1F;</p>
+        <p data-lang="ko">&#xACB0;&#xAD6D; Claude Code&#xB97C; &#xC4F0;&#xAC8C; &#xB420; &#xD150;&#xB370;, &#xCC98;&#xC74C;&#xBD80;&#xD130; &#xCD5C;&#xACE0;&#xC758; &#xACBD;&#xD5D8;&#xC744; &#xC120;&#xD0DD;&#xD558;&#xC9C0; &#xC54A;&#xACA0;&#xC2B5;&#xB2C8;&#xAE4C;?</p>
       </div>
       <div class="welcome-instructions">
         Let's get started. Please select your language.<br>
@@ -364,7 +364,7 @@ ONBOARDING_PAGE = (
 
         <div id="vault-setup" style="display:none;margin-top:16px;">
           <div class="card" style="padding:16px;">
-            <p style="color:#8b949e;font-size:13px;margin-bottom:16px;" data-i18n="vault_desc">Connect to Oracle Autonomous Database to enable The Vault — a deep brain layer with semantic vector search, entity resolution, and full lifecycle tracking. Requires an Oracle Cloud wallet.</p>
+            <p style="color:#8b949e;font-size:13px;margin-bottom:16px;" data-i18n="vault_desc">Connect to Oracle Autonomous Database to enable The Vault: a deep brain layer with semantic vector search, entity resolution, and full lifecycle tracking. Requires an Oracle Cloud wallet.</p>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div class="field-group" style="grid-column:1/-1;">
@@ -407,9 +407,9 @@ ONBOARDING_PAGE = (
                 <tbody style="color:#c9d1d9;">
                   <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_search">Search</td><td style="text-align:center;" data-i18n="vault_cmp_keyword">Keyword only</td><td style="text-align:center;color:#56d364;" data-i18n="vault_cmp_semantic">Keyword + Semantic</td></tr>
                   <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_capacity">Capacity</td><td style="text-align:center;">~10K</td><td style="text-align:center;color:#56d364;" data-i18n="vault_cmp_millions">Millions</td></tr>
-                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_entity">Entity graph</td><td style="text-align:center;">&#x2014;</td><td style="text-align:center;color:#56d364;">&#x2713;</td></tr>
-                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_timeline">Time-travel queries</td><td style="text-align:center;">&#x2014;</td><td style="text-align:center;color:#56d364;">&#x2713;</td></tr>
-                  <tr><td style="padding:6px 8px;" data-i18n="vault_cmp_archive">Email/doc archive</td><td style="text-align:center;">&#x2014;</td><td style="text-align:center;color:#56d364;" data-i18n="vault_cmp_full_lifecycle">Full lifecycle</td></tr>
+                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_entity">Entity graph</td><td style="text-align:center;">-</td><td style="text-align:center;color:#56d364;">&#x2713;</td></tr>
+                  <tr style="border-bottom:1px solid #161b22;"><td style="padding:6px 8px;" data-i18n="vault_cmp_timeline">Time-travel queries</td><td style="text-align:center;">-</td><td style="text-align:center;color:#56d364;">&#x2713;</td></tr>
+                  <tr><td style="padding:6px 8px;" data-i18n="vault_cmp_archive">Email/doc archive</td><td style="text-align:center;">-</td><td style="text-align:center;color:#56d364;" data-i18n="vault_cmp_full_lifecycle">Full lifecycle</td></tr>
                 </tbody>
               </table>
             </div>
@@ -500,7 +500,7 @@ const I18N = {
     finish:"Finish Setup", finishing:"Setting up...",
     vault_title:"Optional: Oracle Vault (Deep Brain)",
     vault_subtitle:"Power-user upgrade: semantic search, entity graph, unlimited capacity",
-    vault_desc:"Connect to Oracle Autonomous Database to enable The Vault \u2014 a deep brain layer with semantic vector search, entity resolution, and full lifecycle tracking. Requires an Oracle Cloud wallet.",
+    vault_desc:"Connect to Oracle Autonomous Database to enable The Vault: a deep brain layer with semantic vector search, entity resolution, and full lifecycle tracking. Requires an Oracle Cloud wallet.",
     vault_wallet_dir:"Wallet directory", vault_dsn:"DSN (TNS name)",
     vault_user:"Database user", vault_password:"Password",
     vault_wallet_password:"Wallet password",
@@ -569,7 +569,7 @@ const I18N = {
     finish:"\\u5B8C\\u6210\\u8A2D\\u5B9A", finishing:"\\u8A2D\\u5B9A\\u4E2D\\u22EF",
     vault_title:"\\u9078\\u914D\\uFF1AOracle Vault\\uFF08\\u6DF1\\u5C64\\u5927\\u8166\\uFF09",
     vault_subtitle:"\\u9032\\u968E\\u5347\\u7D1A\\uFF1A\\u8A9E\\u7FA9\\u641C\\u5C0B\\u3001\\u5BE6\\u9AD4\\u5716\\u8B5C\\u3001\\u7121\\u9650\\u5BB9\\u91CF",
-    vault_desc:"\\u9023\\u63A5 Oracle \\u81EA\\u6CBB\\u8CC7\\u6599\\u5EAB\\u4EE5\\u555F\\u7528 Vault \\u2014 \\u5177\\u5099\\u5411\\u91CF\\u8A9E\\u7FA9\\u641C\\u5C0B\\u3001\\u5BE6\\u9AD4\\u89E3\\u6790\\u548C\\u5B8C\\u6574\\u751F\\u547D\\u9031\\u671F\\u8FFD\\u8E64\\u7684\\u6DF1\\u5C64\\u5927\\u8166\\u3002\\u9700\\u8981 Oracle Cloud \\u9322\\u5305\\u3002",
+    vault_desc:"\\u9023\\u63A5 Oracle \\u81EA\\u6CBB\\u8CC7\\u6599\\u5EAB\\u4EE5\\u555F\\u7528 Vault\\uFF1A\\u5177\\u5099\\u5411\\u91CF\\u8A9E\\u7FA9\\u641C\\u5C0B\\u3001\\u5BE6\\u9AD4\\u89E3\\u6790\\u548C\\u5B8C\\u6574\\u751F\\u547D\\u9031\\u671F\\u8FFD\\u8E64\\u7684\\u6DF1\\u5C64\\u5927\\u8166\\u3002\\u9700\\u8981 Oracle Cloud \\u9322\\u5305\\u3002",
     vault_wallet_dir:"\\u9322\\u5305\\u76EE\\u9304", vault_dsn:"DSN\\uFF08TNS \\u540D\\u7A31\\uFF09",
     vault_user:"\\u8CC7\\u6599\\u5EAB\\u4F7F\\u7528\\u8005", vault_password:"\\u5BC6\\u78BC",
     vault_wallet_password:"\\u9322\\u5305\\u5BC6\\u78BC",
@@ -638,7 +638,7 @@ const I18N = {
     finish:"\\u5B8C\\u6210\\u8BBE\\u7F6E", finishing:"\\u8BBE\\u7F6E\\u4E2D\\u2026",
     vault_title:"\\u53EF\\u9009\\uFF1AOracle Vault\\uFF08\\u6DF1\\u5C42\\u5927\\u8111\\uFF09",
     vault_subtitle:"\\u8FDB\\u9636\\u5347\\u7EA7\\uFF1A\\u8BED\\u4E49\\u641C\\u7D22\\u3001\\u5B9E\\u4F53\\u56FE\\u8C31\\u3001\\u65E0\\u9650\\u5BB9\\u91CF",
-    vault_desc:"\\u8FDE\\u63A5 Oracle \\u81EA\\u6CBB\\u6570\\u636E\\u5E93\\u4EE5\\u542F\\u7528 Vault \\u2014 \\u5177\\u5907\\u5411\\u91CF\\u8BED\\u4E49\\u641C\\u7D22\\u3001\\u5B9E\\u4F53\\u89E3\\u6790\\u548C\\u5B8C\\u6574\\u751F\\u547D\\u5468\\u671F\\u8FFD\\u8E2A\\u7684\\u6DF1\\u5C42\\u5927\\u8111\\u3002\\u9700\\u8981 Oracle Cloud \\u94B1\\u5305\\u3002",
+    vault_desc:"\\u8FDE\\u63A5 Oracle \\u81EA\\u6CBB\\u6570\\u636E\\u5E93\\u4EE5\\u542F\\u7528 Vault\\uFF1A\\u5177\\u5907\\u5411\\u91CF\\u8BED\\u4E49\\u641C\\u7D22\\u3001\\u5B9E\\u4F53\\u89E3\\u6790\\u548C\\u5B8C\\u6574\\u751F\\u547D\\u5468\\u671F\\u8FFD\\u8E2A\\u7684\\u6DF1\\u5C42\\u5927\\u8111\\u3002\\u9700\\u8981 Oracle Cloud \\u94B1\\u5305\\u3002",
     vault_wallet_dir:"\\u94B1\\u5305\\u76EE\\u5F55", vault_dsn:"DSN\\uFF08TNS \\u540D\\u79F0\\uFF09",
     vault_user:"\\u6570\\u636E\\u5E93\\u7528\\u6237", vault_password:"\\u5BC6\\u7801",
     vault_wallet_password:"\\u94B1\\u5305\\u5BC6\\u7801",

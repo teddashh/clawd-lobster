@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clawd-Lobster — Skill Management</title>
+    <title>Clawd-Lobster | Skill Management</title>
     <style>
         /* ── Reset & Base ─────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -605,7 +605,7 @@
         </div>
 
         <div class="footer">
-            <p>Clawd-Lobster &mdash; Claude Code Skills Wrapper</p>
+            <p>Clawd-Lobster: Claude Code Skills Wrapper</p>
             <p>Not affiliated with Anthropic. MIT License.</p>
         </div>
     </div>
@@ -623,7 +623,7 @@
         <div id="wsGrid" class="ws-grid"></div>
 
         <div class="footer">
-            <p>Clawd-Lobster &mdash; Claude Code Skills Wrapper</p>
+            <p>Clawd-Lobster: Claude Code Skills Wrapper</p>
             <p>Not affiliated with Anthropic. MIT License.</p>
         </div>
     </div>
@@ -689,10 +689,10 @@
                         <div class="step-title">Knowledge System</div>
                     </div>
                     <div class="step-body">
-                        <div class="check-item ok"><span class="indicator">&#9745;</span> L1.5 — CC Auto-Memory (native)</div>
-                        <div class="check-item ok"><span class="indicator">&#9745;</span> L2 — MCP Memory Server (21 tools)</div>
-                        <div class="check-item ok"><span class="indicator">&#9745;</span> L3 — Knowledge Base (Markdown)</div>
-                        <div class="check-item"><span class="indicator">&#9744;</span> L4 — Cloud Database (optional)</div>
+                        <div class="check-item ok"><span class="indicator">&#9745;</span> L1.5: CC Auto-Memory (native)</div>
+                        <div class="check-item ok"><span class="indicator">&#9745;</span> L2: MCP Memory Server (21 tools)</div>
+                        <div class="check-item ok"><span class="indicator">&#9745;</span> L3: Knowledge Base (Markdown)</div>
+                        <div class="check-item"><span class="indicator">&#9744;</span> L4: Cloud Database (optional)</div>
                         <div class="input-group" id="oracleConfig" style="display:none;">
                             <label>Oracle Wallet Path</label>
                             <input type="text" placeholder="/path/to/wallet" id="oracleWallet">
@@ -713,8 +713,8 @@
                         <div class="step-title">Scheduler</div>
                     </div>
                     <div class="step-body">
-                        <div class="check-item"><span class="indicator">&#9744;</span> Git Sync — every 30 min</div>
-                        <div class="check-item"><span class="indicator">&#9744;</span> Salience Decay — daily</div>
+                        <div class="check-item"><span class="indicator">&#9744;</span> Git Sync: every 30 min</div>
+                        <div class="check-item"><span class="indicator">&#9744;</span> Salience Decay: daily</div>
                         <p style="margin-top:0.75rem; color:#8b949e;">The installer registers these automatically. Verify:</p>
                         <code onclick="copyCmd(this)">Get-ScheduledTask -TaskName "Clawd-Lobster*"</code>
                         <button class="btn" onclick="completeStep(4)">Scheduler verified</button>
@@ -861,7 +861,7 @@
 
     <script>
     /* ═══════════════════════════════════════════════════════
-       SKILL DATA — will be replaced by API later
+       SKILL DATA: will be replaced by API later
        ═══════════════════════════════════════════════════════ */
     const SKILLS = [
         {
@@ -891,7 +891,7 @@
             id: 'heartbeat',
             name: 'Heartbeat',
             icon: '\u{1F493}',
-            description: 'Session keep-alive — OS scheduler revives dead Claude Code sessions every 30 minutes',
+            description: 'Session keep-alive: OS scheduler revives dead Claude Code sessions every 30 minutes',
             longDescription: 'Uses the OS task scheduler (cron / Task Scheduler / launchd) to check session health at regular intervals. Dead sessions are automatically revived with --resume to preserve full context. Zero custom daemon code.',
             version: '0.3.0',
             category: 'core',
@@ -914,7 +914,7 @@
             id: 'evolve',
             name: 'Evolve',
             icon: '\u{1F9EC}',
-            description: 'Self-evolution prompt pattern — agents learn reusable skills from completed tasks',
+            description: 'Self-evolution prompt pattern: agents learn reusable skills from completed tasks',
             longDescription: 'After completing complex or multi-step tasks, the agent automatically evaluates whether the experience contains a reusable pattern worth saving. Generated skills are stored in skills/learned/ and improved over time. Includes automatic retirement of stale skills.',
             version: '0.3.0',
             category: 'intelligence',
@@ -993,7 +993,7 @@
             id: 'absorb',
             name: 'Absorb',
             icon: '\u{1F9FD}',
-            description: 'Knowledge absorption engine — feed it folders, repos, or URLs',
+            description: 'Knowledge absorption engine: feed it folders, repos, or URLs',
             version: '0.1.0',
             category: 'intelligence',
             tags: ['knowledge', 'learning', 'import'],
@@ -1038,7 +1038,7 @@
             id: 'codex-bridge',
             name: 'Codex Bridge',
             icon: '\u{1F517}',
-            description: 'Delegate parallelizable work to OpenAI Codex — Claude decides when, what, and how much',
+            description: 'Delegate parallelizable work to OpenAI Codex; Claude decides when, what, and how much',
             longDescription: 'Two roles: worker (parallel tasks, boilerplate, bulk refactoring) and critic (security audit, architecture debate, code review). Claude is the brain, Codex is the extra hands. $20/mo unlimited via ChatGPT Plus.',
             version: '0.1.0',
             category: 'integration',
@@ -1072,7 +1072,7 @@
             id: 'notebooklm-bridge',
             name: 'NotebookLM Bridge',
             icon: '\u{1F4D3}',
-            description: 'Free RAG + content engine via Google NotebookLM — slides, infographics, podcasts',
+            description: 'Free RAG + content engine via Google NotebookLM: slides, infographics, podcasts',
             longDescription: 'Auto-syncs workspace docs to NotebookLM. Query with Gemini, generate slides/infographics/podcasts/videos/quizzes. 3-stage pipeline from 3-way AI debate (Claude + Codex + Gemini). Zero token cost.',
             version: '0.1.0',
             category: 'integration',
@@ -1190,7 +1190,7 @@
     let dialogCallback = null;
 
     /* ═══════════════════════════════════════════════════════
-       WORKSPACE DATA — will be replaced by API later
+       WORKSPACE DATA: will be replaced by API later
        ═══════════════════════════════════════════════════════ */
     const WORKSPACES = [
         {
@@ -1699,7 +1699,7 @@
         if (!skill || skill.alwaysOn) return;
 
         if (skill.enabled) {
-            // Disable — ask confirmation
+            // Disable: ask confirmation
             showDialog(
                 `Disable ${skill.name}?`,
                 `This will stop the "${skill.name}" skill. It can be re-enabled at any time.`,
@@ -1736,7 +1736,7 @@
     }
 
     /* ═══════════════════════════════════════════════════════
-       SETTINGS — CREDENTIAL TABLE
+       SETTINGS: CREDENTIAL TABLE
        ═══════════════════════════════════════════════════════ */
     function renderCredentialTable() {
         const tbody = document.getElementById('credTableBody');
@@ -1920,7 +1920,7 @@
 
         if (action === 'approve') {
             ws.staged = ws.staged.filter(s => s.todoId !== todoId);
-            showToast(`Approved: ${staged.title} \u2014 merged to main`, 'success');
+            showToast(`Approved: ${staged.title} (merged to main)`, 'success');
         } else if (action === 'reject') {
             showDialog(
                 `Reject "${staged.title}"?`,
@@ -1928,7 +1928,7 @@
                 'Reject',
                 () => {
                     ws.staged = ws.staged.filter(s => s.todoId !== todoId);
-                    showToast(`Rejected: ${staged.title} \u2014 branch archived`, 'info');
+                    showToast(`Rejected: ${staged.title} (branch archived)`, 'info');
                     renderWorkspaces();
                 }
             );
