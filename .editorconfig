@@ -1,0 +1,8 @@
+root = true
+
+# Windows PowerShell 5.1 reads a file with no BOM as the ANSI code page.
+# Scripts that contain non-ASCII text are stored as UTF-8 with a BOM
+# (bytes EF BB BF) so those characters stay intact. ASCII-only scripts
+# do not need a BOM. This asks editors to keep the BOM on *.ps1.
+[*.ps1]
+charset = utf-8-bom
