@@ -1,4 +1,5 @@
-# install.ps1: Clawd-Lobster Setup
+﻿# install.ps1: Clawd-Lobster Setup
+# Encoding: UTF-8 with a BOM, so Windows PowerShell 5.1 does not read this file as ANSI.
 # Usage:
 #   .\install.ps1                                         # Interactive
 #   .\install.ps1 -Lang en -Hub new -Env fresh -MachineId "my-server"  # Headless

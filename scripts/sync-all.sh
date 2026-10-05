@@ -27,6 +27,22 @@ fi
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"; }
 
+# Tracked updates (git add -u) plus these globs only. Do not switch this
+# to `git add -A` or `git add -f`: ignored files stay untracked, and the
+# commit message stays "auto-sync" plus the date, with no host name.
+# git add stages nothing and exits non-zero when any pathspec matches no
+# file, so each glob is added on its own and a miss is skipped.
+add_safe_globs() {
+    local repo="$1"
+    local glob matches
+    for glob in "*.md" "*.json" "*.py" "*.ps1" "*.sh" "*.toml" "*.yml" "*.yaml" "*.html"; do
+        matches="$(git -C "$repo" ls-files --cached --others --exclude-standard -- "$glob")" || return 1
+        if [ -n "$matches" ]; then
+            git -C "$repo" add -- "$glob" || return 1
+        fi
+    done
+}
+
 log "=== Sync started ==="
 
 # Step 1: Git Pull
@@ -45,7 +61,7 @@ for repo in "$WRAPPER_DIR" $(find "$WS_ROOT" -maxdepth 3 -name ".git" -type d 2>
     if [ -n "$(git -C "$repo" status --porcelain 2>/dev/null)" ]; then
         name="$(basename "$repo")"
         git -C "$repo" add -u 2>/dev/null
-        git -C "$repo" add "*.md" "*.json" "*.py" "*.ps1" "*.sh" "*.toml" "*.yml" "*.yaml" "*.html" 2>/dev/null
+        add_safe_globs "$repo"
         if [ -n "$(git -C "$repo" diff --cached --name-only 2>/dev/null)" ]; then
             git -C "$repo" commit -m "auto-sync $(date '+%Y-%m-%d %H:%M')" --quiet 2>/dev/null
             git -C "$repo" push --quiet 2>/dev/null && log "  PUSH $name: done" || log "  PUSH $name: failed"

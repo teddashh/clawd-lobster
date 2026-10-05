@@ -10,7 +10,7 @@ Clawd-Lobster wraps the Claude Code CLI with a per-workspace MCP memory server, 
 
 **Project page:** https://teddashh.github.io/clawd-lobster/
 
-> **Status: experimental, not maintained.** 136 commits between April 1 and April 9, 2026, then one cleanup and security fix pass in October 2026. No tagged releases and no PyPI package. The package version is 0.6.0; see [CHANGELOG.md](CHANGELOG.md) and [Status and limits](#status-and-limits).
+> **Status: experimental, not maintained.** 136 commits between April 1 and April 9, 2026, then cleanup and security fixes in October 2026. No tagged releases and no PyPI package. The package version is 0.6.0; see [CHANGELOG.md](CHANGELOG.md) and [Status and limits](#status-and-limits).
 
 ---
 
@@ -260,11 +260,11 @@ The workspace registry, `workspaces.json`, is per-machine state: this repository
 
 ## Status and limits
 
-Experimental. 136 commits between April 1 and April 9, 2026, then one cleanup and security fix pass in October 2026. No tagged releases.
+Experimental. 136 commits between April 1 and April 9, 2026, then cleanup and security fixes in October 2026. No tagged releases.
 
 **Works today**
 - `pip install -e .` gives a `clawd-lobster` command with serve, setup, workspace create, squad start, and status
-- The tests pass: 83 unit tests (onboarding, scheduler registration, the dashboard's request checks, and the Spec Squad approval record) plus a scripted end-to-end run through the HTTP API (rechecked on Python 3.14 in October 2026)
+- The tests pass: 89 unit tests (onboarding, scheduler registration, the dashboard's request checks, the Spec Squad approval record, the sync script, and PowerShell encoding) plus a scripted end-to-end run through the HTTP API (rechecked on Python 3.14 in October 2026)
 - The memory server runs on SQLite alone, with text search ranked by salience
 - Install scripts for Windows (PowerShell), macOS, and Linux
 - Spec Squad in the terminal stops after the spec and asks before any code is written

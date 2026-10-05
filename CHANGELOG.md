@@ -11,6 +11,8 @@ A cleanup and security pass in October 2026. No tag or release.
 
 ### Fixes
 
+- `scripts/sync-all.sh` no longer stops when one of its safe file patterns matches nothing. `git add` stages nothing and exits non-zero in that case, and `set -e` then ended the run before commit and push. Each pattern is added on its own and a miss is skipped. Tracked updates are still staged with `git add -u`. A commit is created only when something is staged, and that commit is then pushed. The message stays `auto-sync` plus the date, with no host name. Ignored files are still left untracked (`git add -A` and `git add -f` are not used).
+- `install.ps1` is UTF-8 with a BOM (bytes EF BB BF). Windows PowerShell 5.1 otherwise reads the file as the system ANSI code page, and bytes inside its Chinese, Japanese, and Korean text can become quotes that end a string early. ASCII-only `.ps1` files are unchanged. `.editorconfig` sets `charset = utf-8-bom` for `*.ps1`. The install instructions run the script by path (`.\install.ps1`), not by piping a download into `iex`.
 - Scheduling: the evolve and heartbeat setup steps ran `echo ... | crontab -` as an argument list, so nothing was registered while the step reported success. A new `schedule` step kind registers the job from the skill's `runtime` section instead. It reads `crontab -l` (no crontab counts as empty), keeps the line if it is already there, replaces an outdated line for the same task, otherwise appends, writes the result back through stdin without a shell, checks every return code, and reports failures. The step now runs before the probe that checks the job.
 - Windows scheduling builds the `schtasks` argument list explicitly, so `/TR` keeps paths with spaces in one argument, and command steps are no longer split with `cmd.split()`.
 - Spec Squad: when the Reviewer has not approved after five rounds, the spec is still approved, but `.spec-squad.json` records `"approval": "round_limit"` (or `"reviewer"`), the turn log gets a `FORCED_APPROVAL` entry, a `forced_approval` event goes to the web view, and the terminal and web views say which kind of approval it was.
@@ -27,6 +29,7 @@ A cleanup and security pass in October 2026. No tag or release.
 
 - `templates/global-CLAUDE.md`, which the installers add to `~/.claude/CLAUDE.md`, now holds generic guidance only: the boot steps, the memory tools and basic safety rules. It no longer carries review and push rules meant for this repository's maintainers or the deploy command list. The installers append the template once and never rewrite an existing CLAUDE.md, so earlier installs keep their old copy; its "Code Review & Push Policy" section can be deleted.
 - New tests for scheduler registration, the request checks, and the approval record (83 unit tests in all).
+- Tests for `scripts/sync-all.sh` (a missing pattern, a partial match, a clean tree, and files that must stay untracked) and for the PowerShell BOM (89 unit tests in all).
 
 ---
 

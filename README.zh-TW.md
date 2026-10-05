@@ -10,7 +10,7 @@ Clawd-Lobster 替 Claude Code CLI 加上每個工作區各自的 MCP 記憶伺�
 
 **專案介紹頁：** https://teddashh.github.io/clawd-lobster/?lang=zh-TW
 
-> **狀態：實驗性質，已停止維護**。2026 年 4 月 1 日到 9 日之間有 136 個 commit，之後只在 2026 年 10 月做過一次清理與安全性修正。沒有正式的 release，也沒有 PyPI 套件。套件版本是 0.6.0，詳見 [CHANGELOG.md](CHANGELOG.md) 與[現況與限制](#現況與限制)。
+> **狀態：實驗性質，已停止維護**。2026 年 4 月 1 日到 9 日之間有 136 個 commit，2026 年 10 月又做了清理與安全性修正。沒有正式的 release，也沒有 PyPI 套件。套件版本是 0.6.0，詳見 [CHANGELOG.md](CHANGELOG.md) 與[現況與限制](#現況與限制)。
 
 ---
 
@@ -258,11 +258,11 @@ Dashboard (the eyes)   ->  web UI at 127.0.0.1:3333
 
 ## 現況與限制
 
-實驗性質。2026 年 4 月 1 日到 9 日之間有 136 個 commit，之後只在 2026 年 10 月做過一次清理與安全性修正。沒有正式的 release。
+實驗性質。2026 年 4 月 1 日到 9 日之間有 136 個 commit，2026 年 10 月又做了清理與安全性修正。沒有正式的 release。
 
 **目前可用**
 - `pip install -e .` 之後就有 `clawd-lobster` 指令，包含 serve、setup、workspace create、squad start 與 status
-- 測試可以通過：83 個單元測試（設定流程、排程登記、儀表板的請求檢查與 Spec Squad 的核准紀錄），加上一支透過 HTTP API 跑完整流程的端對端腳本（2026 年 10 月在 Python 3.14 重新驗證過）
+- 測試可以通過：89 個單元測試（設定流程、排程登記、儀表板的請求檢查、Spec Squad 的核准紀錄、同步腳本與 PowerShell 編碼），加上一支透過 HTTP API 跑完整流程的端對端腳本（2026 年 10 月在 Python 3.14 重新驗證過）
 - 記憶伺服器只靠 SQLite 就能運作，文字搜尋依 salience 排序
 - 提供 Windows（PowerShell）、macOS 與 Linux 的安裝腳本
 - 終端機版的 Spec Squad 寫完規格會停下來，問過你才開始寫程式
