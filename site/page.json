@@ -5,7 +5,7 @@
   "mark": "CL",
   "palette": "ember",
   "default_branch": "master",
-  "verified": "2026-10-05",
+  "verified": "2026-10-06",
   "language": "Python",
   "license": {
     "spdx": "MIT",
@@ -658,14 +658,14 @@
         "en": "Last commit",
         "zh": "最後提交"
       },
-      "value": "2026-10-05"
+      "value": "2026-10-06"
     },
     {
       "label": {
         "en": "Verified",
         "zh": "查核日期"
       },
-      "value": "2026-10-05"
+      "value": "2026-10-06"
     }
   ],
   "links": [
@@ -695,6 +695,546 @@
       "label": {
         "en": "中文 README",
         "zh": "中文 README"
+      }
+    }
+  ],
+  "flows": [
+    {
+      "id": "review",
+      "heading": {
+        "en": "Write, then a separate review",
+        "zh": "先寫規格，再分開審查"
+      },
+      "intro": {
+        "en": "The Architect and the Reviewer are different sessions. The Reviewer never sees the Architect's instructions.",
+        "zh": "Architect 與 Reviewer 是不同的 session。Reviewer 看不到 Architect 的指示。"
+      },
+      "after": "how",
+      "spec": {
+        "columns": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "core": 1,
+        "loop": true,
+        "meter": true
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Architect",
+            "zh": "架構師"
+          },
+          "note": {
+            "en": "A fresh session writes OpenSpec files with SHALL and MUST lines and Gherkin scenarios.",
+            "zh": "全新的 session 寫出 OpenSpec 檔，需求用 SHALL 與 MUST，並附 Gherkin 情境。"
+          },
+          "tone": "neutral",
+          "icon": "doc"
+        },
+        {
+          "title": {
+            "en": "Reviewer",
+            "zh": "審查者"
+          },
+          "note": {
+            "en": "Tools are Read, Glob, and Grep only, and the loop stops at five rounds.",
+            "zh": "工具只有 Read、Glob 與 Grep，這個迴圈最多五輪。"
+          },
+          "tone": "accent",
+          "icon": "eye"
+        },
+        {
+          "title": {
+            "en": "Record",
+            "zh": "記下結果"
+          },
+          "note": {
+            "en": "Approval is reviewer, or round_limit when five rounds still have not passed.",
+            "zh": "核准會記成 reviewer；五輪仍未通過則記成 round_limit。"
+          },
+          "tone": "warn",
+          "icon": "ledger"
+        }
+      ],
+      "ticks": [
+        {
+          "en": "spec files written",
+          "zh": "規格檔已寫好"
+        },
+        {
+          "en": "review is read only",
+          "zh": "審查只能讀檔"
+        },
+        {
+          "en": "five rounds at most",
+          "zh": "最多五輪"
+        }
+      ],
+      "caption": {
+        "en": "Each Architect turn and each Reviewer turn is a new Claude Agent SDK session. The Reviewer gets the spec files and read only tools, and does not get the Architect prompt. They repeat until the Reviewer approves, or until five rounds record a forced approval as round_limit. The web flow then continues. Terminal mode asks before any code is written.",
+        "zh": "每一輪 Architect 與每一輪 Reviewer 都是新的 Claude Agent SDK session。Reviewer 拿到規格檔與唯讀工具，拿不到 Architect 的 prompt。兩者重複到 Reviewer 核准，或滿五輪後把強制核准記成 round_limit。網頁流程接著繼續。終端機模式在寫任何程式前會先問。"
+      }
+    },
+    {
+      "id": "kinds",
+      "heading": {
+        "en": "Four kinds of skill",
+        "zh": "四種 skill"
+      },
+      "intro": {
+        "en": "Each skill.json names a kind, credentials, a health check, and dependencies.",
+        "zh": "每個 skill.json 都寫明類型、憑證、健康檢查與相依項目。"
+      },
+      "after": "features",
+      "spec": {
+        "columns": [
+          [
+            0
+          ],
+          [
+            1
+          ]
+        ],
+        "core": 1,
+        "lanes": [
+          "mcp-server",
+          "prompt-pattern",
+          "cron",
+          "poller"
+        ]
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Manifest",
+            "zh": "技能清單"
+          },
+          "note": {
+            "en": "Eleven manifests ship with the repo, and six of them are required during setup.",
+            "zh": "repo 附上 11 份清單，其中 6 個在設定時是必要的。"
+          },
+          "tone": "neutral",
+          "icon": "doc"
+        },
+        {
+          "title": {
+            "en": "Kind",
+            "zh": "類型"
+          },
+          "note": {
+            "en": "The only poller is connect-odoo, and setup reports that its entrypoint is missing.",
+            "zh": "唯一的 poller 是 connect-odoo，設定時會回報找不到進入點。"
+          },
+          "tone": "accent",
+          "icon": "route"
+        }
+      ],
+      "ticks": [
+        {
+          "en": "eleven manifests",
+          "zh": "共 11 份清單"
+        },
+        {
+          "en": "four kind names",
+          "zh": "四種名稱"
+        },
+        {
+          "en": "poller cannot schedule",
+          "zh": "輪詢器還不能排程"
+        }
+      ],
+      "caption": {
+        "en": "The eleven skill.json files use four kind values: mcp-server, prompt-pattern, cron, and poller. Prompt patterns are the largest group and ship a SKILL.md. Cron skills such as heartbeat and evolve register a scheduler. The only poller, connect-odoo, cannot be scheduled yet because setup reports a missing entrypoint.",
+        "zh": "11 份 skill.json 使用四種 kind：mcp-server、prompt-pattern、cron 與 poller。prompt 模式最多，並附上 SKILL.md。heartbeat 與 evolve 這類 cron 會註冊排程。唯一的 poller connect-odoo 還不能排程，因為設定時回報找不到進入點。"
+      }
+    },
+    {
+      "id": "lease",
+      "heading": {
+        "en": "One driver at a time",
+        "zh": "一次只有一個操作者"
+      },
+      "intro": {
+        "en": "The browser and a Claude Code session share one controller lease for setup.",
+        "zh": "瀏覽器與 Claude Code session 共用一份設定用的控制權租約。"
+      },
+      "after": "features",
+      "spec": {
+        "columns": [
+          [
+            0,
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "core": 2
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Browser",
+            "zh": "瀏覽器"
+          },
+          "note": {
+            "en": "The setup page calls acquire with holder web.",
+            "zh": "設定頁以 holder web 呼叫 acquire。"
+          },
+          "tone": "neutral",
+          "icon": "window"
+        },
+        {
+          "title": {
+            "en": "Claude",
+            "zh": "Claude"
+          },
+          "note": {
+            "en": "A Claude Code session can hold the same lease under holder claude.",
+            "zh": "Claude Code session 可以用 holder claude 持有同一份租約。"
+          },
+          "tone": "neutral",
+          "icon": "terminal"
+        },
+        {
+          "title": {
+            "en": "Lease",
+            "zh": "租約"
+          },
+          "note": {
+            "en": "It lasts 90 seconds, the setup page renews it every 25 seconds, and a different holder is refused.",
+            "zh": "有效 90 秒，設定頁每 25 秒續約，另一個 holder 會被拒絕。"
+          },
+          "tone": "accent",
+          "icon": "lock"
+        }
+      ],
+      "ticks": [
+        {
+          "en": "one holder at a time",
+          "zh": "一次一個 holder"
+        },
+        {
+          "en": "lease lasts 90 seconds",
+          "zh": "租約有效 90 秒"
+        },
+        {
+          "en": "page renews every 25s",
+          "zh": "頁面每 25 秒續約"
+        }
+      ],
+      "caption": {
+        "en": "Setup changes need the controller lease. The browser acquires it as web, and a Claude Code session can acquire it as claude. A second, different holder is refused until release or expiry. The lease lasts 90 seconds, and the setup page renews it every 25 seconds.",
+        "zh": "變更設定需要控制權租約。瀏覽器以 web 取得，Claude Code session 可以以 claude 取得。另一個不同的 holder 在釋放或逾期前會被拒絕。租約有效 90 秒，設定頁每 25 秒續約一次。"
+      }
+    },
+    {
+      "id": "evolve",
+      "heading": {
+        "en": "A review on a timer",
+        "zh": "定時回顧一次"
+      },
+      "intro": {
+        "en": "evolve-tick runs every two hours, asks Claude, and leaves files for a person to read.",
+        "zh": "evolve-tick 每兩小時跑一次，請 Claude 看過，再把檔案留給人讀。"
+      },
+      "after": "features",
+      "spec": {
+        "columns": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "core": 1,
+        "sinks": [
+          3,
+          4
+        ]
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Every 2 hours",
+            "zh": "每兩小時"
+          },
+          "note": {
+            "en": "The evolve skill registers a cron, launchd, or Task Scheduler job, and the process then exits.",
+            "zh": "evolve 這個 skill 註冊 cron、launchd 或工作排程器，行程結束後就退出。"
+          },
+          "tone": "neutral",
+          "icon": "clock"
+        },
+        {
+          "title": {
+            "en": "Ask Claude",
+            "zh": "問 Claude"
+          },
+          "note": {
+            "en": "It looks at finished TODOs and recent actions.",
+            "zh": "它看的是已完成的 TODO 與最近的操作。"
+          },
+          "tone": "accent",
+          "icon": "spark"
+        },
+        {
+          "title": {
+            "en": "Decay scores",
+            "zh": "降低分數"
+          },
+          "note": {
+            "en": "Rows with access_count 0 and created more than 30 days ago are multiplied by 0.95, down to a floor of 0.01.",
+            "zh": "access_count 為 0 且建立超過 30 天的列會乘以 0.95，最低到 0.01。"
+          },
+          "tone": "warn",
+          "icon": "bolt"
+        },
+        {
+          "title": {
+            "en": "Learned skill",
+            "zh": "學到的技能"
+          },
+          "note": {
+            "en": "Reusable patterns are stored as learned skills.",
+            "zh": "可重複使用的做法會存成 learned skill。"
+          },
+          "tone": "info",
+          "icon": "doc"
+        },
+        {
+          "title": {
+            "en": "Proposal file",
+            "zh": "提案檔"
+          },
+          "note": {
+            "en": "Improvement ideas are Markdown files under openspec/proposals for a person to review.",
+            "zh": "改進想法寫成 openspec/proposals 下的 Markdown，等人審查。"
+          },
+          "tone": "info",
+          "icon": "ledger"
+        }
+      ],
+      "ticks": [
+        {
+          "en": "timer job exits",
+          "zh": "排程跑完就退出"
+        },
+        {
+          "en": "patterns stored",
+          "zh": "做法已存下"
+        },
+        {
+          "en": "proposals wait for a person",
+          "zh": "提案等人審查"
+        }
+      ],
+      "caption": {
+        "en": "Every two hours evolve-tick asks Claude about finished TODOs and recent actions, stores reusable patterns as learned skills, and writes improvement ideas as Markdown under openspec/proposals. It also multiplies salience by 0.95 for rows that have access_count 0 and were created more than 30 days ago, with a floor of 0.01. It does not delete those rows.",
+        "zh": "每兩小時 evolve-tick 請 Claude 看已完成的 TODO 與最近的操作，把可重複的做法存成 learned skill，並把改進想法寫成 openspec/proposals 下的 Markdown。access_count 為 0 且建立超過 30 天的列，salience 會乘以 0.95，最低 0.01。它不會刪除那些列。"
+      }
+    },
+    {
+      "id": "tools",
+      "heading": {
+        "en": "Who may run a shell",
+        "zh": "誰可以跑 shell"
+      },
+      "intro": {
+        "en": "The Reviewer can only read. Only the Coder and the Tester are given Bash.",
+        "zh": "Reviewer 只能讀。只有 Coder 與 Tester 拿得到 Bash。"
+      },
+      "after": "architecture",
+      "spec": {
+        "columns": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "core": 1,
+        "boundaryAfter": 1
+      },
+      "zones": {
+        "en": [
+          "Spec",
+          "Read only",
+          "Shell"
+        ],
+        "zh": [
+          "規格",
+          "只能讀",
+          "可跑指令"
+        ]
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Spec files",
+            "zh": "規格檔"
+          },
+          "note": {
+            "en": "openspec holds the requirements the Reviewer is allowed to read.",
+            "zh": "openspec 放著 Reviewer 可以讀的需求。"
+          },
+          "tone": "neutral",
+          "icon": "doc"
+        },
+        {
+          "title": {
+            "en": "Reviewer",
+            "zh": "審查者"
+          },
+          "note": {
+            "en": "The tool list is Read, Glob, and Grep, and the prompt is not the Architect's.",
+            "zh": "工具清單是 Read、Glob 與 Grep，prompt 也不是 Architect 的那份。"
+          },
+          "tone": "accent",
+          "icon": "eye"
+        },
+        {
+          "title": {
+            "en": "Coder",
+            "zh": "實作者"
+          },
+          "note": {
+            "en": "The tool list adds Write, Edit, and Bash, and the work comes from tasks.md.",
+            "zh": "工具清單多了 Write、Edit 與 Bash，工作來自 tasks.md。"
+          },
+          "tone": "info",
+          "icon": "code"
+        },
+        {
+          "title": {
+            "en": "Tester",
+            "zh": "測試者"
+          },
+          "note": {
+            "en": "The Tester gets Read, Bash, Glob, and Grep, and cannot edit files.",
+            "zh": "Tester 有 Read、Bash、Glob 與 Grep，不能改檔。"
+          },
+          "tone": "info",
+          "icon": "check"
+        }
+      ],
+      "ticks": [
+        {
+          "en": "reviewer cannot edit",
+          "zh": "審查者不能改檔"
+        },
+        {
+          "en": "coder may use bash",
+          "zh": "實作者可用 Bash"
+        },
+        {
+          "en": "tester cannot edit",
+          "zh": "測試者不能改檔"
+        }
+      ],
+      "caption": {
+        "en": "The Reviewer session is limited to Read, Glob, and Grep. Across that line, the Coder session may also Write, Edit, and run Bash, building from tasks.md. The Tester session may run Bash and read files, and is not given Write or Edit. Each of these is a fresh Agent SDK session.",
+        "zh": "Reviewer 的 session 只能用 Read、Glob 與 Grep。界線另一側，Coder 的 session 還可以 Write、Edit 與執行 Bash，並依 tasks.md 實作。Tester 的 session 可以執行 Bash 與讀檔，沒有 Write 或 Edit。每一次都是全新的 Agent SDK session。"
+      }
+    },
+    {
+      "id": "sync",
+      "heading": {
+        "en": "How machines share files",
+        "zh": "機器之間怎麼對檔"
+      },
+      "intro": {
+        "en": "Only the install scripts schedule this job. A merge conflict stalls that repository until a person resolves it.",
+        "zh": "只有安裝腳本會排這個工作。合併衝突會讓該 repo 停住，直到有人處理。"
+      },
+      "after": "decisions",
+      "spec": {
+        "columns": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "core": 1,
+        "loop": true
+      },
+      "steps": [
+        {
+          "title": {
+            "en": "Every 30 min",
+            "zh": "每三十分鐘"
+          },
+          "note": {
+            "en": "cron, launchd, or Task Scheduler starts the job, and it exits when finished.",
+            "zh": "由 cron、launchd 或工作排程器啟動，做完就退出。"
+          },
+          "tone": "neutral",
+          "icon": "clock"
+        },
+        {
+          "title": {
+            "en": "Pull",
+            "zh": "先拉遠端"
+          },
+          "note": {
+            "en": "The job pulls each git repository under the workspace root.",
+            "zh": "這個工作會 pull 工作區根目錄下的每個 git repo。"
+          },
+          "tone": "accent",
+          "icon": "download"
+        },
+        {
+          "title": {
+            "en": "Commit push",
+            "zh": "提交並推送"
+          },
+          "note": {
+            "en": "When the index has changes it commits tracked updates and new Markdown, JSON, YAML, HTML, and script files, then pushes.",
+            "zh": "索引有變更時，會提交已追蹤檔的更新，以及新的 Markdown、JSON、YAML、HTML 與腳本，然後 push。"
+          },
+          "tone": "info",
+          "icon": "upload"
+        }
+      ],
+      "ticks": [
+        {
+          "en": "job starts on a timer",
+          "zh": "排程到點就啟動"
+        },
+        {
+          "en": "each repo is pulled",
+          "zh": "每個 repo 都 pull"
+        },
+        {
+          "en": "conflict stalls that repo",
+          "zh": "衝突會停住該 repo"
+        }
+      ],
+      "caption": {
+        "en": "The install scripts schedule a job every 30 minutes. It pulls each git repository under the workspace root and, when the index has changes, commits and pushes. It stages tracked updates and new Markdown, JSON, YAML, HTML, and script files. Other new files stay untracked, ignored files stay ignored, and a merge conflict stalls that repository.",
+        "zh": "安裝腳本每 30 分鐘排一次工作。它會 pull 工作區根目錄下的每個 git repo；索引有變更時就 commit 並 push。會加入的是已追蹤檔的更新，以及新的 Markdown、JSON、YAML、HTML 與腳本。其他新檔維持未追蹤，被忽略的檔也不會加入。合併衝突會讓該 repo 停住。"
       }
     }
   ]
